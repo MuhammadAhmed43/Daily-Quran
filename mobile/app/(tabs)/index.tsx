@@ -77,5 +77,5 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 13, fontWeight: '600' },
   rowMid: { flex: 1, gap: 2 },
   sub: { opacity: 0.6, fontSize: 12 },
-  arabicName: { fontSize: 22, writingDirection: 'rtl' },
+  arabicName: { fontFamily: 'AmiriQuran', fontSize: 22, lineHeight: 36, writingDirection: 'rtl' },
 });
