@@ -1,28 +1,58 @@
+import * as Clipboard from 'expo-clipboard';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import quran from '@/assets/quran/quran.json';
+import { getSurah, type Ayah } from '@/lib/quran';
+import { setLastRead } from '@/lib/storage';
 
-type Ayah = { n: number; ar: string; en: string };
-type Surah = {
-  number: number;
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  revelationType: string;
-  numberOfAyahs: number;
-  ayahs: Ayah[];
-};
-
-const SURAHS = quran.surahs as Surah[];
-// Bismillah pulled from the verified text itself (al-Fatiha 1:1), never typed by hand.
-const BISMILLAH = SURAHS[0].ayahs[0].ar;
+const BISMILLAH = getSurah(1)?.ayahs[0]?.ar ?? '';
 
 export default function SurahReader() {
-  const { number } = useLocalSearchParams<{ number: string }>();
-  const surah = SURAHS.find((s) => s.number === Number(number));
+  const { number, ayah } = useLocalSearchParams<{ number: string; ayah?: string }>();
+  const surahNo = Number(number);
+  const surah = getSurah(surahNo);
+  const targetAyah = ayah ? Number(ayah) : undefined;
+
+  const scrollRef = useRef<ScrollView>(null);
+  const positions = useRef<Record<number, number>>({});
+  const scrollY = useRef(0);
+  const didScroll = useRef(false);
+  const [highlight, setHighlight] = useState<number | undefined>(targetAyah);
+
+  // Persist last-read: on open, and the topmost visible ayah on leave.
+  useEffect(() => {
+    if (!surah) return;
+    setLastRead({ surah: surahNo, ayah: targetAyah ?? 1 });
+    return () => {
+      let top = 1;
+      for (const a of surah.ayahs) {
+        const y = positions.current[a.n];
+        if (y === undefined) continue;
+        if (y <= scrollY.current + 40) top = a.n;
+        else break;
+      }
+      setLastRead({ surah: surahNo, ayah: top });
+    };
+  }, [surahNo, surah, targetAyah]);
+
+  // Fade the highlight after a moment.
+  useEffect(() => {
+    if (highlight === undefined) return;
+    const t = setTimeout(() => setHighlight(undefined), 3500);
+    return () => clearTimeout(t);
+  }, [highlight]);
+
+  // When the target ayah reports its measured position, scroll straight to it.
+  function onAyahLayout(ayahNum: number, y: number) {
+    positions.current[ayahNum] = y;
+    if (!didScroll.current && targetAyah && ayahNum === targetAyah) {
+      didScroll.current = true;
+      requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: false }));
+    }
+  }
 
   if (!surah) {
     return (
@@ -34,24 +64,40 @@ export default function SurahReader() {
 
   const showBismillah = surah.number !== 1 && surah.number !== 9;
 
+  function onLongPressAyah(a: Ayah) {
+    const text = `${a.ar}\n\n${a.en}\n\n— Qur'an ${surah!.number}:${a.n} (${surah!.englishName})`;
+    Alert.alert(`Ayah ${surah!.number}:${a.n}`, undefined, [
+      { text: 'Copy', onPress: () => Clipboard.setStringAsync(text) },
+      { text: 'Share', onPress: () => Share.share({ message: text }) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: surah.englishName, headerBackTitle: 'Surahs' }} />
-      <FlatList
-        data={surah.ayahs}
-        keyExtractor={(a) => String(a.n)}
+      <Stack.Screen options={{ title: surah.englishName, headerBackTitle: "Qur'an" }} />
+      <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={
-          <View style={styles.head}>
-            <ThemedText style={styles.surahName}>{surah.name}</ThemedText>
-            <ThemedText style={styles.surahSub}>
-              {surah.englishNameTranslation} · {surah.numberOfAyahs} ayat · {surah.revelationType}
-            </ThemedText>
-            {showBismillah ? <ThemedText style={styles.bismillah}>{BISMILLAH}</ThemedText> : null}
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.ayah}>
+        scrollEventThrottle={100}
+        onScroll={(e) => {
+          scrollY.current = e.nativeEvent.contentOffset.y;
+        }}>
+        <View style={styles.head}>
+          <ThemedText style={styles.surahName}>{surah.name}</ThemedText>
+          <ThemedText style={styles.surahSub}>
+            {surah.englishNameTranslation} · {surah.numberOfAyahs} ayat · {surah.revelationType}
+          </ThemedText>
+          {showBismillah ? <ThemedText style={styles.bismillah}>{BISMILLAH}</ThemedText> : null}
+        </View>
+
+        {surah.ayahs.map((item) => (
+          <Pressable
+            key={item.n}
+            onLayout={(e) => onAyahLayout(item.n, e.nativeEvent.layout.y)}
+            onLongPress={() => onLongPressAyah(item)}
+            delayLongPress={300}
+            style={[styles.ayah, highlight === item.n && styles.ayahHighlight]}>
             <ThemedText style={styles.arabic}>{item.ar}</ThemedText>
             <View style={styles.transRow}>
               <View style={styles.numBadge}>
@@ -59,9 +105,9 @@ export default function SurahReader() {
               </View>
               <ThemedText style={styles.trans}>{item.en}</ThemedText>
             </View>
-          </View>
-        )}
-      />
+          </Pressable>
+        ))}
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -83,10 +129,14 @@ const styles = StyleSheet.create({
   },
   ayah: {
     paddingVertical: 16,
+    paddingHorizontal: 8,
+    marginHorizontal: -8,
+    borderRadius: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(127,127,127,0.2)',
     gap: 12,
   },
+  ayahHighlight: { backgroundColor: 'rgba(10,126,164,0.12)' },
   arabic: {
     fontFamily: 'AmiriQuran',
     fontSize: 26,
