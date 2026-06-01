@@ -26,6 +26,7 @@ const ALIASES: Record<string, [number, number?]> = {
   'ayat al-kursi': [2, 255],
   'ayatul kursi': [2, 255],
   'throne verse': [2, 255],
+  kursi: [2, 255],
   fatiha: [1],
   'al-fatiha': [1],
   'the opening': [1],
@@ -61,8 +62,11 @@ function norm(s: string): string {
     .replace(/w/g, 'u')
     .replace(/e/g, 'i')
     .replace(/o/g, 'u')
-    .replace(/(.)\1+/g, '$1')
-    .replace(/^al/, '');
+    // strip the Arabic article exactly once — sun-letter assimilation first, then plain al-
+    .replace(/^a(sh)\1/, '$1') // ash-sh → sh
+    .replace(/^a([bcdfghjklmnpqrstvwxyz])\1/, '$1') // at-t, an-n, ar-r, as-s, az-z, ad-d …
+    .replace(/^al/, '')
+    .replace(/(.)\1+/g, '$1');
 }
 
 const ALIAS_NORM: Record<string, [number, number?]> = {};
@@ -72,6 +76,7 @@ const ALIAS_LABELS: Record<string, string> = {
   [norm('ayat al-kursi')]: 'Ayat al-Kursi',
   [norm('ayatul kursi')]: 'Ayat al-Kursi',
   [norm('throne verse')]: 'Ayat al-Kursi',
+  [norm('kursi')]: 'Ayat al-Kursi',
 };
 
 export type RefTarget = { surah: number; ayah?: number; label?: string };
@@ -107,6 +112,60 @@ export function searchSurahs(query: string): Surah[] {
     const tr = norm(s.englishNameTranslation);
     return en.includes(t) || t.includes(en) || tr.includes(t) || String(s.number) === raw;
   }).slice(0, 8);
+}
+
+// --- Fuzzy ranking: tolerate wrong/missing letters anywhere (typos, mishearings) ---
+function editDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  let curr = new Array<number>(n + 1).fill(0);
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    const tmp = prev;
+    prev = curr;
+    curr = tmp;
+  }
+  return prev[n];
+}
+
+// 0..1 similarity between two already-normalized strings.
+function matchScore(q: string, name: string): number {
+  if (!q || !name) return 0;
+  if (q === name) return 1;
+  if (name.includes(q) || q.includes(name)) {
+    const ratio = Math.min(q.length, name.length) / Math.max(q.length, name.length);
+    return 0.85 + 0.15 * ratio; // containment is strong; prefer closer lengths
+  }
+  return 1 - editDistance(q, name) / Math.max(q.length, name.length);
+}
+
+export type RankedSurah = { surah: Surah; score: number };
+
+// Rank every surah by how close its (normalized) name is to the query, so a
+// misspelled or mis-heard name still surfaces the right surah, best-first.
+export function rankSurahs(query: string, limit = 8): RankedSurah[] {
+  const q = norm(query);
+  if (q.length < 2) return [];
+  return SURAHS.map((s) => {
+    const nameScore = matchScore(q, norm(s.englishName));
+    const tr = norm(s.englishNameTranslation);
+    const meaningScore = tr.includes(q) || q.includes(tr) ? 0.7 : 0; // e.g. "cow" → Al-Baqara
+    return { surah: s, score: Math.max(nameScore, meaningScore) };
+  })
+    .filter((x) => x.score >= 0.45)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
+export function fuzzySurahs(query: string, limit = 8): Surah[] {
+  return rankSurahs(query, limit).map((r) => r.surah);
 }
 
 // --- Keyword search over the (Pickthall) translation ---

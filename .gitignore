@@ -37,3 +37,5 @@ scripts/data/
 npm-debug.*
 yarn-error.*
 coverage/
+
+.vercel

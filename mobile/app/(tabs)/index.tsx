@@ -1,7 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,12 +18,13 @@ import { ThemedView } from '@/components/themed-view';
 import {
   SURAHS,
   getSurah,
+  rankSurahs,
   resolveReference,
-  searchSurahs,
   searchVerses,
   type Surah,
 } from '@/lib/quran';
 import { getLastRead, type LastRead } from '@/lib/storage';
+import { useVoiceSearch } from '@/hooks/use-voice-search';
 
 export default function QuranScreen() {
   const router = useRouter();
@@ -35,14 +45,66 @@ export default function QuranScreen() {
   const searching = q.length >= 1;
 
   const ref = useMemo(() => (searching ? resolveReference(q) : null), [q, searching]);
-  const surahHits = useMemo(() => (searching ? searchSurahs(q) : []), [q, searching]);
+  const ranked = useMemo(() => (searching ? rankSurahs(q, 8) : []), [q, searching]);
   const verseHits = useMemo(() => (searching ? searchVerses(q) : []), [q, searching]);
+
+  // Promote a strong, non-exact top match into a "Did you mean …?" suggestion.
+  const guess = !ref && ranked.length > 0 && ranked[0].score >= 0.62 ? ranked[0].surah : null;
+  const surahHits = (guess ? ranked.slice(1) : ranked).map((r) => r.surah);
 
   const open = (surah: number, ayah?: number) =>
     router.push({
       pathname: '/surah/[number]',
       params: ayah ? { number: String(surah), ayah: String(ayah) } : { number: String(surah) },
     });
+
+  // Voice search: speak a surah name / number / alias → fill the box and, if it
+  // resolves to an exact reference, jump straight there.
+  const onVoiceResult = useCallback(
+    (text: string) => {
+      const base = text
+        .replace(/[.,!?]+$/g, '')
+        .trim()
+        .replace(/^(surah|surat|sura|chapter)\s+/i, '') // drop a spoken "Surah …" prefix
+        .trim();
+      // Whisper sometimes mishears the leading word (e.g. "Surah" → "Ture"), so also
+      // try the phrase without its first word.
+      const words = base.split(/\s+/).filter(Boolean);
+      const candidates = words.length > 1 ? [base, words.slice(1).join(' ')] : [base];
+
+      const go = (surah: number, ayah?: number, q?: string) => {
+        if (q !== undefined) setQuery(q);
+        router.push({
+          pathname: '/surah/[number]',
+          params: ayah
+            ? { number: String(surah), ayah: String(ayah) }
+            : { number: String(surah) },
+        });
+      };
+
+      // 1) Exact reference (number, or alias like "Ayat al-Kursi").
+      for (const c of candidates) {
+        const r = resolveReference(c);
+        if (r) return go(r.surah, r.ayah, c);
+      }
+      // 2) Best fuzzy surah match across candidates — tolerant of wrong letters anywhere.
+      let best: { surah: Surah; score: number } | null = null;
+      let bestText = base;
+      for (const c of candidates) {
+        const top = rankSurahs(c, 1)[0];
+        if (top && (!best || top.score > best.score)) {
+          best = top;
+          bestText = c;
+        }
+      }
+      // Confident → jump straight to it; otherwise drop the closest text into the box
+      // so the on-screen "Did you mean …?" suggestion can take over.
+      if (best && best.score >= 0.78) return go(best.surah.number, undefined, best.surah.englishName);
+      setQuery(bestText);
+    },
+    [router],
+  );
+  const voice = useVoiceSearch(onVoiceResult);
 
   const renderSurahRow = (item: Surah) => (
     <Pressable key={item.number} style={styles.row} onPress={() => open(item.number)}>
@@ -65,16 +127,38 @@ export default function QuranScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.container}>
         <View style={styles.searchWrap}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search, or jump to 2:255 / Ayat al-Kursi"
-            placeholderTextColor="rgba(127,127,127,0.7)"
-            style={styles.search}
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            returnKeyType="search"
-          />
+          <View style={styles.searchRow}>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search, or jump to 2:255 / Ayat al-Kursi"
+              placeholderTextColor="rgba(127,127,127,0.7)"
+              style={[styles.search, styles.searchInput]}
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+              returnKeyType="search"
+            />
+            {voice.enabled ? (
+              <Pressable
+                onPress={voice.toggle}
+                accessibilityRole="button"
+                accessibilityLabel={voice.listening ? 'Stop listening' : 'Search by voice'}
+                style={[styles.mic, voice.listening && styles.micActive]}>
+                {voice.busy ? (
+                  <ActivityIndicator color={voice.listening ? '#fff' : '#0a7ea4'} />
+                ) : (
+                  <Ionicons
+                    name={voice.listening ? 'stop' : 'mic'}
+                    size={20}
+                    color={voice.listening ? '#fff' : '#0a7ea4'}
+                  />
+                )}
+              </Pressable>
+            ) : null}
+          </View>
+          {voice.listening ? (
+            <ThemedText style={styles.listening}>Listening… tap to stop</ThemedText>
+          ) : null}
         </View>
 
         {searching ? (
@@ -85,6 +169,14 @@ export default function QuranScreen() {
                   Go to {ref.label ? `${ref.label} · ` : ''}
                   {getSurah(ref.surah)?.englishName ?? `Surah ${ref.surah}`}
                   {ref.ayah ? ` ${ref.surah}:${ref.ayah}` : ''}
+                </ThemedText>
+              </Pressable>
+            ) : null}
+
+            {guess ? (
+              <Pressable style={styles.goTo} onPress={() => open(guess.number)}>
+                <ThemedText style={styles.goToText}>
+                  Did you mean {guess.englishName}? · Surah {guess.number}
                 </ThemedText>
               </Pressable>
             ) : null}
@@ -138,6 +230,8 @@ export default function QuranScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   searchWrap: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  searchInput: { flex: 1 },
   search: {
     backgroundColor: 'rgba(127,127,127,0.12)',
     borderRadius: 12,
@@ -146,6 +240,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(127,127,127,1)',
   },
+  mic: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(10,126,164,0.12)',
+  },
+  micActive: { backgroundColor: '#e0245e' },
+  listening: { marginTop: 8, fontSize: 13, color: '#e0245e', fontWeight: '600' },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   results: { paddingHorizontal: 16, paddingBottom: 32, gap: 4 },
   row: {

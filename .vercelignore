@@ -1,0 +1,9 @@
+# Vercel only needs the /api functions — keep the mobile app & data scripts out of the deploy.
+mobile/
+scripts/
+node_modules/
+
+# never upload local secrets / agent config (env vars are set in the Vercel dashboard)
+.env
+.env*
+.claude/
