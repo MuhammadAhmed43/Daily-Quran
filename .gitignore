@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# secrets & env (NEVER commit)
+.env
+.env.local
+.env*.local
+.mcp.json
+**/.env
+**/.env.local
+
+# expo / metro
+.expo/
+**/.expo/
+dist/
+web-build/
+*.tsbuildinfo
+
+# native build output (generated)
+**/ios/
+**/android/
+
+# vercel
+.vercel
+
+# agent / editor local config
+.claude/
+**/.claude/
+
+# generated data intermediates (rebuilt by scripts/build-quran.mjs)
+scripts/data/
+
+# misc
+.DS_Store
+*.log
+npm-debug.*
+yarn-error.*
+coverage/
