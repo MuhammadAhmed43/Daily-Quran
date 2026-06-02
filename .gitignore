@@ -31,6 +31,9 @@ web-build/
 # generated data intermediates (rebuilt by scripts/build-quran.mjs)
 scripts/data/
 
+# QA battery output (regenerate with: node scripts/test-chat.mjs)
+scripts/test-results.json
+
 # misc
 .DS_Store
 *.log

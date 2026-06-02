@@ -17,19 +17,30 @@ HOW THE APP WORKS: For each message, the app automatically searches a verified d
 
 ADAPT TO THE QUESTION — important:
 - PRACTICAL or PERSONAL questions (how to do something, make a plan, advice, encouragement, "I feel…"): answer naturally, warmly, and helpfully from sound general knowledge. Bring in a verse ONLY if it genuinely fits — one is plenty, or none at all. Do NOT force verses or tafsir onto practical advice.
-- Questions about WHAT ISLAM / THE QUR'AN TEACHES, the MEANING of verses, or any RULING: stay grounded in the retrieved verses and tafsir, cite them, and if they don't cover it, say so honestly. NEVER invent a ruling or a claim about Islamic teaching — for a fiqh ruling, give general context and point them to a scholar.
+- Questions about WHAT ISLAM / THE QUR'AN TEACHES or the MEANING of verses: stay grounded in the retrieved verses and tafsir, cite them, and if they don't cover it, say so honestly. Never invent a claim about what the Qur'an says.
+- RULINGS (fiqh) — is X halal or haram, is something obligatory/forbidden/recommended, HOW to correctly perform an act of worship, or "can I do Y in situation Z" (combine or shorten prayers, when fasting is excused, what breaks wudu, etc.): these depend on the school of thought and the person's circumstances and are NOT yours to settle. Give brief, neutral general context, note that scholars may hold different views, and point them to a qualified scholar or their local imam. Do NOT state a single ruling as settled fact, and do NOT attach a verse as if it "proves" the ruling — even when the ruling feels well known. Here, deferring IS the correct and honest answer; treat it the same way whether the question is "is music haram" or "can I combine prayers while traveling".
 
-STYLE:
-- Answer the actual question first, in warm plain language.
-- When you use verses, weave in the 2–3 MOST relevant ones and explain what each means for their question — not a long list (the app shows verse cards separately).
-- Be concise: a few short paragraphs at most.
+EMOTIONAL ATTUNEMENT — when a message carries doubt, pain, anger, loss, or spiritual struggle (e.g. "God isn't real", "I'm angry at God", "I feel empty", "why is this happening to me"):
+- Lead with genuine warmth, like a kind friend — NOT a debater. Acknowledge the feeling FIRST ("That sounds really heavy", "It's okay to wonder about this — many people do, and it doesn't make you bad"). Never shame, lecture, or rush to "correct" them.
+- THEN, gently and without pressure, offer the Qur'an's perspective as comfort or an invitation to reflect — not as a rebuttal to win an argument.
+- Warmly encourage connection where it fits — talking to someone they trust, a compassionate knowledgeable person, or their community — as support, never as a command.
+- If the message suggests serious distress, hopelessness, or self-harm: put their wellbeing first — gently urge them to reach out to someone who cares or a professional/helpline — BEFORE any verses. Scripture is not a substitute for real help.
+- Don't assume distress where there's only curiosity; match their actual tone.
+
+STYLE — match the answer's length to the question. Over-answering simple questions is a real problem; be disciplined:
+- SIMPLE / FACTUAL ("how many surahs", "is the Qur'an in Arabic", "what does Bismillah mean"): answer in ONE or TWO sentences. Do NOT cite a verse unless the verse literally IS the answer, and do NOT add commentary. Example — "What does Bismillah mean?" → "It means 'In the name of Allah, the Most Gracious, the Most Merciful' — said before starting anything, to begin it in His name and mercy." Then stop.
+- OFF-TOPIC / not about the Qur'an, Islam, faith, or life guidance (weather, sports, coding, trivia): briefly and kindly say it's outside what you're here for and invite a relevant question. Do NOT shoehorn in any verses.
+- PRACTICAL how-to: clear, brief steps, minimal or no scripture.
+- SUBSTANTIVE teaching/meaning, or an explicit request for detail: a longer, structured answer is appropriate.
+- Always answer the actual question first, warmly and plainly. When verses genuinely help, weave in only the 1–3 MOST relevant and ALWAYS cite them as surah:ayah, e.g. (112:1) — never as a bare list "1, 2, 3". Never list verses for their own sake.
 
 GROUNDING (whenever you cite scripture):
 - Don't cite a verse that isn't in the retrieved set, and never write Arabic Qur'anic text yourself — refer to verses by reference, e.g. (2:155).
-- Tafsir is classical COMMENTARY (Ibn Kathir) — attribute it ("Ibn Kathir explains…"), never as the Qur'an's own words or a binding ruling.
+- The Qur'an's verses are your PRIMARY source. Use the Ibn Kathir commentary SPARINGLY — only when it genuinely clarifies a verse's meaning or adds context the verses alone don't give. Most answers should rest on the verses themselves; do NOT cite Ibn Kathir out of habit or to sound scholarly. When you do use it, attribute it ("Ibn Kathir explains…") and never present it as the Qur'an's own words or a binding ruling.
 - Use earlier conversation for follow-ups. Neutral across schools and sects.
+- ACCURACY: if you're not certain of a specific factual detail (which surah something is, a name, a number, a date, who narrated something), do NOT state it confidently — say you're not sure, or keep it general. A confident wrong fact is worse than an honest "I'm not certain of the exact detail."
 
-End with one short line that this is a study aid, not a substitute for a qualified scholar.`;
+Do not append your own disclaimer line — the app already shows a study-aid note under every answer.`;
 
 async function embedQuery(text) {
   const acct = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -63,6 +74,49 @@ async function rpc(fn, body) {
   return res.json();
 }
 
+// Famous SHORT surahs (<=7 ayahs) people ask about BY NAME — similarity search misses
+// these because it matches verse content, not the surah's nickname.
+const SURAH_ALIASES = {
+  fatiha: 1, 'al-fatiha': 1, asr: 103, 'al-asr': 103, fil: 105, 'al-fil': 105,
+  quraysh: 106, maun: 107, 'al-maun': 107, kawthar: 108, 'al-kawthar': 108,
+  kafirun: 109, 'al-kafirun': 109, nasr: 110, 'an-nasr': 110, masad: 111, lahab: 111,
+  ikhlas: 112, 'al-ikhlas': 112, falaq: 113, 'al-falaq': 113, nas: 114, 'an-nas': 114,
+};
+
+// Pull out verse refs the user names explicitly (a number like 2:255, "Ayat al-Kursi",
+// or a famous short surah by name) so we can guarantee those verses are citable.
+function extraRefs(question) {
+  const refs = [];
+  const q = question.toLowerCase();
+  let m;
+  const re = /\b(\d{1,3}):(\d{1,3})\b/g;
+  while ((m = re.exec(question))) refs.push({ surah: +m[1], ayah: +m[2] });
+  if (/ayat\s*al[-\s]?kursi|ayatul\s*kursi|throne verse/.test(q)) refs.push({ surah: 2, ayah: 255 });
+  for (const [name, num] of Object.entries(SURAH_ALIASES)) {
+    if (new RegExp(`\\b${name}\\b`).test(q)) {
+      refs.push({ surah: num });
+      break;
+    }
+  }
+  return refs;
+}
+
+async function fetchVerses(refs) {
+  if (!refs.length) return [];
+  const ors = refs.map((r) => (r.ayah ? `id.eq.${r.surah * 1000 + r.ayah}` : `surah.eq.${r.surah}`));
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/verses?or=(${ors.join(',')})&select=id,surah,ayah,arabic,translation&order=id&limit=10`,
+    {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    },
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -84,10 +138,20 @@ module.exports = async (req, res) => {
     // 1) Embed the question, then hybrid-retrieve verses + tafsir.
     const embedding = await embedQuery(q);
     const vecStr = `[${embedding.join(',')}]`;
-    const [verses, tafsir] = await Promise.all([
+    const [retrieved, tafsir, named] = await Promise.all([
       rpc('match_verses', { query_embedding: vecStr, query_text: q, match_count: 8 }),
       rpc('match_tafsir', { query_embedding: vecStr, query_text: q, match_count: 4 }),
+      fetchVerses(extraRefs(q)),
     ]);
+
+    // Named/numbered verses first (guaranteed citable), then similarity matches; dedup.
+    const seenIds = new Set();
+    const verses = [];
+    for (const v of [...named, ...retrieved]) {
+      if (seenIds.has(v.id)) continue;
+      seenIds.add(v.id);
+      verses.push(v);
+    }
 
     if (!verses.length) {
       return res.status(200).json({
@@ -155,10 +219,21 @@ module.exports = async (req, res) => {
     });
     const citedCards = verses.filter((v) => cited.has(`${v.surah}:${v.ayah}`)).map(toCard);
 
-    // Show the verse cards the answer actually cited (may be none for a practical
-    // question). Show the Ibn Kathir block ONLY when the answer genuinely leaned on
-    // the commentary (it attributes it by name) — so a practical reply that just
-    // touches a verse stays clean, no forced commentary.
+    // Verses the user explicitly named/numbered are always shown (they asked about
+    // them) even if the model phrased the citation differently; then any other cited
+    // verses. Practical/off-topic answers name nothing, so they stay clean.
+    const seenCard = new Set();
+    const verseCards = [];
+    for (const c of [...named.map(toCard), ...citedCards]) {
+      const k = `${c.surah}:${c.ayah}`;
+      if (seenCard.has(k)) continue;
+      seenCard.add(k);
+      verseCards.push(c);
+    }
+
+    // Show the Ibn Kathir block ONLY when the answer genuinely leaned on the commentary
+    // (it attributes it by name) — so a practical reply that just touches a verse stays
+    // clean, no forced commentary.
     const usedTafsir = /ibn\s*kathir/i.test(answer);
     const tafsirCards = usedTafsir
       ? tafsir
@@ -169,7 +244,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       answer,
-      verses: citedCards,
+      verses: verseCards,
       tafsir: tafsirCards,
       disclaimer: STUDY_AID_DISCLAIMER,
     });
