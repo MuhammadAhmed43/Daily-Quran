@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,7 @@ import {
 type State = 'loading' | 'ready' | 'denied' | 'error';
 
 export default function PrayerScreen() {
+  const router = useRouter();
   const [state, setState] = useState<State>('loading');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [place, setPlace] = useState<string | null>(null);
@@ -166,6 +168,17 @@ export default function PrayerScreen() {
               </ThemedText>
             </Pressable>
 
+            <Pressable
+              style={styles.btnSecondary}
+              onPress={() =>
+                router.push({
+                  pathname: '/qibla',
+                  params: { lat: String(coords!.lat), lng: String(coords!.lng) },
+                })
+              }>
+              <ThemedText style={styles.btnSecondaryText}>🧭  Find the Qibla</ThemedText>
+            </Pressable>
+
             <ThemedText style={styles.footer}>
               Muslim World League · Shafiʿi (Asr) · your local timezone
             </ThemedText>
@@ -207,5 +220,14 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: '#0a7ea4', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   btnOn: { backgroundColor: '#2e7d32' },
   btnText: { color: '#fff', fontWeight: '600' },
+  btnSecondary: {
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(10,126,164,0.6)',
+    backgroundColor: 'rgba(10,126,164,0.08)',
+  },
+  btnSecondaryText: { color: '#0a7ea4', fontWeight: '700' },
   footer: { fontSize: 12, opacity: 0.5, textAlign: 'center', paddingBottom: 8 },
 });
