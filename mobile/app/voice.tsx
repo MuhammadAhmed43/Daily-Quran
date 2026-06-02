@@ -15,6 +15,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { askQuestion, type ChatTurn } from '@/lib/chat';
+import { useRecitation } from '@/lib/recitation-context';
 import { transcribeAudio } from '@/lib/voice';
 import { pushVoiceExchange } from '@/lib/voice-bridge';
 
@@ -135,6 +136,7 @@ function isJunk(t: string): boolean {
 
 export default function VoiceScreen() {
   const router = useRouter();
+  const recitation = useRecitation();
   const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
   const recState = useAudioRecorderState(recorder, 90);
 
@@ -450,6 +452,7 @@ export default function VoiceScreen() {
 
   useEffect(() => {
     mountedRef.current = true;
+    recitation.stop(); // voice mode needs the mic — never let recitation play (or hold the session) under it
     (async () => {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
       if (!perm.granted) {

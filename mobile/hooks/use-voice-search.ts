@@ -5,9 +5,10 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
+import { useRecitation } from '@/lib/recitation-context';
 import { isVoiceConfigured, transcribeAudio } from '@/lib/voice';
 
 /**
@@ -21,6 +22,11 @@ export function useVoiceSearch(onResult: (text: string) => void) {
   const { isRecording } = useAudioRecorderState(recorder);
   const [busy, setBusy] = useState(false);
 
+  // Stop any Qur'an recitation before grabbing the mic (kept in a ref so `start` stays stable).
+  const recitation = useRecitation();
+  const stopRecitationRef = useRef(recitation.stop);
+  stopRecitationRef.current = recitation.stop;
+
   const start = useCallback(async () => {
     try {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
@@ -28,6 +34,7 @@ export function useVoiceSearch(onResult: (text: string) => void) {
         Alert.alert('Microphone access needed', 'Enable microphone access to search by voice.');
         return;
       }
+      stopRecitationRef.current();
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
       await recorder.prepareToRecordAsync();
       recorder.record();

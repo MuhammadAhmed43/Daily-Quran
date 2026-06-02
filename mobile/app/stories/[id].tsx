@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useRecitation } from '@/lib/recitation-context';
 import { getStory, panelAudio, panelImage, panelVerse, type Panel } from '@/lib/stories';
 
 const BASE = '#0b0d12'; // immersive near-black base for the whole player
@@ -42,6 +43,7 @@ export default function StoryPlayer() {
   const { width, height } = useWindowDimensions();
   const story = getStory(id);
   const [index, setIndex] = useState(0);
+  const recitation = useRecitation();
 
   // Stable refs for FlatList viewability (RN requires these not to change between renders).
   const viewConfig = useRef({ itemVisiblePercentThreshold: 60 });
@@ -59,8 +61,11 @@ export default function StoryPlayer() {
   const autoNarrate = useRef(true);
 
   useEffect(() => {
+    // A story takes over audio — stop any Qur'an recitation so the two never play over each other.
+    recitation.stop();
     // Play even when the iPhone ringer is on silent.
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load + (auto)play the active scene's narration whenever the scene changes (incl. on open).
@@ -259,8 +264,7 @@ function PanelView({
         )}
 
         <Text style={styles.disclaimer}>
-          The verse is the Qur'an's own words; the scene and retelling are an interpretation for
-          reflection.
+          {"The verse is the Qur'an's own words; the scene and retelling are an interpretation for reflection."}
         </Text>
       </ScrollView>
     </View>

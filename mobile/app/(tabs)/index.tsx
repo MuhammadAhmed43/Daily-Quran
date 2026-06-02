@@ -58,6 +58,13 @@ export default function QuranScreen() {
       params: ayah ? { number: String(surah), ayah: String(ayah) } : { number: String(surah) },
     });
 
+  // Start a hands-free, continuous recitation of the whole Qur'an from Al-Fatiha.
+  const listenWholeQuran = () =>
+    router.push({
+      pathname: '/surah/[number]',
+      params: { number: '1', autoplay: '1', continuous: '1' },
+    });
+
   // Voice search: speak a surah name / number / alias → fill the box and, if it
   // resolves to an exact reference, jump straight there.
   const onVoiceResult = useCallback(
@@ -210,14 +217,26 @@ export default function QuranScreen() {
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={
-              lastSurah && last ? (
-                <Pressable style={styles.continue} onPress={() => open(last.surah, last.ayah)}>
-                  <ThemedText style={styles.continueLabel}>CONTINUE READING</ThemedText>
-                  <ThemedText type="defaultSemiBold">
-                    {lastSurah.englishName} · Ayah {last.ayah}
-                  </ThemedText>
+              <>
+                <Pressable style={styles.listenAll} onPress={listenWholeQuran}>
+                  <View style={styles.listenIcon}>
+                    <Ionicons name="play" size={18} color="#fff" />
+                  </View>
+                  <View style={styles.listenMid}>
+                    <ThemedText type="defaultSemiBold">Listen to the whole Qur’an</ThemedText>
+                    <ThemedText style={styles.sub}>Continuous recitation from Al-Fatiha</ThemedText>
+                  </View>
+                  <Ionicons name="infinite" size={20} color="#0a7ea4" />
                 </Pressable>
-              ) : null
+                {lastSurah && last ? (
+                  <Pressable style={styles.continue} onPress={() => open(last.surah, last.ayah)}>
+                    <ThemedText style={styles.continueLabel}>CONTINUE READING</ThemedText>
+                    <ThemedText type="defaultSemiBold">
+                      {lastSurah.englishName} · Ayah {last.ayah}
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+              </>
             }
             renderItem={({ item }) => renderSurahRow(item)}
           />
@@ -272,6 +291,24 @@ const styles = StyleSheet.create({
   rowMid: { flex: 1, gap: 2 },
   sub: { opacity: 0.6, fontSize: 12 },
   arabicName: { fontFamily: 'AmiriQuran', fontSize: 22, lineHeight: 36, writingDirection: 'rtl' },
+  listenAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(10,126,164,0.12)',
+  },
+  listenIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0a7ea4',
+  },
+  listenMid: { flex: 1, gap: 2 },
   continue: {
     marginVertical: 12,
     padding: 14,
