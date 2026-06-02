@@ -1,5 +1,5 @@
 // Builds the app's bundled Qur'an data from verified source editions.
-// Source: Tanzil Uthmani text + Pickthall translation (public domain), via alquran.cloud.
+// Source: Tanzil Uthmani text + Talal Itani "Clear & Easy" translation (free distribution), via alquran.cloud.
 // Self-contained: downloads the source editions if they are not already present.
 // Run from the repo root:  node scripts/build-quran.mjs
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -13,7 +13,7 @@ const OUT = join(ROOT, 'mobile', 'assets', 'quran');
 
 const EDITIONS = {
   uthmani: 'https://api.alquran.cloud/v1/quran/quran-uthmani',
-  pickthall: 'https://api.alquran.cloud/v1/quran/en.pickthall',
+  itani: 'https://api.alquran.cloud/v1/quran/en.itani',
 };
 
 const BOM = /﻿/g; // strip stray byte-order-mark artifacts from the verified text
@@ -31,7 +31,7 @@ async function loadEdition(name) {
 }
 
 const u = await loadEdition('uthmani');
-const p = await loadEdition('pickthall');
+const p = await loadEdition('itani');
 
 const surahs = u.data.surahs.map((su, i) => {
   const sp = p.data.surahs[i];
@@ -54,7 +54,7 @@ const surahs = u.data.surahs.map((su, i) => {
 const ayahCount = surahs.reduce((sum, s) => sum + s.ayahs.length, 0);
 const meta = {
   source: 'Tanzil Uthmani (via alquran.cloud)',
-  translation: 'Pickthall, 1930 (public domain)',
+  translation: 'Talal Itani — Clear & Easy (free distribution)',
   numbering: 'Hafs / Kufan (6236)',
   surahCount: surahs.length,
   ayahCount,
