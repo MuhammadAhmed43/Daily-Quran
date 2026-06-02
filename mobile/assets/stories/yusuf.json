@@ -1,0 +1,170 @@
+{
+  "id": "yusuf",
+  "title": "Yusuf",
+  "subtitle": "The Most Beautiful Story",
+  "arabicName": "سورة يوسف",
+  "surah": 12,
+  "blurb": "A boy, a dream, and a long road from a well to a throne — the Qur'an's most complete narrative, told in 16 fully aniconic scenes.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "The Most Beautiful Story",
+      "ref": "12:3",
+      "verse": "12:3",
+      "narration": "The Qur'an calls this aḥsan al-qaṣaṣ — 'the most beautiful of stories.' It follows one young man, Yusuf (peace be upon him), through betrayal, slavery, prison, and at last power — showing how God's plan works quietly through every hardship. It begins with a boy, a dream, and a father who understood.",
+      "visual": "The name سُورَةُ يُوسُف in calligraphy over a slowly turning eight-point Islamic star, indigo deepening to gold.",
+      "color": "#1b1746",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "The Dream",
+      "ref": "12:4",
+      "verse": "12:4",
+      "narration": "As a boy, Yusuf (peace be upon him) dreamed that eleven stars, the sun, and the moon all bowed down to him. He told his father — the prophet Yaʿqub (peace be upon him) — who knew at once it was a sign of a great future. But he warned his son to keep it secret: Yusuf had eleven brothers, and such a dream could stir their envy.",
+      "visual": "A deep night sky; eleven stars, a sun, and a moon all incline toward a single point of light. The heavens do the bowing — no figures.",
+      "color": "#0e1330",
+      "motion": "rise"
+    },
+    {
+      "n": 3,
+      "title": "Jealousy and the Plot",
+      "ref": "12:8–9",
+      "verse": "12:8",
+      "narration": "Yusuf's older brothers were jealous of the love their father gave him and his younger brother. Sure that their father favored the two boys unfairly, they schemed together — if they could only get rid of Yusuf (peace be upon him), they told themselves, their father's affection would finally be theirs alone.",
+      "visual": "A flawless tile pattern cracking apart; white silhouette forms — the brothers — conspiring in shadow, turned away from one bright tile.",
+      "color": "#232a36",
+      "motion": "panLeft"
+    },
+    {
+      "n": 4,
+      "title": "Into the Well",
+      "ref": "12:10, 15",
+      "verse": "12:15",
+      "narration": "Some of them wanted to kill him; one objected — better to drop him into a deep well, where a passing caravan might carry him away. They talked their father into letting Yusuf (peace be upon him) join them, then lowered him into the dark. Alone at the bottom, he heard God reassure him: one day he would remind these very brothers of what they had done — and they would not even know him.",
+      "visual": "Looking up from the bottom of a stone well — a small circle of sky far above, a rope still swaying, a faint warm glow at the base.",
+      "color": "#10131c",
+      "motion": "sink"
+    },
+    {
+      "n": 5,
+      "title": "The Shirt, and \"Patience is Beautiful\"",
+      "ref": "12:18",
+      "verse": "12:18",
+      "narration": "The brothers came home weeping, claiming a wolf had eaten Yusuf while they raced and played, and they held up his shirt stained with false blood. Yaʿqub (peace be upon him) saw through the story — but with no proof, and his beloved son gone, he chose not rage but ṣabrun jamīl, 'a beautiful patience,' and turned to God for help.",
+      "visual": "A folded garment on sand, a dark stain at its edge; above it, \"patience is beautiful\" in gold calligraphy.",
+      "color": "#3a2b28",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 6,
+      "title": "Sold into Egypt",
+      "ref": "12:19, 21",
+      "verse": "12:19",
+      "narration": "A caravan stopped at the well, and the water-carrier hauled up not water but a boy. They sold Yusuf (peace be upon him) for a few coins, as if he were worthless, and brought him to Egypt — where a powerful man bought him and told his wife to treat him kindly, sensing the boy was special. What looked like the end of everything was God placing him exactly where he needed to be.",
+      "visual": "A bronze water-bucket and a scatter of coins on stone; beyond, the silhouette of an Egyptian palace gate at dusk — the first warm gold.",
+      "color": "#4a3724",
+      "motion": "panRight"
+    },
+    {
+      "n": 7,
+      "title": "Integrity, and the Torn Shirt",
+      "ref": "12:23, 26–28",
+      "verse": "12:23",
+      "narration": "Yusuf (peace be upon him) grew into a man of beauty and character in that household. But the master's wife, drawn to him, shut the doors one day and tried to seduce him. He refused — 'God forbid!' — and ran for the door; she caught his shirt and tore it from behind. When her husband appeared, she accused Yusuf — yet the shirt, torn at the back, proved he had been fleeing her, not chasing her.",
+      "visual": "Carved mashrabiya doors, bolted, light through the lattice; the garment torn at the back hem beside small scales tipping toward truth. A white silhouette recoils — Yusuf (peace be upon him) is not shown.",
+      "color": "#2a2320",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 8,
+      "title": "The Banquet of Knives",
+      "ref": "12:31",
+      "verse": "12:31",
+      "narration": "The scandal spread, and the city's women whispered that the great man's wife had fallen for a servant. So she invited them to a banquet, gave each a knife and fruit, and called Yusuf (peace be upon him) to walk in. Dazzled, the women cut their own hands without even feeling it — and suddenly understood why she could not look away.",
+      "visual": "A patterned cloth set with citrons and small knives, one bead of red at a blade's edge; white silhouette forms — the women — frozen mid-gesture in awe. No face is shown.",
+      "color": "#45271f",
+      "motion": "panLeft"
+    },
+    {
+      "n": 9,
+      "title": "\"Prison is Dearer to Me\"",
+      "ref": "12:33, 35",
+      "verse": "12:33",
+      "narration": "Still the wife pressed him, threatening prison if he would not give in. Yusuf (peace be upon him) prayed that prison was dearer to him than the sin they urged on him, and asked God to turn their schemes away. Though everyone now knew he was innocent, the powerful found it easier to jail him quietly than to face the scandal.",
+      "visual": "A barred window throwing striped shadow across a bare stone floor; a single shaft of light.",
+      "color": "#262d36",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 10,
+      "title": "The One God in Prison",
+      "ref": "12:37–40",
+      "verse": "12:39",
+      "narration": "In prison, two of the king's servants each had a baffling dream and came to Yusuf (peace be upon him), sensing his wisdom. Before reading their dreams, he first called them to the One true God, away from Egypt's many idols. Then he interpreted: one man would be freed and serve the king again — the other would be put to death.",
+      "visual": "Darkness with one rising point of light outshining a row of empty idol-niches; a cup and a loaf at the margins — the two dreams. White silhouettes of two inmates listen.",
+      "color": "#141a30",
+      "motion": "rise"
+    },
+    {
+      "n": 11,
+      "title": "The King's Dream, and the Plan",
+      "ref": "12:43, 47–48",
+      "verse": "12:43",
+      "narration": "Years later, the king of Egypt was haunted by a dream no one could explain: seven fat cows devoured by seven lean ones, seven green ears of grain and seven dry. The freed servant suddenly remembered Yusuf (peace be upon him). Yusuf read it plainly — seven years of plenty, then seven of famine — and urged them to store grain through the good years to survive the lean ones.",
+      "visual": "Seven full golden wheat-sheaves beside seven withered grey ones; rows of sealed granary jars behind. A white silhouette — the king — considers them.",
+      "color": "#4f4326",
+      "motion": "panRight"
+    },
+    {
+      "n": 12,
+      "title": "Raised Over the Storehouses",
+      "ref": "12:55–56",
+      "verse": "12:55",
+      "narration": "The king was so struck that he sent for Yusuf (peace be upon him) — but Yusuf refused to leave until his name was cleared, and the women confessed the truth at last. Freed and honored, he asked to be placed over Egypt's storehouses. The boy once thrown into a well now held a nation's food in his hands — for, as the Qur'an says, God never wastes the reward of the righteous.",
+      "visual": "Ranks of sealed granary jars and a single iron key in warm gold light; the fractured pattern of Panel 3 now reassembled and whole.",
+      "color": "#5e4a1c",
+      "motion": "rise"
+    },
+    {
+      "n": 13,
+      "title": "The Cup and the Brother",
+      "ref": "12:69–70",
+      "verse": "12:69",
+      "narration": "When the famine came, Yusuf's brothers traveled to Egypt for grain, never guessing the powerful minister was the boy they had betrayed. He supplied them, but asked them to bring their youngest brother next time. When they did, Yusuf (peace be upon him) quietly revealed himself to that brother — then hid the king's cup in his bag, a gentle trick to keep him in Egypt a little longer.",
+      "visual": "A golden goblet nestled in a woven saddlebag among sacks of grain. A secret kindness, not a theft.",
+      "color": "#63521f",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 14,
+      "title": "\"No Blame Upon You Today\"",
+      "ref": "12:90, 92",
+      "verse": "12:92",
+      "narration": "When the brothers came back once more, worn down and pleading, Yusuf (peace be upon him) finally asked them: 'Do you know what you did to Yusuf?' Stunned, they realized who stood before them. With every right to take revenge, he forgave them completely — 'No blame upon you today; may God forgive you' — and the promise made to him in the well came true.",
+      "visual": "A gate swinging open, light flooding through; \"no blame upon you today\" in calligraphy; white silhouettes of the brothers bow low in the glow. Yusuf (peace be upon him) is the light, never a figure.",
+      "color": "#756227",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 15,
+      "title": "The Shirt Restores Sight",
+      "ref": "12:93, 96",
+      "verse": "12:93",
+      "narration": "Yusuf (peace be upon him) handed them his own shirt, telling them to lay it over their father's face. Yaʿqub (peace be upon him) had wept for Yusuf so many years that he had lost his sight. When the shirt touched his face, his sight returned — the same garment that once carried a lie about his son now carrying the truth that he was alive.",
+      "visual": "The garment a third time — now clean and luminous, lifted toward soft white light, the stain and the tear gone.",
+      "color": "#8a7c5a",
+      "motion": "rise"
+    },
+    {
+      "n": 16,
+      "title": "The Dream Fulfilled, and the Lesson",
+      "ref": "12:100, 111",
+      "verse": "12:100",
+      "narration": "The whole family made the journey to Egypt and was reunited at last. As his parents and eleven brothers gathered to honor him, Yusuf (peace be upon him) saw his childhood dream — the eleven stars, the sun, and the moon — fulfilled before his eyes. He thanked God for turning every hardship to good. And the Qur'an closes: this is no invented tale, but guidance and mercy for those who reflect.",
+      "visual": "Panel 2's eleven stars, sun, and moon resolve into the bowing family, inclining toward an empty radiant throne; the eight-point star pattern completes, gold on indigo. The celestial symbols are the family — no silhouettes.",
+      "color": "#2a2452",
+      "motion": "zoomIn"
+    }
+  ]
+}
