@@ -42,7 +42,3 @@ yarn-error.*
 coverage/
 
 .vercel
-
-# keep-alive workflow: pushing it needs a GitHub token with 'workflow' scope.
-# Add it later via the GitHub web UI (Actions tab) or after granting that scope, then un-ignore.
-.github/workflows/keepalive.yml
