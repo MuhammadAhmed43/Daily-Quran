@@ -1,3 +1,4 @@
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -15,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getStory, panelVerse, type Panel } from '@/lib/stories';
+import { getStory, panelAudio, panelImage, panelVerse, type Panel } from '@/lib/stories';
 
 const BASE = '#0b0d12'; // immersive near-black base for the whole player
 
@@ -49,6 +50,55 @@ export default function StoryPlayer() {
     if (first?.index != null) setIndex(first.index);
   });
 
+  // Narration playback. One player, re-pointed to the active scene's clip. Auto-narration
+  // is on by default: it starts on scene 1, and when a clip ends it gracefully advances to
+  // the next scene and keeps narrating — until you pause (or the story ends).
+  const listRef = useRef<FlatList<Panel>>(null);
+  const player = useAudioPlayer();
+  const status = useAudioPlayerStatus(player);
+  const autoNarrate = useRef(true);
+
+  useEffect(() => {
+    // Play even when the iPhone ringer is on silent.
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+  }, []);
+
+  // Load + (auto)play the active scene's narration whenever the scene changes (incl. on open).
+  useEffect(() => {
+    if (!story) return;
+    const src = panelAudio(story.id, story.panels[index].n);
+    if (src == null) return;
+    player.replace(src);
+    player.seekTo(0);
+    if (autoNarrate.current) player.play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
+  // Safety net: if play() fired before the clip finished loading, start it once it's ready.
+  useEffect(() => {
+    if (
+      autoNarrate.current &&
+      status.isLoaded &&
+      !status.playing &&
+      !status.didJustFinish &&
+      status.currentTime < 0.25
+    ) {
+      player.play();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status.isLoaded]);
+
+  // When a scene's narration ends, hold a graceful beat, then glide to the next scene.
+  useEffect(() => {
+    if (!story || !status.didJustFinish || !autoNarrate.current) return;
+    if (index >= story.panels.length - 1) return;
+    const t = setTimeout(() => {
+      listRef.current?.scrollToIndex({ index: index + 1, animated: true });
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status.didJustFinish]);
+
   if (!story) {
     return (
       <View style={[styles.fill, styles.center, { backgroundColor: BASE }]}>
@@ -62,12 +112,23 @@ export default function StoryPlayer() {
   }
 
   const total = story.panels.length;
+  const toggleNarration = () => {
+    if (status.playing) {
+      autoNarrate.current = false; // pause stops the auto-advance chain
+      player.pause();
+    } else {
+      autoNarrate.current = true; // resume hands-free narration from this scene on
+      player.seekTo(0);
+      player.play();
+    }
+  };
 
   return (
     <View style={[styles.fill, { backgroundColor: BASE }]}>
       <Stack.Screen options={{ headerShown: false, animation: 'fade' }} />
 
       <FlatList
+        ref={listRef}
         data={story.panels}
         keyExtractor={(p) => String(p.n)}
         horizontal
@@ -78,7 +139,12 @@ export default function StoryPlayer() {
         onViewableItemsChanged={onViewRef.current}
         viewabilityConfig={viewConfig.current}
         renderItem={({ item }) => (
-          <PanelView panel={item} width={width} visualHeight={Math.round(height * 0.46)} />
+          <PanelView
+            panel={item}
+            storyId={story.id}
+            width={width}
+            visualHeight={Math.round(height * 0.46)}
+          />
         )}
       />
 
@@ -93,8 +159,11 @@ export default function StoryPlayer() {
         <View style={styles.iconBtn} />
       </SafeAreaView>
 
-      {/* Bottom progress bar */}
-      <SafeAreaView edges={['bottom']} style={styles.progressWrap} pointerEvents="none">
+      {/* Bottom: narration control + progress */}
+      <SafeAreaView edges={['bottom']} style={styles.bottomBar} pointerEvents="box-none">
+        <Pressable onPress={toggleNarration} hitSlop={8} style={styles.narrateBtn}>
+          <Text style={styles.narrateText}>{status.playing ? '⏸  Narrating…' : '▶  Listen'}</Text>
+        </Pressable>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]} />
         </View>
@@ -105,14 +174,17 @@ export default function StoryPlayer() {
 
 function PanelView({
   panel,
+  storyId,
   width,
   visualHeight,
 }: {
   panel: Panel;
+  storyId: string;
   width: number;
   visualHeight: number;
 }) {
   const verse = panelVerse(panel);
+  const localImg = panelImage(storyId, panel.n);
 
   // Subtle, slow "Ken Burns" drift so each still scene feels alive — a gentle
   // ping-pong eased in and out, in a direction chosen per scene (MOTIONS). Native-driver
@@ -147,7 +219,14 @@ function PanelView({
           The inner layer drifts slowly to give the still scene a living, cinematic feel. */}
       <View style={[styles.visual, { height: visualHeight, backgroundColor: panel.color }]}>
         <Animated.View style={[StyleSheet.absoluteFill, driftStyle]}>
-          {panel.image ? (
+          {localImg ? (
+            <Image
+              source={localImg}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={350}
+            />
+          ) : panel.image ? (
             <Image
               source={{ uri: panel.image }}
               style={StyleSheet.absoluteFill}
@@ -178,13 +257,6 @@ function PanelView({
             </Text>
           </View>
         )}
-
-        {/* Narration audio — wired once the Kokoro MP3s are generated */}
-        <View style={styles.audioChip}>
-          <Text style={styles.audioText}>
-            {panel.audio ? '▶  Play narration' : '🔊  Narration coming soon'}
-          </Text>
-        </View>
 
         <Text style={styles.disclaimer}>
           The verse is the Qur'an's own words; the scene and retelling are an interpretation for
@@ -266,16 +338,6 @@ const styles = StyleSheet.create({
   english: { color: 'rgba(255,255,255,0.85)', fontSize: 15, lineHeight: 23 },
   ref: { color: '#c8a24a', fontSize: 13, fontWeight: '600' },
 
-  audioChip: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  audioText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600' },
-
   disclaimer: {
     color: 'rgba(255,255,255,0.4)',
     fontSize: 11,
@@ -315,7 +377,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  progressWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16 },
+  narrateBtn: {
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  narrateText: { color: '#f0d489', fontSize: 14, fontWeight: '700' },
   progressTrack: {
     height: 3,
     borderRadius: 2,

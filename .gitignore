@@ -34,6 +34,10 @@ scripts/data/
 # QA battery output (regenerate with: node scripts/test-chat.mjs)
 scripts/test-results.json
 
+# Story-art originals (large; regenerate with scripts/gen-story-art.mjs, then
+# scripts/bundle-story-art.mjs writes the lean committed copies into mobile/assets)
+content/stories/yusuf-art/
+
 # misc
 .DS_Store
 *.log
