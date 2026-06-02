@@ -20,6 +20,8 @@ ADAPT TO THE QUESTION — important:
 - Questions about WHAT ISLAM / THE QUR'AN TEACHES or the MEANING of verses: stay grounded in the retrieved verses and tafsir, cite them, and if they don't cover it, say so honestly. Never invent a claim about what the Qur'an says.
 - RULINGS (fiqh) — is X halal or haram, is something obligatory/forbidden/recommended, HOW to correctly perform an act of worship, or "can I do Y in situation Z" (combine or shorten prayers, when fasting is excused, what breaks wudu, etc.): these depend on the school of thought and the person's circumstances and are NOT yours to settle. Give brief, neutral general context, note that scholars may hold different views, and point them to a qualified scholar or their local imam. Do NOT state a single ruling as settled fact, and do NOT attach a verse as if it "proves" the ruling — even when the ruling feels well known. Here, deferring IS the correct and honest answer; treat it the same way whether the question is "is music haram" or "can I combine prayers while traveling".
 
+GREETINGS & WELCOME — if the person greets you or makes small talk ("hi", "hello", "salam", "assalamu alaikum", "good morning"): warmly return the Islamic greeting — reply "Wa alaykum as-salam" if they greeted with salaam, otherwise open with "Assalamu alaykum" — then welcome them with genuine encouragement, and weave in one short uplifting verse (from the retrieved set) to set a hopeful, warm tone. Keep it brief and friendly.
+
 EMOTIONAL ATTUNEMENT — when a message carries doubt, pain, anger, loss, or spiritual struggle (e.g. "God isn't real", "I'm angry at God", "I feel empty", "why is this happening to me"):
 - Lead with genuine warmth, like a kind friend — NOT a debater. Acknowledge the feeling FIRST ("That sounds really heavy", "It's okay to wonder about this — many people do, and it doesn't make you bad"). Never shame, lecture, or rush to "correct" them.
 - THEN, gently and without pressure, offer the Qur'an's perspective as comfort or an invitation to reflect — not as a rebuttal to win an argument.
@@ -92,6 +94,10 @@ function extraRefs(question) {
   const re = /\b(\d{1,3}):(\d{1,3})\b/g;
   while ((m = re.exec(question))) refs.push({ surah: +m[1], ayah: +m[2] });
   if (/ayat\s*al[-\s]?kursi|ayatul\s*kursi|throne verse/.test(q)) refs.push({ surah: 2, ayah: 255 });
+  // Greetings/small talk → offer one warm, uplifting verse (hearts find rest in remembrance).
+  if (/^\s*(hi|hey+|hello|yo|howdy|salam|salaam|asalam|assalam|as[-\s]?salaam?u?\s*alaiku?m|good\s*(morning|afternoon|evening)|peace be upon you)\b/i.test(q)) {
+    refs.push({ surah: 13, ayah: 28 });
+  }
   for (const [name, num] of Object.entries(SURAH_ALIASES)) {
     if (new RegExp(`\\b${name}\\b`).test(q)) {
       refs.push({ surah: num });
@@ -204,17 +210,12 @@ module.exports = async (req, res) => {
       verses.push(v);
     }
 
-    if (!verses.length) {
-      return res.status(200).json({
-        answer: "I couldn't find verses related to that. Try rephrasing, or ask about a theme (patience, gratitude, kindness to parents…).",
-        verses: [],
-        tafsir: [],
-        disclaimer: STUDY_AID_DISCLAIMER,
-      });
-    }
-
-    // 2) Build grounded context for the model.
-    const verseBlock = verses.map((v) => `[${v.surah}:${v.ayah}] ${v.translation}`).join('\n');
+    // 2) Build grounded context for the model. No early-out when nothing is retrieved —
+    // greetings, casual chat ("hi"), and practical questions should still get a warm,
+    // teacher-like reply (the system prompt says answer naturally; don't force/invent verses).
+    const verseBlock = verses.length
+      ? verses.map((v) => `[${v.surah}:${v.ayah}] ${v.translation}`).join('\n')
+      : '(no specific verses retrieved — reply warmly and conversationally, like a kind teacher; do NOT cite or invent any verse)';
     const tafsirBlock = tafsir
       .map((t) => `(Ibn Kathir on ${t.surah}:${t.ayah}) ${t.text.slice(0, 700)}`)
       .join('\n\n');

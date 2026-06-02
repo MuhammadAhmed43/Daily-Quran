@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { askQuestion, type ChatResponse, type TafsirSnippet } from '@/lib/chat';
+import { takeVoiceExchanges } from '@/lib/voice-bridge';
 
 type Message =
   | { id: string; role: 'user'; text: string }
@@ -56,6 +57,23 @@ export default function ChatScreen() {
 
   const openVerse = (surah: number, ayah: number) =>
     router.push({ pathname: '/surah/[number]', params: { number: String(surah), ayah: String(ayah) } });
+
+  // When returning from the voice screen, fold its conversation into the chat thread.
+  useFocusEffect(
+    useCallback(() => {
+      const exchanges = takeVoiceExchanges();
+      if (!exchanges.length) return;
+      setMessages((m) => {
+        const added: Message[] = [];
+        for (const ex of exchanges) {
+          added.push({ id: nextId(), role: 'user', text: ex.question });
+          added.push({ id: nextId(), role: 'assistant', loading: false, data: ex.response });
+        }
+        return [...m, ...added];
+      });
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 150);
+    }, []),
+  );
 
   const send = useCallback(
     async (text: string) => {
@@ -149,6 +167,12 @@ export default function ChatScreen() {
           </ScrollView>
 
           <View style={styles.inputBar}>
+            <Pressable
+              style={styles.voiceBtn}
+              onPress={() => router.push('/voice')}
+              accessibilityLabel="Voice conversation">
+              <Ionicons name="mic" size={22} color="#0a7ea4" />
+            </Pressable>
             <TextInput
               value={input}
               onChangeText={setInput}
@@ -451,4 +475,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
+  voiceBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(10,126,164,0.12)',
+  },
 });

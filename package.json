@@ -5,5 +5,8 @@
   "description": "Serverless API for the Daily Qur'an app (speech-to-text via Groq Whisper). The mobile app lives in /mobile.",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.0.5"
   }
 }
