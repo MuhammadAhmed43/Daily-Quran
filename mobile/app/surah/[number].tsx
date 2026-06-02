@@ -7,6 +7,7 @@ import { AyahActions } from '@/components/ayah-actions';
 import { JumpSheet } from '@/components/jump-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useBookmarks } from '@/lib/bookmarks';
 import { haptic } from '@/lib/haptics';
 import { getSurah, type Ayah } from '@/lib/quran';
 import { useRecitation } from '@/lib/recitation-context';
@@ -35,6 +36,7 @@ export default function SurahReader() {
 
   const [jumpOpen, setJumpOpen] = useState(false);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
+  const bookmarks = useBookmarks();
 
   const scrollRef = useRef<ScrollView>(null);
   const positions = useRef<Record<number, number>>({});
@@ -220,6 +222,7 @@ export default function SurahReader() {
 
         {surah.ayahs.map((item) => {
           const isThis = playingAyah === item.n;
+          const bookmarked = bookmarks.some((b) => b.surah === displayedSurah && b.ayah === item.n);
           return (
             <Pressable
               key={item.n}
@@ -237,6 +240,9 @@ export default function SurahReader() {
                 <View style={styles.numBadge}>
                   <ThemedText style={styles.numText}>{item.n}</ThemedText>
                 </View>
+                {bookmarked ? (
+                  <Ionicons name="bookmark" size={14} color={ACCENT} style={styles.bookmarkMark} />
+                ) : null}
                 <ThemedText style={styles.trans}>{item.en}</ThemedText>
                 <Pressable
                   onPress={() => {
@@ -364,6 +370,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(127,127,127,0.15)',
   },
   numText: { fontSize: 12, fontWeight: '600' },
+  bookmarkMark: { marginTop: 5, marginLeft: -4 },
   trans: { flex: 1, fontSize: 15, lineHeight: 22, opacity: 0.85 },
   ayBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', marginTop: -2 },
 

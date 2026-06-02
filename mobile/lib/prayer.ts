@@ -116,7 +116,12 @@ export async function scheduleAdhan(
       const t = times[p];
       if (t.getTime() > now.getTime()) {
         await Notifications.scheduleNotificationAsync({
-          content: { title: `${LABELS[p]} 🕌`, body: `It's time for ${LABELS[p]} prayer.`, sound: true },
+          content: {
+            title: `${LABELS[p]} 🕌`,
+            body: `It's time for ${LABELS[p]} prayer.`,
+            sound: true,
+            data: { type: 'adhan', prayer: p },
+          },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t },
         });
         count++;

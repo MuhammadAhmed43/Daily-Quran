@@ -4,6 +4,7 @@
 // surah into the next — prefetching the upcoming clip so the hand-off stays gapless, even
 // across a surah boundary.
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
+import * as Notifications from 'expo-notifications';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { getSurah } from '@/lib/quran';
@@ -62,6 +63,16 @@ function useEngine(): RecitationApi {
 
   useEffect(() => {
     getPreferredReciter().then(setReciter);
+  }, []);
+
+  // When a prayer time arrives (adhan notification, foreground), pause recitation so the call
+  // to prayer is heard and isn't drowned out — the user can resume from the mini-player.
+  // (Backgrounded recitation is already suspended by iOS in Expo Go, so this covers the real case.)
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener((n) => {
+      if (n.request.content.data?.type === 'adhan' && currRef.current) pause();
+    });
+    return () => sub.remove();
   }, []);
 
   // Where to go after `pos`: next ayah in the surah, or (continuous) the next surah's first

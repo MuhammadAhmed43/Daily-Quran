@@ -23,6 +23,8 @@ import {
   searchVerses,
   type Surah,
 } from '@/lib/quran';
+import { useBookmarks } from '@/lib/bookmarks';
+import { haptic } from '@/lib/haptics';
 import { getLastRead, type LastRead } from '@/lib/storage';
 import { useVoiceSearch } from '@/hooks/use-voice-search';
 
@@ -30,6 +32,7 @@ export default function QuranScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [last, setLast] = useState<LastRead | null>(null);
+  const bookmarks = useBookmarks();
 
   useFocusEffect(
     useCallback(() => {
@@ -145,6 +148,20 @@ export default function QuranScreen() {
               clearButtonMode="while-editing"
               returnKeyType="search"
             />
+            <Pressable
+              onPress={() => {
+                haptic.light();
+                router.push('/bookmarks');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Bookmarks"
+              style={styles.bookmarkBtn}>
+              <Ionicons
+                name={bookmarks.length > 0 ? 'bookmark' : 'bookmark-outline'}
+                size={20}
+                color="#c8a24a"
+              />
+            </Pressable>
             {voice.enabled ? (
               <Pressable
                 onPress={voice.toggle}
@@ -266,6 +283,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(10,126,164,0.12)',
+  },
+  bookmarkBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(200,162,74,0.14)',
   },
   micActive: { backgroundColor: '#e0245e' },
   listening: { marginTop: 8, fontSize: 13, color: '#e0245e', fontWeight: '600' },

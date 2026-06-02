@@ -6,6 +6,7 @@ import { Animated, Easing, Pressable, Share, StyleSheet, View } from 'react-nati
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { toggleBookmark, useBookmarks } from '@/lib/bookmarks';
 import { haptic } from '@/lib/haptics';
 import type { Ayah, Surah } from '@/lib/quran';
 
@@ -23,6 +24,7 @@ type Props = {
 export function AyahActions({ ayah, surah, onClose, onPlay }: Props) {
   const anim = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState<Ayah | null>(ayah);
+  const bookmarks = useBookmarks();
 
   useEffect(() => {
     if (ayah) {
@@ -46,6 +48,7 @@ export function AyahActions({ ayah, surah, onClose, onPlay }: Props) {
   const refLabel = `${surah.englishName} · ${surah.number}:${shown.n}`;
   const text = `${shown.ar}\n\n${shown.en}\n\n— Qur'an ${surah.number}:${shown.n} (${surah.englishName})`;
   const sheetY = anim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] });
+  const saved = bookmarks.some((b) => b.surah === surah.number && b.ayah === shown.n);
 
   const act = (fn: () => void) => {
     haptic.light();
@@ -71,6 +74,15 @@ export function AyahActions({ ayah, surah, onClose, onPlay }: Props) {
             </ThemedText>
           </View>
 
+          <Row
+            icon={saved ? 'bookmark' : 'bookmark-outline'}
+            label={saved ? 'Saved — tap to remove' : 'Bookmark'}
+            active={saved}
+            onPress={() => {
+              haptic.light();
+              void toggleBookmark(surah.number, shown.n);
+            }}
+          />
           <Row icon="play-circle" label="Play from here" onPress={() => act(() => onPlay(shown.n))} />
           <Row icon="copy-outline" label="Copy" onPress={() => act(() => void Clipboard.setStringAsync(text))} />
           <Row icon="share-outline" label="Share" onPress={() => act(() => void Share.share({ message: text }))} />
@@ -84,15 +96,17 @@ function Row({
   icon,
   label,
   onPress,
+  active,
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   onPress: () => void;
+  active?: boolean;
 }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
       <Ionicons name={icon} size={22} color={ACCENT} />
-      <ThemedText style={styles.rowLabel}>{label}</ThemedText>
+      <ThemedText style={[styles.rowLabel, active && styles.rowLabelActive]}>{label}</ThemedText>
     </Pressable>
   );
 }
@@ -133,4 +147,5 @@ const styles = StyleSheet.create({
   },
   rowPressed: { backgroundColor: 'rgba(127,127,127,0.12)' },
   rowLabel: { fontSize: 16, fontWeight: '500' },
+  rowLabelActive: { color: ACCENT, fontWeight: '600' },
 });
