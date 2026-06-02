@@ -237,9 +237,15 @@ function useEngine(): RecitationApi {
   const setContinuous = (v: boolean) => setContinuousState(v);
   const chooseReciter = (id: string) => {
     const r = RECITERS.find((x) => x.id === id);
-    if (!r) return;
+    if (!r || r.id === reciter.id) return;
     setReciter(r);
     void setPreferredReciter(id);
+    // If something's playing, restart the current ayah in the new voice so the change is heard
+    // immediately (folderRef set synchronously since setReciter only applies next render).
+    if (wantRef.current) {
+      folderRef.current = r.folder;
+      void start({ ...wantRef.current });
+    }
   };
 
   useEffect(() => {

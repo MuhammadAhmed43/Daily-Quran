@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 
 import { AyahActions } from '@/components/ayah-actions';
 import { JumpSheet } from '@/components/jump-sheet';
+import { ReciterSheet } from '@/components/reciter-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useBookmarks } from '@/lib/bookmarks';
@@ -35,6 +36,7 @@ export default function SurahReader() {
   const surah = getSurah(displayedSurah);
 
   const [jumpOpen, setJumpOpen] = useState(false);
+  const [reciterOpen, setReciterOpen] = useState(false);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   const bookmarks = useBookmarks();
 
@@ -278,12 +280,18 @@ export default function SurahReader() {
             style={[styles.contBtn, ctx.continuous && styles.contBtnOn]}>
             <Ionicons name="infinite" size={18} color={ctx.continuous ? '#fff' : ACCENT} />
           </Pressable>
-          <ThemedText style={styles.playbarText} numberOfLines={1}>
-            {ctx.loading ? 'Loading…' : `Reciting ${surah.number}:${playingAyah}`}
-            <ThemedText style={styles.playbarReciter}>
-              {`  ·  ${ctx.continuous ? 'Whole Qur’an' : ctx.reciter.name}`}
+          <Pressable
+            style={styles.playbarInfo}
+            onPress={() => {
+              haptic.light();
+              setReciterOpen(true);
+            }}>
+            <ThemedText style={styles.playbarText} numberOfLines={1}>
+              {ctx.loading ? 'Loading…' : `Reciting ${surah.number}:${playingAyah}`}
+              <ThemedText style={styles.playbarReciter}>{`  ·  ${ctx.reciter.name}`}</ThemedText>
             </ThemedText>
-          </ThemedText>
+            <Ionicons name="chevron-down" size={13} color="rgba(127,127,127,0.6)" />
+          </Pressable>
           <Pressable
             onPress={() => {
               haptic.light();
@@ -318,6 +326,13 @@ export default function SurahReader() {
         surah={surah}
         onClose={() => setActiveAyah(null)}
         onPlay={(n) => ctx.playFrom(displayedSurah, n)}
+      />
+
+      <ReciterSheet
+        visible={reciterOpen}
+        currentId={ctx.reciter.id}
+        onClose={() => setReciterOpen(false)}
+        onSelect={(id) => ctx.chooseReciter(id)}
       />
     </ThemedView>
   );
@@ -397,6 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10,126,164,0.14)',
   },
   contBtnOn: { backgroundColor: ACCENT },
+  playbarInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
   playbarText: { flex: 1, fontSize: 14, fontWeight: '600' },
   playbarReciter: { fontSize: 12, fontWeight: '400', opacity: 0.6 },
   barBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
