@@ -117,6 +117,43 @@ async function fetchVerses(refs) {
   return res.json();
 }
 
+// Keyword-only retrieval over the generated FTS tsvector columns (PostgREST websearch).
+// Used as a graceful fallback when query embedding is unavailable (e.g. Cloudflare's daily
+// Neuron quota is spent) — the chat keeps working on keywords instead of hard-failing.
+// Pull the meaningful content words out of a question and OR them together — a natural
+// question ("what does the Quran say about patience?") otherwise ANDs every word and
+// matches nothing. Stopwords + question framing are dropped.
+const FTS_STOP = new Set(
+  ('what whats does do did is are was were the a an to of in on at for and or about how why when ' +
+    'where which who whom this that these those quran quranic say says said tell me i my we our you ' +
+    'your he she it its they them their can could would should will shall please am be been being ' +
+    'have has had with from as by if then than so but not no yes there here just like more most ' +
+    'mean means meaning explain').split(' '),
+);
+function ftsQuery(q) {
+  const ks = q
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !FTS_STOP.has(w));
+  return ks.length ? ks.join(' or ') : q;
+}
+async function ftsSearch(table, columns, q, count) {
+  const url =
+    `${process.env.SUPABASE_URL}/rest/v1/${table}` +
+    `?fts=wfts(english).${encodeURIComponent(ftsQuery(q))}&select=${columns}&limit=${count}`;
+  const res = await fetch(url, {
+    headers: {
+      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+const ftsVerses = (q, count = 8) => ftsSearch('verses', 'id,surah,ayah,arabic,translation', q, count);
+const ftsTafsir = (q, count = 4) => ftsSearch('tafsir', 'id,surah,ayah,source,text', q, count);
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -135,14 +172,28 @@ module.exports = async (req, res) => {
       .slice(-6)
       .map((m) => ({ role: m.role, content: m.content.slice(0, 3000) }));
 
-    // 1) Embed the question, then hybrid-retrieve verses + tafsir.
-    const embedding = await embedQuery(q);
-    const vecStr = `[${embedding.join(',')}]`;
-    const [retrieved, tafsir, named] = await Promise.all([
-      rpc('match_verses', { query_embedding: vecStr, query_text: q, match_count: 8 }),
-      rpc('match_tafsir', { query_embedding: vecStr, query_text: q, match_count: 4 }),
-      fetchVerses(extraRefs(q)),
-    ]);
+    // 1) Embed the question, then hybrid-retrieve verses + tafsir. If embedding is
+    //    unavailable (e.g. Cloudflare's daily quota is spent), fall back to keyword (FTS)
+    //    search so the chat degrades gracefully instead of failing.
+    const namedP = fetchVerses(extraRefs(q));
+    let embedding = null;
+    try {
+      embedding = await embedQuery(q);
+    } catch (e) {
+      console.error('Embedding unavailable, using keyword fallback:', (e && e.message) || e);
+    }
+    let retrieved = [];
+    let tafsir = [];
+    if (embedding) {
+      const vecStr = `[${embedding.join(',')}]`;
+      [retrieved, tafsir] = await Promise.all([
+        rpc('match_verses', { query_embedding: vecStr, query_text: q, match_count: 8 }),
+        rpc('match_tafsir', { query_embedding: vecStr, query_text: q, match_count: 4 }),
+      ]);
+    } else {
+      [retrieved, tafsir] = await Promise.all([ftsVerses(q, 8), ftsTafsir(q, 4)]);
+    }
+    const named = await namedP;
 
     // Named/numbered verses first (guaranteed citable), then similarity matches; dedup.
     const seenIds = new Set();
