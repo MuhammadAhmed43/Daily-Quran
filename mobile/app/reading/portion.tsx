@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { haptic } from '@/lib/haptics';
 import { getAyah } from '@/lib/quran';
-import { corpusAyahs, corpusLength, estimateMinutes, surahName } from '@/lib/quran-plan';
+import { corpusAyahs, corpusLength, estimateMinutes, surahName, type Corpus } from '@/lib/quran-plan';
 import { useQuranPlan } from '@/lib/quran-plan-progress';
 import { useRecitation } from '@/lib/recitation-context';
 import { getSurahIntro } from '@/lib/surah-intro';
@@ -26,6 +26,31 @@ export default function PortionScreen() {
   const [completed, setCompleted] = useState<null | { wasLast: boolean; percentAfter: number }>(null);
   const ownsAudioRef = useRef(false);
   ownsAudioRef.current = rec.queued; // the portion screen's only audio is its "narrate portion" playlist
+  const onExplain = useCallback((t: ExplainTarget) => setExplainTarget(t), []);
+
+  // Follow the recitation like the surah reader: highlight the ayah being recited and keep it on
+  // screen. `playList` makes the engine advance `rec.playing` ayah-by-ayah, so we just react to it.
+  // Positions are keyed by surah*1000+ayah because a portion can span surahs.
+  const scrollRef = useRef<ScrollView>(null);
+  const positions = useRef<Record<number, number>>({});
+  const pendingScrollRef = useRef<number | null>(null);
+  const playingKey = rec.playing ? rec.playing.surah * 1000 + rec.playing.ayah : null;
+
+  const onAyahLayout = useCallback((key: number, y: number) => {
+    positions.current[key] = y;
+    if (pendingScrollRef.current === key) {
+      pendingScrollRef.current = null;
+      requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 100), animated: true }));
+    }
+  }, []);
+
+  // When the recited ayah changes, bring it comfortably into view (deferred if not yet measured).
+  useEffect(() => {
+    if (playingKey == null) return;
+    const y = positions.current[playingKey];
+    if (y != null) scrollRef.current?.scrollTo({ y: Math.max(0, y - 100), animated: true });
+    else pendingScrollRef.current = playingKey;
+  }, [playingKey]);
 
   // Fade narration out smoothly if we leave while it's still playing.
   useEffect(() => {
@@ -117,12 +142,6 @@ export default function PortionScreen() {
   }
 
   const refs = corpusAyahs(plan.corpus).slice(today.startIdx, today.endIdx);
-  const rows: { surah: number; ayah: number; header: boolean }[] = [];
-  let prev = -1;
-  for (const r of refs) {
-    rows.push({ surah: r.surah, ayah: r.ayah, header: r.surah !== prev });
-    prev = r.surah;
-  }
 
   const complete = () => {
     haptic.success();
@@ -136,7 +155,7 @@ export default function PortionScreen() {
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ title: `Portion ${portionNumber}`, headerBackTitle: 'Plan' }} />
       <SafeAreaView edges={['bottom']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <FadeIn duration={450}>
             <ThemedText style={styles.kicker}>
               PORTION {portionNumber} OF {totalPortionsCount}
@@ -163,35 +182,14 @@ export default function PortionScreen() {
             </ThemedText>
           </Pressable>
 
-          {rows.map((row, i) => {
-            const a = getAyah(row.surah, row.ayah);
-            if (!a) return null;
-            const intro = row.header ? getSurahIntro(row.surah) : undefined;
-            return (
-              <View key={`${row.surah}:${row.ayah}`}>
-                {row.header ? (
-                  <View style={styles.surahHead}>
-                    <ThemedText style={styles.surahHeadName}>{surahName(row.surah)}</ThemedText>
-                    {intro ? <ThemedText style={styles.surahHeadIntro}>{intro.summary}</ThemedText> : null}
-                  </View>
-                ) : null}
-                <Pressable
-                  style={({ pressed }) => [styles.ayah, pressed && { backgroundColor: ACCENT + '10' }]}
-                  onPress={() =>
-                    setExplainTarget({ surah: row.surah, ayah: row.ayah, name: surahName(row.surah), ar: a.ar, en: a.en })
-                  }>
-                  <View style={styles.ayahHead}>
-                    <ThemedText style={styles.ayahRef}>
-                      {row.surah}:{row.ayah}
-                    </ThemedText>
-                    {i === 0 ? <ThemedText style={styles.tapHint}>tap any ayah to explain</ThemedText> : null}
-                  </View>
-                  <ThemedText style={styles.ar}>{a.ar}</ThemedText>
-                  <ThemedText style={styles.en}>{a.en}</ThemedText>
-                </Pressable>
-              </View>
-            );
-          })}
+          <PortionAyahs
+            corpus={plan.corpus}
+            startIdx={today.startIdx}
+            endIdx={today.endIdx}
+            playingKey={playingKey}
+            onExplain={onExplain}
+            onLayout={onAyahLayout}
+          />
 
           <Pressable style={styles.completeBtn} onPress={complete}>
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
@@ -208,6 +206,73 @@ export default function PortionScreen() {
     </ThemedView>
   );
 }
+
+// The portion's ayah rows, isolated + memoized: opening/closing the ExplainSheet or marking complete
+// re-renders the parent but never re-reconciles these (up to ~200 AmiriQuran rows on a Ramadan pace).
+// They DO re-render as recitation advances (playingKey changes), so the recited ayah highlights and is
+// scrolled into view — the same follow-along the surah reader does.
+const PortionAyahs = memo(function PortionAyahs({
+  corpus,
+  startIdx,
+  endIdx,
+  playingKey,
+  onExplain,
+  onLayout,
+}: {
+  corpus: Corpus;
+  startIdx: number;
+  endIdx: number;
+  playingKey: number | null;
+  onExplain: (t: ExplainTarget) => void;
+  onLayout: (key: number, y: number) => void;
+}) {
+  const refs = corpusAyahs(corpus).slice(startIdx, endIdx);
+  const rows: { surah: number; ayah: number; header: boolean }[] = [];
+  let prev = -1;
+  for (const r of refs) {
+    rows.push({ surah: r.surah, ayah: r.ayah, header: r.surah !== prev });
+    prev = r.surah;
+  }
+  return (
+    <>
+      {rows.map((row, i) => {
+        const a = getAyah(row.surah, row.ayah);
+        if (!a) return null;
+        const intro = row.header ? getSurahIntro(row.surah) : undefined;
+        const key = row.surah * 1000 + row.ayah;
+        const isPlaying = playingKey === key;
+        return (
+          <View key={`${row.surah}:${row.ayah}`} onLayout={(e) => onLayout(key, e.nativeEvent.layout.y)}>
+            {row.header ? (
+              <View style={styles.surahHead}>
+                <ThemedText style={styles.surahHeadName}>{surahName(row.surah)}</ThemedText>
+                {intro ? <ThemedText style={styles.surahHeadIntro}>{intro.summary}</ThemedText> : null}
+              </View>
+            ) : null}
+            <Pressable
+              style={({ pressed }) => [
+                styles.ayah,
+                isPlaying && styles.ayahPlaying,
+                pressed && { backgroundColor: ACCENT + '10' },
+              ]}
+              onPress={() =>
+                onExplain({ surah: row.surah, ayah: row.ayah, name: surahName(row.surah), ar: a.ar, en: a.en })
+              }>
+              <View style={styles.ayahHead}>
+                <ThemedText style={styles.ayahRef}>
+                  {row.surah}:{row.ayah}
+                </ThemedText>
+                {i === 0 ? <ThemedText style={styles.tapHint}>tap any ayah to explain</ThemedText> : null}
+              </View>
+              <ThemedText style={styles.ar}>{a.ar}</ThemedText>
+              <ThemedText style={styles.en}>{a.en}</ThemedText>
+            </Pressable>
+          </View>
+        );
+      })}
+    </>
+  );
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -234,6 +299,7 @@ const styles = StyleSheet.create({
   surahHeadName: { fontSize: 17, fontWeight: '800', color: ACCENT },
   surahHeadIntro: { fontSize: 13, lineHeight: 19, opacity: 0.7 },
   ayah: { paddingVertical: 12, gap: 8, borderRadius: 12, paddingHorizontal: 6 },
+  ayahPlaying: { backgroundColor: ACCENT + '26' },
   ayahHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ayahRef: { fontSize: 12.5, fontWeight: '700', color: ACCENT, opacity: 0.9 },
   tapHint: { fontSize: 11.5, opacity: 0.5, fontStyle: 'italic' },
