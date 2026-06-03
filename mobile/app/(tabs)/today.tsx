@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { recordActivity } from '@/lib/streak';
 import { getVerse, resolveToday, type Verse } from '@/lib/today';
 
 export default function TodayScreen() {
+  const router = useRouter();
   const info = useMemo(() => resolveToday(), []);
   const verses = useMemo(
     () =>
@@ -52,6 +53,17 @@ export default function TodayScreen() {
 
           <StreakHero />
           <MoodCheckIn />
+
+          <Pressable style={styles.findPeace} onPress={() => router.push('/hubs')}>
+            <ThemedText style={styles.findPeaceEmoji}>🌿</ThemedText>
+            <View style={styles.findPeaceText}>
+              <ThemedText style={styles.findPeaceTitle}>Find peace</ThemedText>
+              <ThemedText style={styles.findPeaceBlurb}>
+                Verses for whatever you’re carrying
+              </ThemedText>
+            </View>
+            <ThemedText style={styles.findPeaceArrow}>›</ThemedText>
+          </Pressable>
 
           <View style={styles.card}>
             <View style={styles.badge}>
@@ -139,6 +151,21 @@ const styles = StyleSheet.create({
   trans: { fontSize: 15, lineHeight: 22, opacity: 0.85 },
   verseFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   footerRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  findPeace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(10,126,164,0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(10,126,164,0.2)',
+  },
+  findPeaceEmoji: { fontSize: 24 },
+  findPeaceText: { flex: 1 },
+  findPeaceTitle: { fontSize: 16, fontWeight: '700' },
+  findPeaceBlurb: { fontSize: 13, opacity: 0.6 },
+  findPeaceArrow: { fontSize: 22, opacity: 0.4 },
   ref: { fontSize: 13, opacity: 0.6 },
   link: { fontSize: 13, fontWeight: '600', color: '#0a7ea4' },
   shareBtn: {

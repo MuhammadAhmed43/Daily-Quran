@@ -1,8 +1,11 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { haptic } from '@/lib/haptics';
+import { bumpHub, HUB_MOOD_WEIGHT } from '@/lib/hub-affinity';
+import { hubForMood } from '@/lib/hubs';
 import { getTodayTypes, recordActivity } from '@/lib/streak';
 
 // One-tap daily mood check-in. A quick, low-friction action that counts toward the streak and is
@@ -17,6 +20,7 @@ const MOODS = [
 ];
 
 export function MoodCheckIn() {
+  const router = useRouter();
   const [done, setDone] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
 
@@ -29,18 +33,30 @@ export function MoodCheckIn() {
     setPicked(id);
     setDone(true);
     recordActivity('checkin');
-    // TODO (hubs): route low/anxious/etc. → matched hub + "a verse for how you're feeling".
+    const h = hubForMood(id);
+    if (h) bumpHub(h.id, HUB_MOOD_WEIGHT); // feeds adaptive "For you"
   };
+
+  const pickedHub = picked ? hubForMood(picked) : null;
 
   return (
     <View style={styles.card}>
       <ThemedText style={styles.title}>How are you today?</ThemedText>
       {done ? (
-        <ThemedText style={styles.doneText}>
-          {picked
-            ? 'Noted — may today bring you ease. 🤲'
-            : 'You’ve checked in today. May it bring you ease.'}
-        </ThemedText>
+        <View style={styles.doneWrap}>
+          <ThemedText style={styles.doneText}>
+            {picked
+              ? 'Noted — may today bring you ease. 🤲'
+              : 'You’ve checked in today. May it bring you ease.'}
+          </ThemedText>
+          {pickedHub ? (
+            <Pressable
+              onPress={() => router.push({ pathname: '/hub/[id]', params: { id: pickedHub.id } })}
+              hitSlop={6}>
+              <ThemedText style={styles.hubLink}>A verse for how you’re feeling →</ThemedText>
+            </Pressable>
+          ) : null}
+        </View>
       ) : (
         <View style={styles.row}>
           {MOODS.map((m) => (
@@ -68,4 +84,6 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28, lineHeight: 34 },
   moodLabel: { fontSize: 11, opacity: 0.7 },
   doneText: { fontSize: 14, opacity: 0.75, lineHeight: 20 },
+  doneWrap: { gap: 8 },
+  hubLink: { fontSize: 14, fontWeight: '700', color: '#0a7ea4' },
 });
