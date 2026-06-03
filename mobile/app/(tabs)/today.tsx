@@ -7,10 +7,12 @@ import { MoodCheckIn } from '@/components/home/mood-check-in';
 import { QuranPlanCard } from '@/components/home/quran-plan-card';
 import { StreakHero } from '@/components/home/streak-hero';
 import { TodayStepCard } from '@/components/home/today-step';
+import { VerseReminder } from '@/components/home/verse-reminder';
 import { WatchCard } from '@/components/home/watch-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VerseSpeaker } from '@/components/verse-speaker';
+import { refreshDailyVerse } from '@/lib/daily-verse';
 import { usePlanProgress } from '@/lib/plan-progress';
 import { useQuranPlan } from '@/lib/quran-plan-progress';
 import { recordActivity } from '@/lib/streak';
@@ -31,9 +33,10 @@ export default function TodayScreen() {
     [info],
   );
 
-  // opening today's reflection counts toward the streak
+  // opening today's reflection counts toward the streak; also top up the rolling verse-reminder window
   useEffect(() => {
     recordActivity('daily_verse');
+    void refreshDailyVerse();
   }, []);
 
   const gregorian = info.gregorian.toLocaleDateString([], {
@@ -61,6 +64,7 @@ export default function TodayScreen() {
           </View>
 
           <StreakHero />
+          <VerseReminder />
           <MoodCheckIn />
           {/* resume shortcut for whatever's active (Qur'an plan takes priority over a journey) */}
           {hasQuranPlan ? <QuranPlanCard /> : journeyActive ? <TodayStepCard /> : null}

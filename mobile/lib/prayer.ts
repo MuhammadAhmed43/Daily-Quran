@@ -1,15 +1,11 @@
 import { CalculationMethod, Coordinates, Madhab, PrayerTimes, Qibla } from 'adhan';
 import * as Notifications from 'expo-notifications';
 
-// Show the adhan alert even when the app is foregrounded.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+import { cancelByType, ensureNotifPermission } from './notifications';
+
+// Re-exported so existing callers (app/(tabs)/prayer.tsx) keep importing it from here. The notification
+// handler + permission prompt now live in lib/notifications.ts (shared with the daily-verse reminder).
+export { ensureNotifPermission };
 
 export type PrayerName = 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 export type Method =
@@ -90,15 +86,6 @@ export function qiblaDirection(lat: number, lng: number): number {
   return Qibla(new Coordinates(lat, lng));
 }
 
-export async function ensureNotifPermission(): Promise<boolean> {
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
-  const req = await Notifications.requestPermissionsAsync({
-    ios: { allowAlert: true, allowSound: true, allowBadge: true },
-  });
-  return req.granted;
-}
-
 // Schedule adhan notifications for upcoming prayers over the next `days`.
 // Rolling window — re-run on app open (iOS caps pending notifications at 64).
 export async function scheduleAdhan(
@@ -108,7 +95,7 @@ export async function scheduleAdhan(
   madhab: MadhabName = 'shafi',
   days = 2,
 ): Promise<number> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await cancelByType('adhan');
   const now = new Date();
   let count = 0;
   for (let d = 0; d < days; d++) {
@@ -135,5 +122,5 @@ export async function scheduleAdhan(
 }
 
 export async function cancelAdhan(): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await cancelByType('adhan');
 }
