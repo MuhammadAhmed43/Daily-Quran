@@ -3,6 +3,7 @@ import { Animated, Easing, StyleSheet, View, type StyleProp, type TextStyle } fr
 
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { haptic } from '@/lib/haptics';
+import { mdToPlain } from '@/lib/markdown';
 
 // ChatGPT / Claude-style reveal: each word fades in (opacity 0→1). CRUCIAL: the fade only renders
 // if each word is its own BLOCK-LEVEL flex child — animating opacity on inline nested <Text> does
@@ -51,7 +52,7 @@ export function StreamingText({
 }) {
   const color = useThemeColor({}, 'text');
   const tokens = useMemo<Token[]>(() => {
-    const clean = text.replace(/\*\*/g, ''); // drop bold markers; full formatting applies when done
+    const clean = mdToPlain(text); // strip markers (###, |, *, -) so the live reveal stays clean
     const out: Token[] = [];
     const lines = clean.split('\n');
     lines.forEach((line, i) => {

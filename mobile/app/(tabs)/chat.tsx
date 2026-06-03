@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -27,6 +27,7 @@ import { takeChatSeed } from '@/lib/chat-seed';
 import { haptic } from '@/lib/haptics';
 import { useForYou } from '@/lib/hub-affinity';
 import { HUBS, type Hub } from '@/lib/hubs';
+import { parseMarkdownBlocks } from '@/lib/markdown';
 import { useProfile } from '@/lib/profile';
 import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
@@ -588,26 +589,57 @@ function renderInline(s: string, keyBase: string) {
   });
 }
 
-// Lightweight Markdown: renders **bold**, *italic*, and "- " bullets so the raw
-// markers don't leak into the answer text.
+// Lightweight Markdown for the answer: headings, clean tables, bullets, and **bold**/*italic* — so
+// raw markers ("### ", "| a | b |") never leak into the chat bubble. Parsing lives in lib/markdown.
 function RichAnswer({ text }: { text: string }) {
-  const lines = text.replace(/\r/g, '').split('\n');
+  const blocks = useMemo(() => parseMarkdownBlocks(text), [text]);
   return (
     <View style={styles.answerBlock}>
-      {lines.map((line, i) => {
-        const t = line.trim();
-        if (!t) return null;
-        const bullet = /^[-*]\s+/.test(t);
-        const content = bullet ? t.replace(/^[-*]\s+/, '') : t;
-        return (
-          <View key={i} style={bullet ? styles.bulletRow : undefined}>
-            {bullet ? <ThemedText style={styles.answer}>{'•  '}</ThemedText> : null}
-            <ThemedText style={[styles.answer, bullet ? styles.bulletText : null]}>
-              {renderInline(content, String(i))}
+      {blocks.map((blk, i) => {
+        if (blk.type === 'heading')
+          return (
+            <ThemedText key={i} style={styles.mdHeading}>
+              {renderInline(blk.text, `h${i}`)}
             </ThemedText>
-          </View>
+          );
+        if (blk.type === 'rule') return <View key={i} style={styles.mdRule} />;
+        if (blk.type === 'table') return <MarkdownTable key={i} rows={blk.rows} />;
+        if (blk.type === 'bullet')
+          return (
+            <View key={i} style={styles.bulletRow}>
+              <ThemedText style={[styles.answer, styles.bulletMarker]}>{blk.marker} </ThemedText>
+              <ThemedText style={[styles.answer, styles.bulletText]}>
+                {renderInline(blk.text, `b${i}`)}
+              </ThemedText>
+            </View>
+          );
+        return (
+          <ThemedText key={i} style={styles.answer}>
+            {renderInline(blk.text, `p${i}`)}
+          </ThemedText>
         );
       })}
+    </View>
+  );
+}
+
+// A clean, readable table — the model rarely needs one, but when it makes one we render a real grid
+// (equal-width columns, first row as a header) instead of leaking pipes.
+function MarkdownTable({ rows }: { rows: string[][] }) {
+  const cols = rows.reduce((m, r) => Math.max(m, r.length), 1);
+  return (
+    <View style={styles.table}>
+      {rows.map((row, r) => (
+        <View key={r} style={[styles.tableRow, r === 0 && styles.tableHeadRow]}>
+          {Array.from({ length: cols }).map((_, c) => (
+            <View key={c} style={[styles.tableCell, c > 0 && styles.tableCellDivide]}>
+              <ThemedText style={[styles.tableCellText, r === 0 && styles.tableHeadText]}>
+                {renderInline(row[c] ?? '', `t${r}-${c}`)}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+      ))}
     </View>
   );
 }
@@ -708,7 +740,26 @@ const styles = StyleSheet.create({
   bold: { fontWeight: '700' },
   italic: { fontStyle: 'italic' },
   bulletRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  bulletMarker: { opacity: 0.7 },
   bulletText: { flex: 1 },
+  mdHeading: { fontSize: 16.5, fontWeight: '800', lineHeight: 23, marginTop: 2 },
+  mdRule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(127,127,127,0.3)', marginVertical: 2 },
+  table: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(127,127,127,0.3)',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(127,127,127,0.2)',
+  },
+  tableHeadRow: { borderTopWidth: 0, backgroundColor: 'rgba(127,127,127,0.08)' },
+  tableCell: { flex: 1, paddingVertical: 8, paddingHorizontal: 10 },
+  tableCellDivide: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: 'rgba(127,127,127,0.2)' },
+  tableCellText: { fontSize: 13.5, lineHeight: 19 },
+  tableHeadText: { fontWeight: '700' },
 
   verseCard: {
     gap: 10,
