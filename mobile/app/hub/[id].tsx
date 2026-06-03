@@ -13,6 +13,7 @@ import { haptic } from '@/lib/haptics';
 import { bumpHub, HUB_OPEN_WEIGHT } from '@/lib/hub-affinity';
 import { getHub } from '@/lib/hubs';
 import { getAyah, getSurah } from '@/lib/quran';
+import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
 
 const ACCENT = '#0a7ea4';
@@ -21,6 +22,7 @@ export default function HubScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const hub = getHub(String(id));
+  const rec = useRecitation();
   const [explainTarget, setExplainTarget] = useState<ExplainTarget | null>(null);
 
   useEffect(() => {
@@ -66,6 +68,21 @@ export default function HubScreen() {
                 talk to someone you trust. Reaching out is strength, and help is real.
               </ThemedText>
             </View>
+          ) : null}
+
+          {hub.verses.length > 0 ? (
+            <Pressable
+              style={({ pressed }) => [styles.narrateBtn, pressed && styles.narratePressed]}
+              onPress={() => {
+                haptic.light();
+                if (rec.queued) rec.stop();
+                else rec.playList(hub.verses.map((v) => ({ surah: v.surah, ayah: v.ayah })));
+              }}>
+              <Ionicons name={rec.queued ? 'stop' : 'play'} size={16} color={ACCENT} />
+              <ThemedText style={styles.narrateText}>
+                {rec.queued ? 'Stop narration' : 'Narrate all verses'}
+              </ThemedText>
+            </Pressable>
           ) : null}
 
           {hub.verses.map((v) => {
@@ -154,6 +171,18 @@ const styles = StyleSheet.create({
   },
   en: { fontSize: 15, lineHeight: 23, opacity: 0.85 },
   explainHint: { fontSize: 12, color: ACCENT, opacity: 0.8, fontWeight: '600' },
+  narrateBtn: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: 'rgba(10,126,164,0.12)',
+  },
+  narratePressed: { opacity: 0.6 },
+  narrateText: { color: ACCENT, fontSize: 14, fontWeight: '700' },
   footer: {
     paddingHorizontal: 16,
     paddingTop: 12,

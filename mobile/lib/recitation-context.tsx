@@ -25,8 +25,10 @@ export type RecitationApi = {
   paused: boolean;
   loading: boolean;
   continuous: boolean;
+  queued: boolean; // a playlist (e.g. a hub's "narrate all") is running
   reciter: Reciter;
   playFrom: (surah: number, ayah: number) => void;
+  playList: (verses: PlayingPos[]) => void;
   toggle: (surah: number, ayah: number) => void;
   toggleAyah: (surah: number, ayah: number) => void;
   pause: () => void;
@@ -48,6 +50,7 @@ function useEngine(): RecitationApi {
   const [paused, setPaused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [continuous, setContinuousState] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [reciter, setReciter] = useState<Reciter>(DEFAULT_RECITER);
 
   const continuousRef = useRef(continuous);
@@ -60,6 +63,8 @@ function useEngine(): RecitationApi {
   const wantRef = useRef<PlayingPos | null>(null);
   const startedRef = useRef(false);
   const onceRef = useRef(false); // one-shot ayah (verse-card speaker): stop at end, don't advance
+  const queueRef = useRef<PlayingPos[] | null>(null); // active playlist (e.g. a hub's "narrate all")
+  const qIdxRef = useRef(0);
   const failRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioReadyRef = useRef(false);
   const mountedRef = useRef(true);
@@ -118,11 +123,13 @@ function useEngine(): RecitationApi {
   };
   const stop = () => {
     wantRef.current = null;
+    queueRef.current = null;
     teardown();
     if (!mountedRef.current) return;
     setPlaying(null);
     setPaused(false);
     setLoading(false);
+    setQueued(false);
   };
 
   const makePlayer = (pos: PlayingPos) =>
@@ -157,7 +164,8 @@ function useEngine(): RecitationApi {
         clearFail();
       }
       if (st.didJustFinish) {
-        if (onceRef.current) stop();
+        if (queueRef.current) advanceQueue();
+        else if (onceRef.current) stop();
         else advance(pos);
       }
     });
@@ -192,6 +200,20 @@ function useEngine(): RecitationApi {
       safeRemove(old?.player);
     }, 0);
     attachAndPlay(next, pre ? pre.player : makePlayer(next), !pre);
+  };
+
+  // Playlist step: hard-start the next verse in the queue (a tiny gap between scattered comfort
+  // verses is fine — no need for the gapless prefetch the surah-by-surah flow uses).
+  const advanceQueue = () => {
+    const q = queueRef.current;
+    if (!q) return;
+    const i = qIdxRef.current + 1;
+    if (i < q.length) {
+      qIdxRef.current = i;
+      void start(q[i]);
+    } else {
+      stop();
+    }
   };
 
   const start = async (pos: PlayingPos, once = false) => {
@@ -232,13 +254,28 @@ function useEngine(): RecitationApi {
     } catch {}
   };
   const playFrom = (surah: number, ayah: number) => {
+    queueRef.current = null;
+    setQueued(false);
     void start({ surah, ayah });
+  };
+  // Play a curated playlist of (often scattered) verses in order — e.g. a hub's "narrate all".
+  const playList = (verses: PlayingPos[]) => {
+    const valid = verses.filter(
+      (v) => v.surah >= 1 && v.surah <= LAST_SURAH && v.ayah >= 1 && v.ayah <= ayahCount(v.surah),
+    );
+    if (!valid.length) return;
+    queueRef.current = valid;
+    qIdxRef.current = 0;
+    setQueued(true);
+    void start(valid[0]);
   };
   const toggle = (surah: number, ayah: number) => {
     if (playing && playing.surah === surah && playing.ayah === ayah) {
       if (paused) resume();
       else pause();
     } else {
+      queueRef.current = null;
+      setQueued(false);
       void start({ surah, ayah });
     }
   };
@@ -250,6 +287,8 @@ function useEngine(): RecitationApi {
       if (paused) resume();
       else pause();
     } else {
+      queueRef.current = null;
+      setQueued(false);
       void start({ surah, ayah }, true);
     }
   };
@@ -282,8 +321,10 @@ function useEngine(): RecitationApi {
     paused,
     loading,
     continuous,
+    queued,
     reciter,
     playFrom,
+    playList,
     toggle,
     toggleAyah,
     pause,
