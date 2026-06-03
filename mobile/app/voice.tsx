@@ -7,15 +7,18 @@ import {
   useAudioRecorderState,
   type AudioPlayer,
 } from 'expo-audio';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Stack, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { askQuestion, type ChatTurn } from '@/lib/chat';
+import { haptic } from '@/lib/haptics';
 import { useRecitation } from '@/lib/recitation-context';
+import { fetchSpokenReply } from '@/lib/speak';
 import { transcribeAudio } from '@/lib/voice';
 import { pushVoiceExchange } from '@/lib/voice-bridge';
 
@@ -25,16 +28,34 @@ const API_BASE = (process.env.EXPO_PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'denied';
 
-// Slow "Christopher" voice speaks ~12 chars/sec; used to estimate how long the reply takes so
-// the caption cards keep pace. (Streamed MP3s don't report a reliable duration, so we estimate.)
-const CHARS_PER_SEC = 12;
+// The "Andrew" voice speaks ~15 chars/sec; used to estimate how long the reply takes so the
+// caption cards keep pace (slightly leading rather than lagging). Streamed MP3s don't report a
+// reliable duration, so we estimate.
+const CHARS_PER_SEC = 16;
 // Minimum time a caption card stays up — guarantees a short card (e.g. the citation) is never
-// skipped past unread, even if the pacing estimate lurches forward.
-const MIN_DWELL = 1300;
+// skipped past unread, while still letting the captions keep up with brisk speech.
+const MIN_DWELL = 800;
+
+// Voice-activity detection works RELATIVE to the room's noise floor, since absolute mic dB
+// varies wildly by device/room: speech = clearly above ambient, silence = back near ambient.
+const SPEECH_MARGIN = 9; // dB above the noise floor that counts as speaking
+const SILENCE_MARGIN = 6; // back within this many dB of the floor = silence again
+const SILENCE_HOLD = 1400; // ms of CONTINUOUS silence after speech → end of turn (tolerates a breath / mid-sentence pause so we don't cut you off)
+const MIN_SPEECH_FRAMES = 6; // need ~0.6s of real speech before we'll answer (noise blips don't)
+const NO_SPEECH_TIMEOUT = 12000; // ms with no speech at all → recycle the listen window
+const WAVE_BARS = 13; // bars in the live input equalizer shown while you speak
+// center-weighted bar heights/opacity, so the equalizer blooms from the middle outward
+const BAR_WEIGHTS = Array.from({ length: WAVE_BARS }, (_, i) => {
+  const c = (WAVE_BARS - 1) / 2;
+  return 1 - (Math.abs(i - c) / (c + 1)) * 0.6;
+});
+const CAPTION_LEAD = 90; // ms — switch a caption card slightly before its word so it reads as in-sync
 
 function forSpeech(answer: string): string {
   const clean = answer
     .replace(/[*_#>`]/g, '')
+    // drop "(2:22)" digit refs — the surah name + "verse N" is what's spoken (matches /api/speak)
+    .replace(/\s*\(\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?\)/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
@@ -109,10 +130,13 @@ function chunkAt(chunks: string[], frac: number): number {
   return chunks.length - 1;
 }
 
-const REF_RE = /(\(?\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?\)?)/g;
-const isRef = (s: string) => /^\(?\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?\)?$/.test(s);
+// Match a spoken reference — "Surah Al-Baqara, verse 22" (with optional "the"/leading words) —
+// or a bare "(2:22)" — so we can tint it gold in the caption.
+const REF_RE = /(Surah\s+[^\s,]+(?:,?\s+verse\s+\d{1,3})?|\(?\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?\)?)/g;
+const isRef = (s: string) =>
+  /^(Surah\s+[^\s,]+(?:,?\s+verse\s+\d{1,3})?|\(?\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?\)?)$/.test(s);
 
-// Render a card, tinting any ayah reference (e.g. "(13:28)") gold like the storyboard.
+// Render a card, tinting any verse reference ("Surah Al-Baqara, verse 22" or "(13:28)") gold.
 function renderCaption(text: string) {
   return text.split(REF_RE).map((part, i) =>
     isRef(part) ? (
@@ -127,11 +151,46 @@ function renderCaption(text: string) {
 
 // Whisper invents "Thank you" / "you" etc. on (near-)silent clips.
 function isJunk(t: string): boolean {
-  const s = t.trim().toLowerCase().replace(/[.!?]+$/, '');
-  if (s.length < 2) return true;
-  return /^(thank you|thanks for watching|thanks|thank you so much|you|bye|bye bye|okay|ok|uh|um|hmm|\.\.\.|subscribe.*|please subscribe.*)$/.test(
+  const s = t
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?…]+$/, '')
+    .trim();
+  if (s.length < 4) return true; // too short to be a real question
+  return /^(thank you( so much| very much| for watching)?|thanks( for watching)?|you|bye( bye)?|okay|ok|uh+|um+|hmm+|mm+|ah+|oh+|yeah|yes|no|so|the|a|i|please subscribe.*|subscribe.*|♪.*)$/.test(
     s,
   );
+}
+
+// Map each caption card to the moment its first word is spoken, using msedge word timestamps
+// (ms). Falls back to a duration-proportional split when no per-word marks are available.
+function buildCardTimes(
+  cards: string[],
+  spoken: string,
+  marks: { t: number }[],
+  dur: number,
+): number[] {
+  const times = new Array<number>(cards.length).fill(0);
+  const words = spoken.split(/\s+/).filter(Boolean);
+  if (marks.length > 0 && words.length > 0) {
+    const ratio = marks.length / words.length;
+    let wi = 0;
+    for (let k = 0; k < cards.length; k++) {
+      const mi = Math.min(marks.length - 1, Math.max(0, Math.round(wi * ratio)));
+      times[k] = marks[mi] ? marks[mi].t : 0;
+      wi += cards[k].split(/\s+/).filter(Boolean).length;
+    }
+    times[0] = 0; // first card shows the instant the voice starts
+  } else {
+    const total = cards.reduce((n, c) => n + c.length, 0) || 1;
+    const D = dur > 0 ? dur : (total / CHARS_PER_SEC) * 1000;
+    let acc = 0;
+    for (let k = 0; k < cards.length; k++) {
+      times[k] = (acc / total) * D;
+      acc += cards[k].length;
+    }
+  }
+  return times;
 }
 
 export default function VoiceScreen() {
@@ -145,8 +204,24 @@ export default function VoiceScreen() {
   const [note, setNote] = useState('');
   const [chunks, setChunks] = useState<string[]>([]);
   const [chunkIdx, setChunkIdx] = useState(0);
+  const [muted, setMuted] = useState(false);
 
   const phaseRef = useRef<Phase>('idle');
+  const mutedRef = useRef(false);
+  const speechStartedRef = useRef(false); // has the user begun speaking this turn?
+  const silenceStartRef = useRef(0); // when silence began after speech (ms)
+  const listenStartRef = useRef(0); // when the current listen started (ms)
+  const lvlRef = useRef(-50); // smoothed mic level (dB)
+  const floorRef = useRef(-50); // adaptive noise floor (dB)
+  const speechFramesRef = useRef(0); // consecutive frames above the speech margin
+  const speechTotalRef = useRef(0); // total speech frames this turn (must clear MIN_SPEECH_FRAMES)
+  const lvlBufRef = useRef<number[]>([]); // recent smoothed levels, for a percentile noise floor
+  const transcriptTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // word-by-word reveal
+  const barsRef = useRef<Animated.Value[]>(
+    Array.from({ length: WAVE_BARS }, () => new Animated.Value(0.12)),
+  );
+  const barSmoothRef = useRef<number[]>(new Array(WAVE_BARS).fill(0.12));
+  const cardTimesRef = useRef<number[]>([]); // ms onset of each caption card (true word sync)
   const meterRef = useRef(-60);
   const smoothRef = useRef(0.2);
   const historyRef = useRef<ChatTurn[]>([]);
@@ -157,14 +232,16 @@ export default function VoiceScreen() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const capTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const failTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const loopRef = useRef<Animated.CompositeAnimation | null>(null);
-  const organicRef = useRef(false);
   const mountedRef = useRef(true);
   // The reply player is created ON DEMAND (only while speaking) and removed before listening,
   // so no audio player ever holds the iOS audio session while the mic needs to record.
   const playerRef = useRef<AudioPlayer | null>(null);
   const subRef = useRef<{ remove: () => void } | null>(null);
   const intensity = useRef(new Animated.Value(0.12)).current;
+  const rafRef = useRef<number | null>(null);
+  const t0Ref = useRef(0);
+  const envRef = useRef(0.12);
+  const burstRef = useRef(0); // momentary swell when a new spoken sentence begins
 
   const go = (p: Phase) => {
     phaseRef.current = p;
@@ -185,73 +262,52 @@ export default function VoiceScreen() {
     if (typeof recState.metering === 'number') meterRef.current = recState.metering;
   }, [recState.metering]);
 
-  // ---- crescent animation ----
-  // Always stop whatever is mid-flight on the value before starting the next motion, so phase
-  // changes never snap or fight each other.
-  const stopAnim = () => {
-    organicRef.current = false;
-    loopRef.current?.stop();
-    loopRef.current = null;
-    intensity.stopAnimation();
+  // ---- crescent pulse ----
+  // One rAF-driven, sum-of-sines envelope makes the moon breathe and swell smoothly and
+  // continuously — like ChatGPT's voice orb — instead of jerky random steps. The whole envelope
+  // is low-passed each frame so phase changes glide rather than snap. (This screen is light, so
+  // a JS-thread rAF stays buttery here — unlike the heavy reader ScrollView.)
+  const pulse = () => {
+    if (!mountedRef.current) return;
+    const t = (Date.now() - t0Ref.current) / 1000;
+    const phase = phaseRef.current;
+    let target: number;
+    if (phase === 'speaking') {
+      // a quick, speech-like flutter + a swell on each new spoken sentence (burstRef, set in
+      // advanceCaption) — so the moon visibly tracks the cadence of the speech, not just breathes
+      const flutter =
+        0.09 * Math.sin(t * 11.0) + 0.06 * Math.sin(t * 17.3 + 1.1) + 0.05 * Math.sin(t * 6.5 + 2.0);
+      target = 0.42 + flutter + burstRef.current;
+    } else if (phase === 'listening') {
+      const raw = Math.max(0, Math.min(1, (meterRef.current + 50) / 45));
+      smoothRef.current = smoothRef.current * 0.82 + raw * 0.18;
+      target = 0.14 + smoothRef.current * 0.62 + 0.025 * Math.sin(t * 3.0);
+    } else if (phase === 'thinking') {
+      target = 0.3 + 0.12 * Math.sin(t * 2.4);
+    } else {
+      target = 0.13 + 0.05 * Math.sin(t * 1.3); // idle / denied — gentle breathing
+    }
+    burstRef.current *= 0.92; // the per-sentence swell decays quickly
+    // smooth while speaking, but settle back to calm quickly once speech stops (no laggy drift)
+    const k = phase === 'speaking' ? 0.16 : 0.32;
+    envRef.current += (target - envRef.current) * k;
+    intensity.setValue(envRef.current);
+    // listening equalizer: smooth 60fps bars driven by the live mic level (rest flat otherwise)
+    const lvl = phase === 'listening' ? smoothRef.current : 0;
+    for (let i = 0; i < WAVE_BARS; i++) {
+      const flut =
+        phase === 'listening' ? 0.12 * (0.5 + 0.5 * Math.sin(t * (6 + i * 0.6) + i * 1.3)) : 0;
+      const tgt = phase === 'listening' ? 0.16 + lvl * BAR_WEIGHTS[i] * 0.95 + flut * lvl : 0.1;
+      const nv = barSmoothRef.current[i] + (tgt - barSmoothRef.current[i]) * 0.28;
+      barSmoothRef.current[i] = nv;
+      barsRef.current[i].setValue(nv);
+    }
+    rafRef.current = requestAnimationFrame(pulse);
   };
-  // A very soft, slow breath for idle — the moon stays gently alive, never frozen.
-  const idleBreathe = () => {
-    stopAnim();
-    const leg = (to: number) =>
-      Animated.timing(intensity, {
-        toValue: to,
-        duration: 2200,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      });
-    loopRef.current = Animated.loop(Animated.sequence([leg(0.22), leg(0.08)]));
-    loopRef.current.start();
-  };
-  // A slightly fuller breath while thinking.
-  const breathe = () => {
-    stopAnim();
-    const leg = (to: number) =>
-      Animated.timing(intensity, {
-        toValue: to,
-        duration: 1400,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      });
-    loopRef.current = Animated.loop(Animated.sequence([leg(0.34), leg(0.16)]));
-    loopRef.current.start();
-  };
-  // While speaking: a gentle random WALK (each target near the last) rather than hard random
-  // jumps, eased in/out — reads as living, speech-like swell without the jitter.
-  const organic = () => {
-    stopAnim();
-    organicRef.current = true;
-    let level = 0.55;
-    const step = () => {
-      if (!organicRef.current || !mountedRef.current) return;
-      level = Math.max(0.32, Math.min(0.9, level + (Math.random() - 0.45) * 0.45));
-      Animated.timing(intensity, {
-        toValue: level,
-        duration: 300 + Math.random() * 240,
-        easing: Easing.inOut(Easing.sin),
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) step();
-      });
-    };
-    step();
-  };
-  // Ease back to a calm resting glow instead of snapping with setValue().
-  const settleToIdle = () => {
-    stopAnim();
-    Animated.timing(intensity, {
-      toValue: 0.14,
-      duration: 420,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished && mountedRef.current && phaseRef.current === 'idle') idleBreathe();
-    });
-  };
+  // Phase changes just set the phase now (via go()) — the pulse loop reads phaseRef and follows,
+  // so these are no-ops kept only so existing call sites stay tidy.
+  const stopAnim = () => {};
+  const breathe = () => {};
 
   // ---- caption pacing ----
   const resetCaption = () => {
@@ -269,6 +325,7 @@ export default function VoiceScreen() {
       dispRef.current = Math.min(dispRef.current + 1, cs.length - 1);
       dwellRef.current = now;
       setChunkIdx(dispRef.current);
+      burstRef.current = 0.32; // a new sentence is being spoken → swell the moon
     }
   };
   const restCaptionAtEnd = () => {
@@ -278,6 +335,22 @@ export default function VoiceScreen() {
     }
     dispRef.current = Math.max(0, chunksRef.current.length - 1);
     setChunkIdx(dispRef.current);
+  };
+  // True word-synced switch: show the latest card whose first word the voice has reached (ms).
+  const syncCaption = (ms: number) => {
+    const times = cardTimesRef.current;
+    if (times.length === 0) return;
+    let idx = 0;
+    for (let i = 0; i < times.length; i++) {
+      if (ms >= times[i] - CAPTION_LEAD) idx = i;
+      else break;
+    }
+    if (idx > dispRef.current) {
+      dispRef.current = idx;
+      dwellRef.current = Date.now();
+      setChunkIdx(idx);
+      burstRef.current = 0.32; // swell the moon as a new card begins
+    }
   };
   // Caption fallback for on-device speech (no audio-progress events): walk frac over an estimate.
   const startTimedCaption = () => {
@@ -298,14 +371,19 @@ export default function VoiceScreen() {
     }, 200);
   };
 
-  // ---- conversation: tap-to-talk; crescent reacts to your voice ----
+  // ---- conversation: auto-listen, detect when you stop speaking, then answer (no tapping) ----
   const startListening = async () => {
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || mutedRef.current) return;
     try {
       stopAnim();
       Speech.stop();
       teardownPlayer();
       if (capTimerRef.current) clearInterval(capTimerRef.current);
+      if (tickRef.current) clearInterval(tickRef.current);
+      if (transcriptTimerRef.current) {
+        clearInterval(transcriptTimerRef.current);
+        transcriptTimerRef.current = null;
+      }
       setNote('');
       setTranscript('');
       setChunks([]);
@@ -313,26 +391,109 @@ export default function VoiceScreen() {
       chunksRef.current = [];
       smoothRef.current = 0.2;
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
+      if (!mountedRef.current || mutedRef.current) return;
       await recorder.prepareToRecordAsync();
       recorder.record();
       go('listening');
-      if (tickRef.current) clearInterval(tickRef.current);
+      // Voice-activity detection: once you've begun speaking, a short pause ends the turn.
+      speechStartedRef.current = false;
+      silenceStartRef.current = 0;
+      listenStartRef.current = Date.now();
+      lvlRef.current = -50;
+      floorRef.current = -50;
+      speechFramesRef.current = 0;
+      speechTotalRef.current = 0;
+      lvlBufRef.current = [];
       tickRef.current = setInterval(() => {
         if (phaseRef.current !== 'listening') return;
-        const raw = Math.max(0, Math.min(1, (meterRef.current + 50) / 45));
-        // low-pass the mic level so the moon answers the voice smoothly, not in jerks
-        smoothRef.current = smoothRef.current * 0.7 + raw * 0.3;
-        Animated.timing(intensity, {
-          toValue: smoothRef.current,
-          duration: 150,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }).start();
-      }, 130);
+        const now = Date.now();
+        const age = now - listenStartRef.current;
+        lvlRef.current = lvlRef.current * 0.6 + meterRef.current * 0.4;
+        if (age < 300) {
+          // the mic's cold-start readings (e.g. -96) are garbage — let it settle before measuring
+          return;
+        }
+        // floor = 20th-percentile of the last ~4s of levels: a robust "quiet reference" that sits
+        // above brief dropouts but below speech, and keeps a quiet anchor even through a long
+        // sentence — so a real pause clearly drops back down to it.
+        lvlBufRef.current.push(lvlRef.current);
+        if (lvlBufRef.current.length > 40) lvlBufRef.current.shift();
+        if (lvlBufRef.current.length >= 5) {
+          const sorted = [...lvlBufRef.current].sort((a, b) => a - b);
+          floorRef.current = sorted[Math.floor(sorted.length * 0.2)];
+        } else {
+          floorRef.current = lvlRef.current;
+        }
+        const above = lvlRef.current - floorRef.current; // dB above ambient
+        if (above > SPEECH_MARGIN) {
+          speechFramesRef.current += 1;
+          speechTotalRef.current += 1;
+          if (speechFramesRef.current >= 2) speechStartedRef.current = true; // need it sustained
+          silenceStartRef.current = 0;
+        } else {
+          speechFramesRef.current = 0;
+          if (speechStartedRef.current && above < SILENCE_MARGIN) {
+            if (silenceStartRef.current === 0) silenceStartRef.current = now;
+            else if (now - silenceStartRef.current > SILENCE_HOLD) endTurn();
+          }
+        }
+        // safety: never hang in "Listening" — cap a single turn even if the pause isn't detected
+        if (speechStartedRef.current && now - listenStartRef.current > 30000) endTurn();
+        // nothing said for a while → recycle the recording (stay listening, don't grow a huge file)
+        if (!speechStartedRef.current && now - listenStartRef.current > NO_SPEECH_TIMEOUT) {
+          if (tickRef.current) {
+            clearInterval(tickRef.current);
+            tickRef.current = null;
+          }
+          recorder.stop().catch(() => {});
+          relisten();
+        }
+      }, 100);
     } catch {
       go('idle');
-      settleToIdle();
     }
+  };
+
+  // Continuous conversation: after a reply (or a missed turn), listen again unless muted.
+  const relisten = () => {
+    if (!mutedRef.current && mountedRef.current) setTimeout(() => void startListening(), 500);
+  };
+
+  // End the listening turn: answer only if there was enough REAL speech; otherwise it was just
+  // noise/silence — recycle the mic rather than transcribe (and answer) gibberish.
+  const endTurn = () => {
+    if (speechTotalRef.current >= MIN_SPEECH_FRAMES) {
+      void stopListeningAndProcess();
+    } else {
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+      recorder.stop().catch(() => {});
+      relisten();
+    }
+  };
+
+  // Reveal the recognized question word-by-word. Expo Go can't stream live partial speech, so
+  // rather than dropping the whole transcript as a block, we animate it building in — which runs
+  // concurrently with the chat request, so the question "types out" while the answer is fetched.
+  const revealTranscript = (full: string) => {
+    if (transcriptTimerRef.current) clearInterval(transcriptTimerRef.current);
+    const words = full.split(/\s+/).filter(Boolean);
+    if (words.length <= 1) {
+      setTranscript(full);
+      return;
+    }
+    let i = 0;
+    setTranscript('');
+    transcriptTimerRef.current = setInterval(() => {
+      i += 1;
+      setTranscript(words.slice(0, i).join(' '));
+      if (i >= words.length) {
+        if (transcriptTimerRef.current) clearInterval(transcriptTimerRef.current);
+        transcriptTimerRef.current = null;
+      }
+    }, 65);
   };
 
   const stopListeningAndProcess = async () => {
@@ -350,14 +511,14 @@ export default function VoiceScreen() {
       const text = (await transcribeAudio(uri)).trim();
       if (!mountedRef.current) return;
       if (!text || isJunk(text)) {
-        setNote('I didn’t catch that — tap the moon and speak again.');
+        setNote('I didn’t catch that.');
         go('idle');
-        settleToIdle();
+        relisten();
         return;
       }
-      setTranscript(text);
+      revealTranscript(text);
       setNote('');
-      const data = await askQuestion(text, historyRef.current.slice(-6));
+      const data = await askQuestion(text, historyRef.current.slice(-6), { voice: true });
       if (!mountedRef.current) return;
       historyRef.current.push(
         { role: 'user', content: text },
@@ -367,9 +528,9 @@ export default function VoiceScreen() {
       void playReply(data.answer);
     } catch {
       if (!mountedRef.current) return;
-      setNote('Something went wrong — tap the moon to try again.');
+      setNote('Something went wrong.');
       go('idle');
-      settleToIdle();
+      relisten();
     }
   };
 
@@ -377,19 +538,46 @@ export default function VoiceScreen() {
   // on-device if it's slow or fails.
   const playReply = async (full: string) => {
     const speakText = forSpeech(full);
-    const cs = makeChunks(speakText);
-    chunksRef.current = cs;
-    estTotalRef.current = Math.max(1.2, speakText.length / CHARS_PER_SEC);
-    setChunks(cs);
-    setChunkIdx(0);
     await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
     teardownPlayer();
     if (failTimerRef.current) clearTimeout(failTimerRef.current);
-    try {
-      const player = createAudioPlayer(
-        { uri: `${API_BASE}/api/speak?text=${encodeURIComponent(speakText)}` },
-        { updateInterval: 110 },
+    // overall guard: if nothing is speaking within 15s, fall back to on-device speech
+    failTimerRef.current = setTimeout(() => {
+      if (mountedRef.current && phaseRef.current === 'thinking') {
+        teardownPlayer();
+        speakOnDevice(speakText);
+      }
+    }, 15000);
+
+    // Preferred path: fetch the audio as a LOCAL file + per-word timestamps → true caption sync.
+    const reply = await fetchSpokenReply(speakText);
+    if (!mountedRef.current) return;
+
+    let srcUri: string;
+    if (reply) {
+      const cs = makeChunks(reply.spoken);
+      chunksRef.current = cs;
+      cardTimesRef.current = buildCardTimes(cs, reply.spoken, reply.marks, reply.dur);
+      estTotalRef.current = Math.max(
+        1.2,
+        (reply.dur || (reply.spoken.length / CHARS_PER_SEC) * 1000) / 1000,
       );
+      setChunks(cs);
+      setChunkIdx(0);
+      srcUri = reply.uri;
+    } else {
+      // marks endpoint unavailable → stream the audio (Andrew voice) and pace off an estimate
+      const cs = makeChunks(speakText);
+      chunksRef.current = cs;
+      cardTimesRef.current = [];
+      estTotalRef.current = Math.max(1.2, speakText.length / CHARS_PER_SEC);
+      setChunks(cs);
+      setChunkIdx(0);
+      srcUri = `${API_BASE}/api/speak?text=${encodeURIComponent(speakText)}`;
+    }
+
+    try {
+      const player = createAudioPlayer({ uri: srcUri }, { updateInterval: 90 });
       playerRef.current = player;
       subRef.current = player.addListener('playbackStatusUpdate', (st) => {
         if (!mountedRef.current) return;
@@ -399,37 +587,34 @@ export default function VoiceScreen() {
             failTimerRef.current = null;
           }
           go('speaking');
-          organic();
+          haptic.light(); // gentle cue that the reply is starting
           resetCaption();
         }
-        // Drive the cards off the real playback head (currentTime), measured against our
-        // estimated total. We must NOT gate on st.duration — streamed MP3s report duration:0
-        // for most of playback, which would freeze the caption on the very first card.
         if (phaseRef.current === 'speaking' && st.currentTime > 0) {
-          advanceCaption(st.currentTime / estTotalRef.current);
+          // word-synced when we have real timestamps; otherwise proportional to the estimate
+          if (cardTimesRef.current.length) syncCaption(st.currentTime * 1000);
+          else advanceCaption(st.currentTime / estTotalRef.current);
         }
         if (st.didJustFinish) {
           teardownPlayer();
           restCaptionAtEnd();
           go('idle');
-          settleToIdle();
+          relisten();
         }
       });
       player.play();
-      failTimerRef.current = setTimeout(() => {
-        if (mountedRef.current && phaseRef.current === 'thinking') {
-          teardownPlayer();
-          speakOnDevice(speakText);
-        }
-      }, 9000);
     } catch {
-      speakOnDevice(speakText);
+      if (failTimerRef.current) {
+        clearTimeout(failTimerRef.current);
+        failTimerRef.current = null;
+      }
+      speakOnDevice(reply ? reply.spoken : speakText);
     }
   };
 
   const speakOnDevice = (text: string) => {
     go('speaking');
-    organic();
+    haptic.light();
     startTimedCaption();
     Speech.stop();
     Speech.speak(text, {
@@ -438,13 +623,13 @@ export default function VoiceScreen() {
         if (mountedRef.current && phaseRef.current === 'speaking') {
           restCaptionAtEnd();
           go('idle');
-          settleToIdle();
+          relisten();
         }
       },
       onError: () => {
         if (mountedRef.current && phaseRef.current === 'speaking') {
           go('idle');
-          settleToIdle();
+          relisten();
         }
       },
     });
@@ -453,6 +638,8 @@ export default function VoiceScreen() {
   useEffect(() => {
     mountedRef.current = true;
     recitation.stop(); // voice mode needs the mic — never let recitation play (or hold the session) under it
+    t0Ref.current = Date.now();
+    rafRef.current = requestAnimationFrame(pulse);
     (async () => {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
       if (!perm.granted) {
@@ -463,9 +650,11 @@ export default function VoiceScreen() {
     })();
     return () => {
       mountedRef.current = false;
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       if (tickRef.current) clearInterval(tickRef.current);
       if (capTimerRef.current) clearInterval(capTimerRef.current);
       if (failTimerRef.current) clearTimeout(failTimerRef.current);
+      if (transcriptTimerRef.current) clearInterval(transcriptTimerRef.current);
       stopAnim();
       Speech.stop();
       teardownPlayer();
@@ -474,9 +663,24 @@ export default function VoiceScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onTapMoon = () => {
-    if (phaseRef.current === 'listening') void stopListeningAndProcess();
-    else if (phaseRef.current !== 'thinking') void startListening();
+  const toggleMute = () => {
+    haptic.medium();
+    if (mutedRef.current) {
+      mutedRef.current = false;
+      setMuted(false);
+      if (phaseRef.current === 'idle' || phaseRef.current === 'denied') void startListening();
+    } else {
+      mutedRef.current = true;
+      setMuted(true);
+      if (phaseRef.current === 'listening') {
+        if (tickRef.current) {
+          clearInterval(tickRef.current);
+          tickRef.current = null;
+        }
+        recorder.stop().catch(() => {});
+        go('idle');
+      }
+    }
   };
 
   const close = () => {
@@ -484,6 +688,7 @@ export default function VoiceScreen() {
     if (tickRef.current) clearInterval(tickRef.current);
     if (capTimerRef.current) clearInterval(capTimerRef.current);
     if (failTimerRef.current) clearTimeout(failTimerRef.current);
+    if (transcriptTimerRef.current) clearInterval(transcriptTimerRef.current);
     stopAnim();
     Speech.stop();
     teardownPlayer();
@@ -491,18 +696,19 @@ export default function VoiceScreen() {
     router.back();
   };
 
-  const status =
-    phase === 'listening'
-      ? 'Listening… tap when you’re done'
+  const status = muted
+    ? 'Mic off — tap the mic to talk'
+    : phase === 'listening'
+      ? "I'm listening"
       : phase === 'thinking'
         ? 'Thinking…'
         : phase === 'speaking'
           ? 'Speaking…'
           : phase === 'denied'
             ? 'Microphone access is needed'
-            : 'Tap the moon to speak';
+            : "I'm listening";
 
-  const moonScale = intensity.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.24] });
+  const moonScale = intensity.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1.32] });
   const capText =
     (phase === 'speaking' || phase === 'idle') && chunks.length
       ? chunks[Math.min(chunkIdx, chunks.length - 1)]
@@ -512,41 +718,57 @@ export default function VoiceScreen() {
     <View style={styles.fill}>
       <Stack.Screen options={{ headerShown: false, animation: 'fade' }} />
       <SafeAreaView style={styles.fill}>
-        <View style={styles.top}>
-          <View style={styles.sidePad} />
-          <Text style={styles.brand}>Voice</Text>
-          <Pressable onPress={close} hitSlop={14} style={styles.closeBtn}>
-            <Text style={styles.closeTxt}>✕</Text>
-          </Pressable>
-        </View>
+        <Text style={styles.brand}>Voice</Text>
 
         {transcript ? (
           <Text style={styles.transcript} numberOfLines={2}>
             “{transcript}”
           </Text>
+        ) : phase === 'listening' && !muted ? (
+          <View style={styles.waveRow}>
+            {barsRef.current.map((v, i) => (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.waveBar,
+                  { opacity: 0.45 + 0.45 * BAR_WEIGHTS[i], transform: [{ scaleY: v }] },
+                ]}
+              />
+            ))}
+          </View>
         ) : (
           <View style={styles.transcriptPad} />
         )}
 
-        <Pressable style={styles.center} onPress={onTapMoon}>
+        <View style={styles.center}>
           <Animated.View style={{ transform: [{ scale: moonScale }] }}>
             <Image source={CRESCENT} style={styles.moon} contentFit="contain" />
           </Animated.View>
-        </Pressable>
 
-        <Text style={styles.status}>{status}</Text>
+          <Text style={styles.status}>{status}</Text>
 
-        <View style={styles.captionWrap}>
-          {note ? (
-            <Text style={styles.note}>{note}</Text>
-          ) : capText ? (
-            <Text style={styles.caption} numberOfLines={3}>
-              {renderCaption(capText)}
-            </Text>
-          ) : null}
+          <View style={styles.captionWrap}>
+            {note ? (
+              <Text style={styles.note}>{note}</Text>
+            ) : capText ? (
+              <Text style={styles.caption} numberOfLines={3}>
+                {renderCaption(capText)}
+              </Text>
+            ) : null}
+          </View>
         </View>
 
-        <View style={styles.bottomSpacer} />
+        <View style={styles.controls}>
+          <Pressable onPress={close} hitSlop={12} style={styles.ctrlBtn}>
+            <Ionicons name="close" size={26} color="#fff" />
+          </Pressable>
+          <Pressable
+            onPress={toggleMute}
+            hitSlop={12}
+            style={[styles.micBtn, muted && styles.micBtnOff]}>
+            <Ionicons name={muted ? 'mic-off' : 'mic'} size={28} color={muted ? '#fff' : '#0b0d12'} />
+          </Pressable>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -554,24 +776,14 @@ export default function VoiceScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: BG },
-  top: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 6,
+  brand: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    paddingTop: 10,
   },
-  sidePad: { width: 40 },
-  brand: { color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  closeTxt: { color: '#fff', fontSize: 18, fontWeight: '500' },
 
   transcript: {
     color: 'rgba(255,255,255,0.78)',
@@ -583,6 +795,15 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   transcriptPad: { height: 40, marginTop: 18 },
+  waveRow: {
+    height: 40,
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  waveBar: { width: 3, height: 28, borderRadius: 2, backgroundColor: 'rgba(224,196,138,0.95)' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   moon: { width: 320, height: 320 },
@@ -600,5 +821,29 @@ const styles = StyleSheet.create({
   captionRef: { color: '#d6a84e', fontWeight: '700' },
   note: { color: 'rgba(255,200,120,0.85)', fontSize: 14, lineHeight: 20, textAlign: 'center' },
 
-  bottomSpacer: { flex: 0.5 },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 40,
+    paddingTop: 10,
+    paddingBottom: 28,
+  },
+  ctrlBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  micBtn: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  micBtnOff: { backgroundColor: 'rgba(255,255,255,0.18)' },
 });

@@ -20,7 +20,7 @@ ADAPT TO THE QUESTION — important:
 - Questions about WHAT ISLAM / THE QUR'AN TEACHES or the MEANING of verses: stay grounded in the retrieved verses and tafsir, cite them, and if they don't cover it, say so honestly. Never invent a claim about what the Qur'an says.
 - RULINGS (fiqh) — is X halal or haram, is something obligatory/forbidden/recommended, HOW to correctly perform an act of worship, or "can I do Y in situation Z" (combine or shorten prayers, when fasting is excused, what breaks wudu, etc.): these depend on the school of thought and the person's circumstances and are NOT yours to settle. Give brief, neutral general context, note that scholars may hold different views, and point them to a qualified scholar or their local imam. Do NOT state a single ruling as settled fact, and do NOT attach a verse as if it "proves" the ruling — even when the ruling feels well known. Here, deferring IS the correct and honest answer; treat it the same way whether the question is "is music haram" or "can I combine prayers while traveling".
 
-GREETINGS & WELCOME — if the person greets you or makes small talk ("hi", "hello", "salam", "assalamu alaikum", "good morning"): warmly return the Islamic greeting — reply "Wa alaykum as-salam" if they greeted with salaam, otherwise open with "Assalamu alaykum" — then welcome them with genuine encouragement, and weave in one short uplifting verse (from the retrieved set) to set a hopeful, warm tone. Keep it brief and friendly.
+GREETINGS — ONLY when the user's CURRENT message is itself a greeting or pure small talk with no real question ("hi", "hello", "salam", "assalamu alaikum", "good morning"): return the greeting warmly ("Wa alaykum as-salam" if they said salaam, otherwise "Assalamu alaykum"), welcome them briefly, and you may weave in one short uplifting verse. CRITICAL: do NOT open with a greeting or "Assalamu alaykum" on an actual question, on a follow-up, or once the conversation is already underway — in those cases just answer directly. Never begin every reply with a salaam; a normal question gets a normal answer with no greeting.
 
 EMOTIONAL ATTUNEMENT — when a message carries doubt, pain, anger, loss, or spiritual struggle (e.g. "God isn't real", "I'm angry at God", "I feel empty", "why is this happening to me"):
 - Lead with genuine warmth, like a kind friend — NOT a debater. Acknowledge the feeling FIRST ("That sounds really heavy", "It's okay to wonder about this — many people do, and it doesn't make you bad"). Never shame, lecture, or rush to "correct" them.
@@ -43,6 +43,10 @@ GROUNDING (whenever you cite scripture):
 - ACCURACY: if you're not certain of a specific factual detail (which surah something is, a name, a number, a date, who narrated something), do NOT state it confidently — say you're not sure, or keep it general. A confident wrong fact is worse than an honest "I'm not certain of the exact detail."
 
 Do not append your own disclaimer line — the app already shows a study-aid note under every answer.`;
+
+// English surah names (index = surah number − 1) so the assistant can name verses, not just number them.
+const SURAH_NAMES = ['Al-Faatiha','Al-Baqara','Aal-i-Imraan','An-Nisaa','Al-Maaida','Al-An\'aam','Al-A\'raaf','Al-Anfaal','At-Tawba','Yunus','Hud','Yusuf','Ar-Ra\'d','Ibrahim','Al-Hijr','An-Nahl','Al-Israa','Al-Kahf','Maryam','Taa-Haa','Al-Anbiyaa','Al-Hajj','Al-Muminoon','An-Noor','Al-Furqaan','Ash-Shu\'araa','An-Naml','Al-Qasas','Al-Ankaboot','Ar-Room','Luqman','As-Sajda','Al-Ahzaab','Saba','Faatir','Yaseen','As-Saaffaat','Saad','Az-Zumar','Ghafir','Fussilat','Ash-Shura','Az-Zukhruf','Ad-Dukhaan','Al-Jaathiya','Al-Ahqaf','Muhammad','Al-Fath','Al-Hujuraat','Qaaf','Adh-Dhaariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahmaan','Al-Waaqia','Al-Hadid','Al-Mujaadila','Al-Hashr','Al-Mumtahana','As-Saff','Al-Jumu\'a','Al-Munaafiqoon','At-Taghaabun','At-Talaaq','At-Tahrim','Al-Mulk','Al-Qalam','Al-Haaqqa','Al-Ma\'aarij','Nooh','Al-Jinn','Al-Muzzammil','Al-Muddaththir','Al-Qiyaama','Al-Insaan','Al-Mursalaat','An-Naba','An-Naazi\'aat','Abasa','At-Takwir','Al-Infitaar','Al-Mutaffifin','Al-Inshiqaaq','Al-Burooj','At-Taariq','Al-A\'laa','Al-Ghaashiya','Al-Fajr','Al-Balad','Ash-Shams','Al-Lail','Ad-Dhuhaa','Ash-Sharh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyina','Az-Zalzala','Al-Aadiyaat','Al-Qaari\'a','At-Takaathur','Al-Asr','Al-Humaza','Al-Fil','Quraish','Al-Maa\'un','Al-Kawthar','Al-Kaafiroon','An-Nasr','Al-Masad','Al-Ikhlaas','Al-Falaq','An-Naas'];
+const surahName = (n) => SURAH_NAMES[n - 1] || `Surah ${n}`;
 
 async function embedQuery(text) {
   const acct = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -168,7 +172,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   try {
-    const { question, history } = req.body || {};
+    const { question, history, voice } = req.body || {};
     if (!question || !question.trim()) return res.status(400).json({ error: 'question is required' });
     const q = question.trim().slice(0, 500);
 
@@ -214,7 +218,7 @@ module.exports = async (req, res) => {
     // greetings, casual chat ("hi"), and practical questions should still get a warm,
     // teacher-like reply (the system prompt says answer naturally; don't force/invent verses).
     const verseBlock = verses.length
-      ? verses.map((v) => `[${v.surah}:${v.ayah}] ${v.translation}`).join('\n')
+      ? verses.map((v) => `[${surahName(v.surah)} ${v.surah}:${v.ayah}] ${v.translation}`).join('\n')
       : '(no specific verses retrieved — reply warmly and conversationally, like a kind teacher; do NOT cite or invent any verse)';
     const tafsirBlock = tafsir
       .map((t) => `(Ibn Kathir on ${t.surah}:${t.ayah}) ${t.text.slice(0, 700)}`)
@@ -224,7 +228,14 @@ module.exports = async (req, res) => {
       `Context the app retrieved for this message (the user did NOT provide this):\n\n` +
       `RETRIEVED VERSES (cite by reference; the app renders the real text):\n${verseBlock}\n\n` +
       `RETRIEVED TAFSIR (classical commentary — attribute, don't treat as scripture):\n${tafsirBlock}\n\n` +
-      `Answer their message directly and warmly, weaving in only the most relevant verses. Keep it concise and connected to what they actually asked. Use any earlier conversation for context.`;
+      `Answer their message directly and warmly, weaving in only the most relevant verses. Keep it concise and connected to what they actually asked. Use any earlier conversation for context.` +
+      (voice
+        ? `\n\nIMPORTANT — this is a SPOKEN voice conversation, read aloud by a text-to-speech voice. Reply in 1–3 short, natural sentences as if talking to the person. Be warm and direct, get to the point quickly. NO markdown, NO bullet lists, NO headings, NO emoji. When you mention a verse, follow this pattern EXACTLY — both parts are required every time:
+1) say the surah name and ayah in spoken words ("in Surah <Name>, verse <N>"), then
+2) after the meaning, the digits-only reference in parentheses "(<surah>:<ayah>)".
+Full example: "In Surah Hud, verse 11, the Qur'an promises forgiveness and a great reward for those who are patient (11:11)."
+The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the "(11:11)" lets the app link the card — never put the name or the word "verse" inside the parentheses, and never give just one without the other. Only reference verses from the retrieved list above; do not cite from memory. Keep the whole reply brief.`
+        : '');
 
     // 3) Groq, grounded.
     const groqRes = await fetch(GROQ_URL, {
@@ -241,7 +252,7 @@ module.exports = async (req, res) => {
           { role: 'user', content: userMsg },
         ],
         temperature: 0.3,
-        max_tokens: 800,
+        max_tokens: voice ? 260 : 800, // voice replies are short & spoken → fewer tokens, faster to generate and to speak
         reasoning_effort: 'low', // gpt-oss is a reasoning model — keep hidden reasoning small so it's fast and the visible answer isn't truncated
       }),
     });
