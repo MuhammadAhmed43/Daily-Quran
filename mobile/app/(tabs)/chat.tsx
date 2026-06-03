@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { VerseSpeaker } from '@/components/verse-speaker';
 import { askQuestion, type ChatResponse, type TafsirSnippet } from '@/lib/chat';
 import { takeVoiceExchanges } from '@/lib/voice-bridge';
 
@@ -245,7 +246,10 @@ function MessageView({
             <ThemedText style={styles.verseRef}>
               {primary.surah}:{primary.ayah}
             </ThemedText>
-            <ThemedText style={styles.openLink}>Open →</ThemedText>
+            <View style={styles.verseHeadRight}>
+              <VerseSpeaker surah={primary.surah} ayah={primary.ayah} />
+              <ThemedText style={styles.openLink}>Open →</ThemedText>
+            </View>
           </View>
           <ThemedText style={styles.verseArabic}>{primary.arabic}</ThemedText>
           <ThemedText style={styles.verseTrans}>{primary.translation}</ThemedText>
@@ -402,6 +406,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(127,127,127,0.05)',
   },
   verseHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  verseHeadRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   verseRef: { fontSize: 13, fontWeight: '700', color: '#0a7ea4' },
   openLink: { fontSize: 12, color: '#0a7ea4', opacity: 0.8 },
   verseArabic: {

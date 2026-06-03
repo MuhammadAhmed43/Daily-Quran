@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { VerseSpeaker } from '@/components/verse-speaker';
 import { getVerse, resolveToday, type Verse } from '@/lib/today';
 
 export default function TodayScreen() {
@@ -60,13 +61,16 @@ export default function TodayScreen() {
                 <ThemedText style={styles.ref}>
                   {v.surahEnglish} · {v.surah}:{v.ayah}
                 </ThemedText>
-                <Link
-                  href={{ pathname: '/surah/[number]', params: { number: String(v.surah) } }}
-                  asChild>
-                  <Pressable hitSlop={8}>
-                    <ThemedText style={styles.link}>Read in context →</ThemedText>
-                  </Pressable>
-                </Link>
+                <View style={styles.footerRight}>
+                  <VerseSpeaker surah={v.surah} ayah={v.ayah} />
+                  <Link
+                    href={{ pathname: '/surah/[number]', params: { number: String(v.surah) } }}
+                    asChild>
+                    <Pressable hitSlop={8}>
+                      <ThemedText style={styles.link}>Read in context →</ThemedText>
+                    </Pressable>
+                  </Link>
+                </View>
               </View>
             </View>
           ))}
@@ -123,6 +127,7 @@ const styles = StyleSheet.create({
   },
   trans: { fontSize: 15, lineHeight: 22, opacity: 0.85 },
   verseFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   ref: { fontSize: 13, opacity: 0.6 },
   link: { fontSize: 13, fontWeight: '600', color: '#0a7ea4' },
   shareBtn: {

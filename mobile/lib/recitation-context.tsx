@@ -27,6 +27,7 @@ export type RecitationApi = {
   reciter: Reciter;
   playFrom: (surah: number, ayah: number) => void;
   toggle: (surah: number, ayah: number) => void;
+  toggleAyah: (surah: number, ayah: number) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -57,6 +58,7 @@ function useEngine(): RecitationApi {
   const nextRef = useRef<{ pos: PlayingPos; player: AudioPlayer } | null>(null);
   const wantRef = useRef<PlayingPos | null>(null);
   const startedRef = useRef(false);
+  const onceRef = useRef(false); // one-shot ayah (verse-card speaker): stop at end, don't advance
   const failRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioReadyRef = useRef(false);
   const mountedRef = useRef(true);
@@ -152,7 +154,10 @@ function useEngine(): RecitationApi {
         setLoading(false);
         clearFail();
       }
-      if (st.didJustFinish) advance(pos);
+      if (st.didJustFinish) {
+        if (onceRef.current) stop();
+        else advance(pos);
+      }
     });
     currRef.current = { pos, player, sub };
     try {
@@ -187,13 +192,14 @@ function useEngine(): RecitationApi {
     attachAndPlay(next, pre ? pre.player : makePlayer(next), !pre);
   };
 
-  const start = async (pos: PlayingPos) => {
+  const start = async (pos: PlayingPos, once = false) => {
     if (!mountedRef.current) return;
     if (pos.surah < 1 || pos.surah > LAST_SURAH || pos.ayah < 1 || pos.ayah > ayahCount(pos.surah)) {
       stop();
       return;
     }
     teardown();
+    onceRef.current = once;
     wantRef.current = pos;
     startedRef.current = false;
     setPlaying(pos);
@@ -234,6 +240,17 @@ function useEngine(): RecitationApi {
       void start({ surah, ayah });
     }
   };
+  // One-shot: play just this ayah (stops at the end, never rolls into the next) — for the speaker
+  // buttons on chat verse cards and the daily reminder. Same engine = it can't overlap recitation,
+  // stories, or voice (whichever starts last wins, the rest are torn down).
+  const toggleAyah = (surah: number, ayah: number) => {
+    if (playing && playing.surah === surah && playing.ayah === ayah) {
+      if (paused) resume();
+      else pause();
+    } else {
+      void start({ surah, ayah }, true);
+    }
+  };
   const setContinuous = (v: boolean) => setContinuousState(v);
   const chooseReciter = (id: string) => {
     const r = RECITERS.find((x) => x.id === id);
@@ -244,7 +261,7 @@ function useEngine(): RecitationApi {
     // immediately (folderRef set synchronously since setReciter only applies next render).
     if (wantRef.current) {
       folderRef.current = r.folder;
-      void start({ ...wantRef.current });
+      void start({ ...wantRef.current }, onceRef.current);
     }
   };
 
@@ -266,6 +283,7 @@ function useEngine(): RecitationApi {
     reciter,
     playFrom,
     toggle,
+    toggleAyah,
     pause,
     resume,
     stop,
