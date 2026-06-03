@@ -19,6 +19,7 @@ import { askQuestion, type ChatTurn } from '@/lib/chat';
 import { haptic } from '@/lib/haptics';
 import { useRecitation } from '@/lib/recitation-context';
 import { fetchSpokenReply } from '@/lib/speak';
+import { recordActivity } from '@/lib/streak';
 import { transcribeAudio } from '@/lib/voice';
 import { pushVoiceExchange } from '@/lib/voice-bridge';
 
@@ -520,6 +521,7 @@ export default function VoiceScreen() {
       setNote('');
       const data = await askQuestion(text, historyRef.current.slice(-6), { voice: true });
       if (!mountedRef.current) return;
+      recordActivity('asked'); // counts toward the streak
       historyRef.current.push(
         { role: 'user', content: text },
         { role: 'assistant', content: data.answer },

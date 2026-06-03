@@ -1,11 +1,14 @@
 import { Link } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MoodCheckIn } from '@/components/home/mood-check-in';
+import { StreakHero } from '@/components/home/streak-hero';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VerseSpeaker } from '@/components/verse-speaker';
+import { recordActivity } from '@/lib/streak';
 import { getVerse, resolveToday, type Verse } from '@/lib/today';
 
 export default function TodayScreen() {
@@ -17,6 +20,11 @@ export default function TodayScreen() {
         .filter((v): v is Verse => v !== null),
     [info],
   );
+
+  // opening today's reflection counts toward the streak
+  useEffect(() => {
+    recordActivity('daily_verse');
+  }, []);
 
   const gregorian = info.gregorian.toLocaleDateString([], {
     weekday: 'long',
@@ -41,6 +49,9 @@ export default function TodayScreen() {
             <ThemedText style={styles.hijri}>{info.hijri.label}</ThemedText>
             <ThemedText style={styles.greg}>{gregorian}</ThemedText>
           </View>
+
+          <StreakHero />
+          <MoodCheckIn />
 
           <View style={styles.card}>
             <View style={styles.badge}>

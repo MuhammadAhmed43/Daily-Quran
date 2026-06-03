@@ -18,6 +18,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VerseSpeaker } from '@/components/verse-speaker';
 import { askQuestion, type ChatResponse, type TafsirSnippet } from '@/lib/chat';
+import { recordActivity } from '@/lib/streak';
 import { takeVoiceExchanges } from '@/lib/voice-bridge';
 
 type Message =
@@ -103,6 +104,7 @@ export default function ChatScreen() {
       setSending(true);
       try {
         const data = await askQuestion(q, history);
+        recordActivity('asked'); // counts toward the streak
         setMessages((m) =>
           m.map((msg) =>
             msg.id === loadingId ? { id: loadingId, role: 'assistant', loading: false, data } : msg,

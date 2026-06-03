@@ -8,6 +8,7 @@ import * as Notifications from 'expo-notifications';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { getSurah } from '@/lib/quran';
+import { recordActivity } from '@/lib/streak';
 import {
   ayahAudioUrl,
   DEFAULT_RECITER,
@@ -150,6 +151,7 @@ function useEngine(): RecitationApi {
     const sub = player.addListener('playbackStatusUpdate', (st) => {
       if (!mountedRef.current || !samePos(wantRef.current, pos)) return;
       if (st.playing) {
+        if (!startedRef.current) recordActivity('listened'); // counts toward the streak, once per clip
         startedRef.current = true;
         setLoading(false);
         clearFail();
