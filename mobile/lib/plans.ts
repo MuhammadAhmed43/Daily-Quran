@@ -371,9 +371,9 @@ const THROUGH_HARDSHIP: PlanTrack = {
     {
       order: 4,
       title: 'Tested, and held',
-      verses: ref(2, 155, 153),
+      verses: ref(2, 153, 155),
       framing:
-        'The Qur’an is honest that trials are real — “We will certainly test you” — and in the same breath promises companionship: “God is with the steadfast.” Steadfastness here isn’t gritting your teeth alone; it’s being accompanied through it.',
+        'The Qur’an offers its anchor first — “God is with the steadfast” — and only then names the trial just as plainly — “We will certainly test you” — and that the comfort comes before the warning is no accident. Steadfastness here isn’t gritting your teeth alone; it’s being accompanied through it.',
       reflection: 'Where could you ask God to “be with” you this week?',
     },
     {
