@@ -19,6 +19,11 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'rectangle.stack.fill': 'collections',
+  // tab-bar icons — were missing, so blank on Android/web (iOS uses native SF Symbols)
+  calendar: 'calendar-today',
+  'book.fill': 'menu-book',
+  sparkles: 'auto-awesome',
+  'moon.stars.fill': 'bedtime',
 } as IconMapping;
 
 /**

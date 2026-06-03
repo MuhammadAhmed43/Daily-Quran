@@ -164,11 +164,7 @@ export function rankSurahs(query: string, limit = 8): RankedSurah[] {
     .slice(0, limit);
 }
 
-export function fuzzySurahs(query: string, limit = 8): Surah[] {
-  return rankSurahs(query, limit).map((r) => r.surah);
-}
-
-// --- Keyword search over the (Pickthall) translation ---
+// --- Keyword search over the (Itani) translation ---
 export type VerseHit = { surah: number; ayah: number; surahEnglish: string; en: string };
 
 export function searchVerses(query: string, limit = 40): VerseHit[] {
