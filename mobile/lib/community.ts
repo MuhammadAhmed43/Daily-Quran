@@ -81,6 +81,22 @@ export async function fetchFeed(limit = 40): Promise<FeedItem[]> {
   return items.map((it) => ({ ...it, ameenedByMe: set.has(it.id) }));
 }
 
+// Summary of YOUR own intentions, for the "people prayed for you" payoff. ameen_count already EXCLUDES
+// your own Ameen (you can't Ameen your own intention - enforced by RLS), so `ameens` here is purely the
+// prayers OTHER people added to your posts. Counts only your visible (non-hidden) intentions.
+export async function myIntentionsSummary(): Promise<{ posts: number; ameens: number }> {
+  if (!supabase) return { posts: 0, ameens: 0 };
+  const s = await ensureAnonSession();
+  if (!s) return { posts: 0, ameens: 0 };
+  const { data } = await supabase
+    .from('intentions')
+    .select('ameen_count')
+    .eq('user_id', s.user.id)
+    .eq('hidden', false);
+  const rows = (data ?? []) as { ameen_count: number }[];
+  return { posts: rows.length, ameens: rows.reduce((sum, r) => sum + (r.ameen_count || 0), 0) };
+}
+
 export type PostResult =
   | { ok: true; intention: Intention }
   | { ok: false; kind: 'crisis' | 'rejected' | 'rate' | 'error'; message: string };

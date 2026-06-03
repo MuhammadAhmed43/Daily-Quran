@@ -28,6 +28,7 @@ import {
   fetchFeed,
   getAgeOk,
   getDisplayName,
+  myIntentionsSummary,
   type FeedItem,
   type Intention,
   postIntention,
@@ -70,15 +71,17 @@ export default function AmeenWall() {
   const [refreshing, setRefreshing] = useState(false);
   const [uid, setUid] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [summary, setSummary] = useState<{ posts: number; ameens: number }>({ posts: 0, ameens: 0 });
 
   useEffect(() => {
     getAgeOk().then((v) => setAge(v === true ? 'ok' : v === false ? 'blocked' : 'gate'));
   }, []);
 
   const load = useCallback(async () => {
-    const [items, myId] = await Promise.all([fetchFeed(), currentUserId()]);
+    const [items, myId, sum] = await Promise.all([fetchFeed(), currentUserId(), myIntentionsSummary()]);
     setFeed(items);
     setUid(myId);
+    setSummary(sum);
     setLoading(false);
   }, []);
 
@@ -127,7 +130,13 @@ export default function AmeenWall() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          if (await deleteMyIntention(item.id)) setFeed((f) => f.filter((x) => x.id !== item.id));
+          if (await deleteMyIntention(item.id)) {
+            setFeed((f) => f.filter((x) => x.id !== item.id));
+            setSummary((s) => ({
+              posts: Math.max(0, s.posts - 1),
+              ameens: Math.max(0, s.ameens - item.ameen_count),
+            }));
+          }
         },
       },
     ]);
@@ -172,6 +181,18 @@ export default function AmeenWall() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
           ListHeaderComponent={
             <View style={styles.head}>
+              {summary.ameens > 0 ? (
+                <View style={styles.payoffBanner}>
+                  <ThemedText style={styles.payoffEmoji}>🤲</ThemedText>
+                  <View style={styles.payoffTextWrap}>
+                    <ThemedText style={styles.payoffHead}>
+                      {summary.ameens} {summary.ameens === 1 ? 'prayer' : 'prayers'} for your{' '}
+                      {summary.posts === 1 ? 'intention' : 'intentions'}
+                    </ThemedText>
+                    <ThemedText style={styles.payoffSub}>Others are praying with you.</ThemedText>
+                  </View>
+                </View>
+              ) : null}
               <ThemedText style={styles.intro}>
                 Share an intention or du’a, and add your ameen to others’. A space for prayer — please
                 keep it kind.
@@ -207,13 +228,24 @@ export default function AmeenWall() {
                 <ThemedText style={styles.body}>{item.body}</ThemedText>
                 {item.verse_refs && item.verse_refs[0] ? <AttachedVerse refStr={item.verse_refs[0]} /> : null}
                 <View style={styles.cardActions}>
-                  <Pressable
-                    style={[styles.ameen, item.ameenedByMe && styles.ameenOn]}
-                    onPress={() => onAmeen(item)}>
-                    <ThemedText style={[styles.ameenText, item.ameenedByMe && styles.ameenTextOn]}>
-                      🤲 Ameen{item.ameen_count > 0 ? ` · ${item.ameen_count}` : ''}
-                    </ThemedText>
-                  </Pressable>
+                  {mine ? (
+                    <View style={styles.minePayoff}>
+                      <ThemedText
+                        style={[styles.minePayoffText, item.ameen_count === 0 && styles.minePayoffMuted]}>
+                        {item.ameen_count === 0
+                          ? '🤲 No ameens yet'
+                          : `🤲 ${item.ameen_count} ${item.ameen_count === 1 ? 'person' : 'people'} prayed for this`}
+                      </ThemedText>
+                    </View>
+                  ) : (
+                    <Pressable
+                      style={[styles.ameen, item.ameenedByMe && styles.ameenOn]}
+                      onPress={() => onAmeen(item)}>
+                      <ThemedText style={[styles.ameenText, item.ameenedByMe && styles.ameenTextOn]}>
+                        🤲 Ameen{item.ameen_count > 0 ? ` · ${item.ameen_count}` : ''}
+                      </ThemedText>
+                    </Pressable>
+                  )}
                   <Pressable hitSlop={10} style={styles.overflow} onPress={() => (mine ? onDelete(item) : onReport(item))}>
                     <Ionicons
                       name={mine ? 'trash-outline' : 'flag-outline'}
@@ -532,6 +564,24 @@ const styles = StyleSheet.create({
   ameenText: { fontSize: 14, fontWeight: '700', color: ACCENT },
   ameenTextOn: { color: '#fff' },
   overflow: { padding: 6 },
+  minePayoff: { flexShrink: 1, paddingVertical: 8, paddingRight: 8 },
+  minePayoffText: { fontSize: 13.5, fontWeight: '700', color: ACCENT },
+  minePayoffMuted: { color: 'rgba(127,127,127,0.85)', fontWeight: '600' },
+
+  payoffBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(10,126,164,0.1)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(10,126,164,0.3)',
+  },
+  payoffEmoji: { fontSize: 26 },
+  payoffTextWrap: { flex: 1, gap: 2 },
+  payoffHead: { fontSize: 15.5, fontWeight: '800', color: ACCENT },
+  payoffSub: { fontSize: 13, opacity: 0.7 },
 
   gateEmoji: { fontSize: 44 },
   gateTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center' },

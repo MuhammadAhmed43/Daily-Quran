@@ -85,11 +85,16 @@ drop policy if exists "delete own intention" on public.intentions;
 create policy "delete own intention" on public.intentions for delete to authenticated
   using (user_id = auth.uid());
 
--- ameens: manage your own only (public counts come from intentions.ameen_count).
+-- ameens: manage your own only (public counts come from intentions.ameen_count). You may NOT Ameen your
+-- OWN intention - a self-ameen must never inflate "N people prayed for you" (blocked in the check below).
 drop policy if exists "read own ameens" on public.ameens;
 create policy "read own ameens" on public.ameens for select to authenticated using (user_id = auth.uid());
 drop policy if exists "insert own ameen" on public.ameens;
-create policy "insert own ameen" on public.ameens for insert to authenticated with check (user_id = auth.uid());
+create policy "insert own ameen" on public.ameens for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and not exists (select 1 from public.intentions i where i.id = intention_id and i.user_id = auth.uid())
+  );
 drop policy if exists "delete own ameen" on public.ameens;
 create policy "delete own ameen" on public.ameens for delete to authenticated using (user_id = auth.uid());
 
