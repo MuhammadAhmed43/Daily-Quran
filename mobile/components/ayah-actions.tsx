@@ -17,11 +17,12 @@ type Props = {
   surah: Surah;
   onClose: () => void;
   onPlay: (n: number) => void;
+  onExplain: (ayah: Ayah) => void;
 };
 
 // A focus overlay: long-press lifts the chosen ayah into a sharp card while everything behind
 // it blurs out, with its actions right there — so you're clearly acting on *that* ayah.
-export function AyahActions({ ayah, surah, onClose, onPlay }: Props) {
+export function AyahActions({ ayah, surah, onClose, onPlay, onExplain }: Props) {
   const anim = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState<Ayah | null>(ayah);
   const bookmarks = useBookmarks();
@@ -74,6 +75,11 @@ export function AyahActions({ ayah, surah, onClose, onPlay }: Props) {
             </ThemedText>
           </View>
 
+          <Row
+            icon="sparkles-outline"
+            label="Explain this verse"
+            onPress={() => act(() => onExplain(shown))}
+          />
           <Row
             icon={saved ? 'bookmark' : 'bookmark-outline'}
             label={saved ? 'Saved — tap to remove' : 'Bookmark'}

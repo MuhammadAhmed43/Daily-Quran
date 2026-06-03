@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AyahActions } from '@/components/ayah-actions';
+import { ExplainSheet, type ExplainTarget } from '@/components/explain-sheet';
 import { JumpSheet } from '@/components/jump-sheet';
 import { ReciterSheet } from '@/components/reciter-sheet';
 import { ThemedText } from '@/components/themed-text';
@@ -38,6 +39,7 @@ export default function SurahReader() {
   const [jumpOpen, setJumpOpen] = useState(false);
   const [reciterOpen, setReciterOpen] = useState(false);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
+  const [explainTarget, setExplainTarget] = useState<ExplainTarget | null>(null);
   const bookmarks = useBookmarks();
 
   const scrollRef = useRef<ScrollView>(null);
@@ -326,7 +328,18 @@ export default function SurahReader() {
         surah={surah}
         onClose={() => setActiveAyah(null)}
         onPlay={(n) => ctx.playFrom(displayedSurah, n)}
+        onExplain={(a) =>
+          setExplainTarget({
+            surah: surah.number,
+            ayah: a.n,
+            name: surah.englishName,
+            ar: a.ar,
+            en: a.en,
+          })
+        }
       />
+
+      <ExplainSheet target={explainTarget} onClose={() => setExplainTarget(null)} />
 
       <ReciterSheet
         visible={reciterOpen}
