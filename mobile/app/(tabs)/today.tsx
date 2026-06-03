@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MoodCheckIn } from '@/components/home/mood-check-in';
+import { ProfileCircle } from '@/components/home/profile-circle';
 import { QuranPlanCard } from '@/components/home/quran-plan-card';
 import { StreakHero } from '@/components/home/streak-hero';
 import { TodayStepCard } from '@/components/home/today-step';
@@ -17,9 +18,11 @@ import { usePlanProgress } from '@/lib/plan-progress';
 import { useQuranPlan } from '@/lib/quran-plan-progress';
 import { recordActivity } from '@/lib/streak';
 import { getVerse, resolveToday, type Verse } from '@/lib/today';
+import { useTranslation, verseText } from '@/lib/translations';
 
 export default function TodayScreen() {
   const router = useRouter();
+  useTranslation(); // re-render the daily verse when the translation changes
   // Home shows ONE primary plan card: the Qur'an plan if you have one (the flagship), otherwise your
   // active guided journey, otherwise the Qur'an-plan start nudge.
   const hasQuranPlan = useQuranPlan().plan != null;
@@ -50,7 +53,7 @@ export default function TodayScreen() {
     const v = verses[0];
     if (!v) return;
     await Share.share({
-      message: `${v.en}\n\n— Qur'an ${v.surah}:${v.ayah} (${v.surahEnglish})\n\nvia Daily Qur'an`,
+      message: `${verseText(v.surah, v.ayah)}\n\n— Qur'an ${v.surah}:${v.ayah} (${v.surahEnglish})\n\nvia Daily Qur'an`,
     });
   }
 
@@ -59,12 +62,57 @@ export default function TodayScreen() {
       <SafeAreaView edges={['top']} style={styles.container}>
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.header}>
-            <ThemedText style={styles.hijri}>{info.hijri.label}</ThemedText>
-            <ThemedText style={styles.greg}>{gregorian}</ThemedText>
+            <View style={styles.headerText}>
+              <ThemedText style={styles.hijri}>{info.hijri.label}</ThemedText>
+              <ThemedText style={styles.greg}>{gregorian}</ThemedText>
+            </View>
+            <ProfileCircle />
           </View>
 
           <StreakHero />
-          <VerseReminder />
+
+          {/* the day's significance + verse, front and center under the streak */}
+          <View style={styles.card}>
+            <View style={styles.badge}>
+              <ThemedText style={styles.badgeText}>{info.badge.toUpperCase()}</ThemedText>
+            </View>
+            <ThemedText type="subtitle" style={styles.title}>
+              {info.title}
+            </ThemedText>
+            <ThemedText style={styles.significance}>{info.significance}</ThemedText>
+            {info.caveat ? <ThemedText style={styles.caveat}>{info.caveat}</ThemedText> : null}
+          </View>
+
+          {verses.map((v) => (
+            <View key={`${v.surah}:${v.ayah}`} style={styles.verse}>
+              <ThemedText style={styles.arabic}>{v.ar}</ThemedText>
+              <ThemedText style={styles.trans}>{verseText(v.surah, v.ayah)}</ThemedText>
+              <View style={styles.verseFooter}>
+                <ThemedText style={styles.ref}>
+                  {v.surahEnglish} · {v.surah}:{v.ayah}
+                </ThemedText>
+                <View style={styles.footerRight}>
+                  <VerseSpeaker surah={v.surah} ayah={v.ayah} />
+                  <Link
+                    href={{ pathname: '/surah/[number]', params: { number: String(v.surah) } }}
+                    asChild>
+                    <Pressable hitSlop={8}>
+                      <ThemedText style={styles.link}>Read in context →</ThemedText>
+                    </Pressable>
+                  </Link>
+                </View>
+              </View>
+            </View>
+          ))}
+
+          <Pressable style={styles.shareBtn} onPress={onShare}>
+            <ThemedText style={styles.shareText}>Share</ThemedText>
+          </Pressable>
+
+          <ThemedText style={styles.disclaimer}>
+            Significance notes are a curated summary for reflection, not a religious ruling.
+          </ThemedText>
+
           <MoodCheckIn />
           {/* resume shortcut for whatever's active (Qur'an plan takes priority over a journey) */}
           {hasQuranPlan ? <QuranPlanCard /> : journeyActive ? <TodayStepCard /> : null}
@@ -104,46 +152,7 @@ export default function TodayScreen() {
             <ThemedText style={styles.findPeaceArrow}>›</ThemedText>
           </Pressable>
 
-          <View style={styles.card}>
-            <View style={styles.badge}>
-              <ThemedText style={styles.badgeText}>{info.badge.toUpperCase()}</ThemedText>
-            </View>
-            <ThemedText type="subtitle" style={styles.title}>
-              {info.title}
-            </ThemedText>
-            <ThemedText style={styles.significance}>{info.significance}</ThemedText>
-            {info.caveat ? <ThemedText style={styles.caveat}>{info.caveat}</ThemedText> : null}
-          </View>
-
-          {verses.map((v) => (
-            <View key={`${v.surah}:${v.ayah}`} style={styles.verse}>
-              <ThemedText style={styles.arabic}>{v.ar}</ThemedText>
-              <ThemedText style={styles.trans}>{v.en}</ThemedText>
-              <View style={styles.verseFooter}>
-                <ThemedText style={styles.ref}>
-                  {v.surahEnglish} · {v.surah}:{v.ayah}
-                </ThemedText>
-                <View style={styles.footerRight}>
-                  <VerseSpeaker surah={v.surah} ayah={v.ayah} />
-                  <Link
-                    href={{ pathname: '/surah/[number]', params: { number: String(v.surah) } }}
-                    asChild>
-                    <Pressable hitSlop={8}>
-                      <ThemedText style={styles.link}>Read in context →</ThemedText>
-                    </Pressable>
-                  </Link>
-                </View>
-              </View>
-            </View>
-          ))}
-
-          <Pressable style={styles.shareBtn} onPress={onShare}>
-            <ThemedText style={styles.shareText}>Share</ThemedText>
-          </Pressable>
-
-          <ThemedText style={styles.disclaimer}>
-            Significance notes are a curated summary for reflection, not a religious ruling.
-          </ThemedText>
+          <VerseReminder />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -153,7 +162,8 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40, gap: 16 },
-  header: { gap: 2, paddingTop: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 8 },
+  headerText: { flex: 1, gap: 2 },
   hijri: { fontSize: 22, fontWeight: '700' },
   greg: { fontSize: 13, opacity: 0.6 },
   card: {
