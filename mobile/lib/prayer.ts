@@ -27,7 +27,10 @@ export type MadhabName = 'shafi' | 'hanafi';
 
 // Sunrise is displayed but is not a prayer (no notification, not "next").
 export const DISPLAY_ORDER: PrayerName[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
-const PRAYERS: PrayerName[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+// The five obligatory (fard) prayers — sunrise is shown in the list but is not a prayer.
+export type FardName = Exclude<PrayerName, 'sunrise'>;
+export const FARD: FardName[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
 export const LABELS: Record<PrayerName, string> = {
   fajr: 'Fajr',
@@ -70,7 +73,7 @@ export function nextPrayer(
   madhab: MadhabName = 'shafi',
 ): { name: PrayerName; time: Date } {
   const today = computeTimes(lat, lng, now, method, madhab);
-  for (const p of PRAYERS) {
+  for (const p of FARD) {
     if (today[p].getTime() > now.getTime()) return { name: p, time: today[p] };
   }
   // After Isha → tomorrow's Fajr
@@ -112,7 +115,7 @@ export async function scheduleAdhan(
     const date = new Date(now);
     date.setDate(now.getDate() + d);
     const times = computeTimes(lat, lng, date, method, madhab);
-    for (const p of PRAYERS) {
+    for (const p of FARD) {
       const t = times[p];
       if (t.getTime() > now.getTime()) {
         await Notifications.scheduleNotificationAsync({

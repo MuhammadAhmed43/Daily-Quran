@@ -1,9 +1,10 @@
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PrayerTracker } from '@/components/prayer/prayer-tracker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
@@ -127,7 +128,7 @@ export default function PrayerScreen() {
         )}
 
         {state === 'ready' && times && next && (
-          <View style={styles.content}>
+          <ScrollView style={styles.fill} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <ThemedText type="title">Prayer</ThemedText>
               <ThemedText style={styles.muted}>
@@ -141,6 +142,8 @@ export default function PrayerScreen() {
               <ThemedText style={styles.nextCountdown}>{countdown()}</ThemedText>
               <ThemedText style={styles.muted}>at {formatTime(next.time)}</ThemedText>
             </View>
+
+            <PrayerTracker times={times} now={now} />
 
             <View style={styles.listCard}>
               {DISPLAY_ORDER.map((p, i) => {
@@ -182,7 +185,7 @@ export default function PrayerScreen() {
             <ThemedText style={styles.footer}>
               Muslim World League · Shafiʿi (Asr) · your local timezone
             </ThemedText>
-          </View>
+          </ScrollView>
         )}
       </SafeAreaView>
     </ThemedView>
@@ -193,7 +196,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   muted: { opacity: 0.6, textAlign: 'center' },
-  content: { flex: 1, paddingHorizontal: 16, gap: 16 },
+  fill: { flex: 1 },
+  content: { paddingHorizontal: 16, gap: 16, paddingBottom: 24 },
   header: { paddingTop: 12, gap: 4 },
   nextCard: {
     alignItems: 'center',
