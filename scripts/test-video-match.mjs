@@ -47,6 +47,7 @@ function top(emb, n = 2) {
 // ✓ = expect a card (history/Seerah topic), ✗ = expect NO card (fiqh, emotional, verse, practical)
 const SHOULD = [
   'what happened at the battle of badr',
+  'history of islam',
   'tell me about the golden age of islam',
   'who was abu bakr',
   'why did the prophet go to taif',

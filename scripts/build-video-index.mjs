@@ -111,7 +111,12 @@ async function main() {
   const index = [];
   for (const c of chapters) {
     const kw = await keywords(c.title, c.era, c.blurb);
-    const profile = stripDiacritics(`${c.title}. ${c.era}. ${c.blurb} ${kw}`);
+    // A LIGHT track tag so generic queries route to the right timeline ("history of Islam" -> a
+    // history chapter, not a Seerah one) without diluting specific-topic matches. Seerah chapters
+    // already match Seerah questions strongly on their own, so only the history track needs tagging,
+    // and a short tag keeps specific queries (Badr, the Night Journey) well clear of the threshold.
+    const trackCtx = c.track === 'seerah' ? '' : 'Islamic history. ';
+    const profile = stripDiacritics(`${trackCtx}${c.title}. ${c.era}. ${c.blurb} ${kw}`);
     const embedding = await cfEmbed(profile);
     index.push({ id: c.id, title: c.title, embedding });
     console.log(`✓ ${c.id}  ${c.title}  (${embedding.length}d${kw ? ', +keywords' : ''})`);
