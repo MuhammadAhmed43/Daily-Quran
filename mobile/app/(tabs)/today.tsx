@@ -89,6 +89,17 @@ export default function TodayScreen() {
             <ThemedText style={styles.findPeaceArrow}>›</ThemedText>
           </Pressable>
 
+          <Pressable style={styles.findPeace} onPress={() => router.push('/ameen')}>
+            <ThemedText style={styles.findPeaceEmoji}>🤲</ThemedText>
+            <View style={styles.findPeaceText}>
+              <ThemedText style={styles.findPeaceTitle}>Ameen wall</ThemedText>
+              <ThemedText style={styles.findPeaceBlurb}>
+                Share an intention, add your ameen to others’
+              </ThemedText>
+            </View>
+            <ThemedText style={styles.findPeaceArrow}>›</ThemedText>
+          </Pressable>
+
           <View style={styles.card}>
             <View style={styles.badge}>
               <ThemedText style={styles.badgeText}>{info.badge.toUpperCase()}</ThemedText>
