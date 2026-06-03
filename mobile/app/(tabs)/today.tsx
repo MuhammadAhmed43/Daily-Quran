@@ -4,16 +4,24 @@ import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MoodCheckIn } from '@/components/home/mood-check-in';
+import { QuranPlanCard } from '@/components/home/quran-plan-card';
 import { StreakHero } from '@/components/home/streak-hero';
+import { TodayStepCard } from '@/components/home/today-step';
 import { WatchCard } from '@/components/home/watch-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VerseSpeaker } from '@/components/verse-speaker';
+import { usePlanProgress } from '@/lib/plan-progress';
+import { useQuranPlan } from '@/lib/quran-plan-progress';
 import { recordActivity } from '@/lib/streak';
 import { getVerse, resolveToday, type Verse } from '@/lib/today';
 
 export default function TodayScreen() {
   const router = useRouter();
+  // Home shows ONE primary plan card: the Qur'an plan if you have one (the flagship), otherwise your
+  // active guided journey, otherwise the Qur'an-plan start nudge.
+  const hasQuranPlan = useQuranPlan().plan != null;
+  const journeyActive = usePlanProgress().today.kind !== 'none';
   const info = useMemo(() => resolveToday(), []);
   const verses = useMemo(
     () =>
@@ -54,6 +62,20 @@ export default function TodayScreen() {
 
           <StreakHero />
           <MoodCheckIn />
+          {/* resume shortcut for whatever's active (Qur'an plan takes priority over a journey) */}
+          {hasQuranPlan ? <QuranPlanCard /> : journeyActive ? <TodayStepCard /> : null}
+
+          {/* always-present entry to the Plans hub (Qur'an plan + guided journeys) */}
+          <Pressable style={styles.findPeace} onPress={() => router.push('/plan')}>
+            <ThemedText style={styles.findPeaceEmoji}>📚</ThemedText>
+            <View style={styles.findPeaceText}>
+              <ThemedText style={styles.findPeaceTitle}>Reading plans</ThemedText>
+              <ThemedText style={styles.findPeaceBlurb}>
+                The whole Qur’an at your pace, or a guided journey
+              </ThemedText>
+            </View>
+            <ThemedText style={styles.findPeaceArrow}>›</ThemedText>
+          </Pressable>
           <WatchCard />
 
           <Pressable style={styles.findPeace} onPress={() => router.push('/hubs')}>
