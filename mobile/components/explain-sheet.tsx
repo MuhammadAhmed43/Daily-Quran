@@ -11,11 +11,11 @@ import {
   View,
 } from 'react-native';
 
+import { FadeIn } from '@/components/fade-in';
 import { SpeakButton } from '@/components/speak-button';
-import { StreamingText } from '@/components/streaming-text';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { streamExplain, type Explanation } from '@/lib/explain';
+import { explainAyah, type Explanation } from '@/lib/explain';
 import { haptic } from '@/lib/haptics';
 import { useProfile } from '@/lib/profile';
 import { recordActivity } from '@/lib/streak';
@@ -36,10 +36,8 @@ export function ExplainSheet({
   const { profile } = useProfile();
   const anim = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState<ExplainTarget | null>(target);
-  const [status, setStatus] = useState<'loading' | 'streaming' | 'done' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
   const [data, setData] = useState<Explanation | null>(null);
-  const [streamText, setStreamText] = useState('');
-  const [final, setFinal] = useState(false);
 
   // animate in when a target arrives, out when it clears
   useEffect(() => {
@@ -61,33 +59,22 @@ export function ExplainSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
-  // fetch the explanation whenever a new ayah is opened
+  // fetch the explanation whenever a new ayah is opened — buffered, then revealed all at once with
+  // a calm fade (token-by-token streaming is kept for chat only; it reads poorly in a sheet).
   useEffect(() => {
     if (!target) return;
     let active = true;
     setStatus('loading');
     setData(null);
-    setStreamText('');
-    setFinal(false);
     const level = profile.knowledge === 'new' || profile.knowledge === 'some' ? 'simple' : 'standard';
     const tone = profile.journey === 'exploring' ? 'explore' : 'default';
-    streamExplain(
-      target.surah,
-      target.ayah,
-      { name: target.name, level, tone },
-      (full) => {
-        if (active) {
-          setStreamText(full);
-          setStatus('streaming');
-        }
-      },
-    )
+    explainAyah(target.surah, target.ayah, { name: target.name, level, tone })
       .then((d) => {
         if (!active) return;
         setData(d);
-        setStreamText(d.explanation);
-        setFinal(true);
+        setStatus('done');
         recordActivity('read_ayahs');
+        haptic.light();
       })
       .catch(() => {
         if (active) setStatus('error');
@@ -139,25 +126,15 @@ export function ExplainSheet({
               <ThemedText style={styles.errorText}>
                 Couldn’t load the explanation. Check your connection and try again.
               </ThemedText>
-            ) : status === 'streaming' ? (
-              <StreamingText
-                text={streamText}
-                final={final}
-                style={styles.explanation}
-                onComplete={() => {
-                  setStatus('done');
-                  haptic.light();
-                }}
-              />
             ) : data ? (
-              <>
+              <FadeIn duration={650}>
                 <ThemedText style={styles.explanation}>{data.explanation}</ThemedText>
                 <ThemedText style={styles.source}>
                   {data.hasTafsir
                     ? 'Explained from Ibn Kathir’s tafsir.'
                     : 'Plain-meaning explanation — detailed commentary isn’t available for this verse.'}
                 </ThemedText>
-              </>
+              </FadeIn>
             ) : null}
           </ScrollView>
 
