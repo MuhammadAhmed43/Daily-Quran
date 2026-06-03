@@ -11,6 +11,8 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 
+const { streamGroq } = require('./_groq');
+
 const SYSTEM_PROMPT = `You are a warm, knowledgeable Qur'an study companion inside a mobile app — a thoughtful teacher, not a search engine. You answer the person's actual question, connecting to what they asked or how they feel. You are a study aid, not a mufti.
 
 HOW THE APP WORKS: For each message, the app automatically searches a verified database and gives you RETRIEVED VERSES and TAFSIR as context. The user did NOT provide these — your app looked them up. Never say the user "provided"/"supplied"/"shared" verses; refer to them naturally ("the Qur'an says…", "a verse that speaks to this is…").
@@ -164,6 +166,40 @@ async function ftsSearch(table, columns, q, count) {
 const ftsVerses = (q, count = 8) => ftsSearch('verses', 'id,surah,ayah,arabic,translation', q, count);
 const ftsTafsir = (q, count = 4) => ftsSearch('tafsir', 'id,surah,ayah,source,text', q, count);
 
+// From the finished answer + retrieved context, build the verse/tafsir cards: only verses the
+// answer actually cited (∩ retrieved), named verses always first, tafsir only when the answer
+// leaned on Ibn Kathir. Citations need the whole answer, so in streaming mode this runs after the
+// token stream completes.
+function buildCards(answer, verses, named, tafsir) {
+  const cited = new Set();
+  const refRe = /(\d{1,3}):(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?/g;
+  let m;
+  while ((m = refRe.exec(answer))) {
+    const s = +m[1];
+    const a1 = +m[2];
+    const a2 = m[3] ? +m[3] : a1;
+    for (let a = a1; a <= a2; a++) cited.add(`${s}:${a}`);
+  }
+  const toCard = (v) => ({ surah: v.surah, ayah: v.ayah, arabic: v.arabic, translation: v.translation });
+  const citedCards = verses.filter((v) => cited.has(`${v.surah}:${v.ayah}`)).map(toCard);
+  const seenCard = new Set();
+  const verseCards = [];
+  for (const c of [...named.map(toCard), ...citedCards]) {
+    const k = `${c.surah}:${c.ayah}`;
+    if (seenCard.has(k)) continue;
+    seenCard.add(k);
+    verseCards.push(c);
+  }
+  const usedTafsir = /ibn\s*kathir/i.test(answer);
+  const tafsirCards = usedTafsir
+    ? tafsir
+        .filter((t) => (t.text || '').trim().length >= 200)
+        .slice(0, 3)
+        .map((t) => ({ source: 'Ibn Kathir', surah: t.surah, ayah: t.ayah, snippet: t.text.trim() }))
+    : [];
+  return { verseCards, tafsirCards };
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -172,7 +208,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   try {
-    const { question, history, voice } = req.body || {};
+    const { question, history, voice, stream } = req.body || {};
     if (!question || !question.trim()) return res.status(400).json({ error: 'question is required' });
     const q = question.trim().slice(0, 500);
 
@@ -237,7 +273,40 @@ Full example: "In Surah Hud, verse 11, the Qur'an promises forgiveness and a gre
 The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the "(11:11)" lets the app link the card — never put the name or the word "verse" inside the parentheses, and never give just one without the other. Only reference verses from the retrieved list above; do not cite from memory. Keep the whole reply brief.`
         : '');
 
-    // 3) Groq, grounded.
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...priorTurns,
+      { role: 'user', content: userMsg },
+    ];
+
+    // Streaming path: proxy Groq tokens as NDJSON, then a final event carrying the verse/tafsir
+    // cards (which need the whole answer to validate citations).
+    if (stream) {
+      res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      let answer = '';
+      try {
+        answer = await streamGroq(
+          { model: GROQ_MODEL, messages, maxTokens: voice ? 260 : 800, reasoningEffort: 'low' },
+          (delta) => res.write(JSON.stringify({ t: delta }) + '\n'),
+        );
+      } catch (e) {
+        res.write(JSON.stringify({ error: String((e && e.message) || e) }) + '\n');
+        return res.end();
+      }
+      const { verseCards, tafsirCards } = buildCards(answer, verses, named, tafsir);
+      res.write(
+        JSON.stringify({
+          done: true,
+          verses: verseCards,
+          tafsir: tafsirCards,
+          disclaimer: STUDY_AID_DISCLAIMER,
+        }) + '\n',
+      );
+      return res.end();
+    }
+
+    // 3) Groq, grounded (non-streaming — used by voice mode, which needs the whole text for TTS).
     const groqRes = await fetch(GROQ_URL, {
       method: 'POST',
       headers: {
@@ -246,11 +315,7 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...priorTurns,
-          { role: 'user', content: userMsg },
-        ],
+        messages,
         temperature: 0.3,
         max_tokens: voice ? 260 : 800, // voice replies are short & spoken → fewer tokens, faster to generate and to speak
         reasoning_effort: 'low', // gpt-oss is a reasoning model — keep hidden reasoning small so it's fast and the visible answer isn't truncated
@@ -262,49 +327,7 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
     const groqJson = await groqRes.json();
     const answer = (groqJson.choices?.[0]?.message?.content || '').trim();
 
-    // 4) Citation validation — which retrieved verses did the answer actually cite?
-    const cited = new Set();
-    // Match every surah:ayah reference (grouped, inline, or parenthesized). We only
-    // keep ones present in the retrieved set, so stray matches can't invent cards.
-    const refRe = /(\d{1,3}):(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?/g;
-    let m;
-    while ((m = refRe.exec(answer))) {
-      const s = +m[1];
-      const a1 = +m[2];
-      const a2 = m[3] ? +m[3] : a1;
-      for (let a = a1; a <= a2; a++) cited.add(`${s}:${a}`);
-    }
-    const toCard = (v) => ({
-      surah: v.surah,
-      ayah: v.ayah,
-      arabic: v.arabic,
-      translation: v.translation,
-    });
-    const citedCards = verses.filter((v) => cited.has(`${v.surah}:${v.ayah}`)).map(toCard);
-
-    // Verses the user explicitly named/numbered are always shown (they asked about
-    // them) even if the model phrased the citation differently; then any other cited
-    // verses. Practical/off-topic answers name nothing, so they stay clean.
-    const seenCard = new Set();
-    const verseCards = [];
-    for (const c of [...named.map(toCard), ...citedCards]) {
-      const k = `${c.surah}:${c.ayah}`;
-      if (seenCard.has(k)) continue;
-      seenCard.add(k);
-      verseCards.push(c);
-    }
-
-    // Show the Ibn Kathir block ONLY when the answer genuinely leaned on the commentary
-    // (it attributes it by name) — so a practical reply that just touches a verse stays
-    // clean, no forced commentary.
-    const usedTafsir = /ibn\s*kathir/i.test(answer);
-    const tafsirCards = usedTafsir
-      ? tafsir
-          .filter((t) => (t.text || '').trim().length >= 200) // drop heading-only fragments
-          .slice(0, 3)
-          .map((t) => ({ source: 'Ibn Kathir', surah: t.surah, ayah: t.ayah, snippet: t.text.trim() }))
-      : [];
-
+    const { verseCards, tafsirCards } = buildCards(answer, verses, named, tafsir);
     return res.status(200).json({
       answer,
       verses: verseCards,

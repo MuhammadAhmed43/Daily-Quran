@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,27 +17,56 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FadeIn } from '@/components/fade-in';
+import { StreamingText } from '@/components/streaming-text';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VerseSpeaker } from '@/components/verse-speaker';
-import { askQuestion, type ChatResponse, type TafsirSnippet } from '@/lib/chat';
+import { streamChat, type ChatResponse, type TafsirSnippet } from '@/lib/chat';
+import { takeChatSeed } from '@/lib/chat-seed';
+import { haptic } from '@/lib/haptics';
+import { useForYou } from '@/lib/hub-affinity';
+import { HUBS, type Hub } from '@/lib/hubs';
+import { useProfile } from '@/lib/profile';
+import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
 import { takeVoiceExchanges } from '@/lib/voice-bridge';
 
 type Message =
   | { id: string; role: 'user'; text: string }
-  | { id: string; role: 'assistant'; loading: true }
-  | { id: string; role: 'assistant'; loading: false; data?: ChatResponse; error?: string };
-
-const EXAMPLES = [
-  'What does the Qur’an say about patience?',
-  'How should I treat my parents?',
-  'What is Ayat al-Kursi about?',
-  'Verses about hope when I feel low',
-];
+  | { id: string; role: 'assistant'; status: 'loading' }
+  | {
+      id: string;
+      role: 'assistant';
+      status: 'streaming';
+      text: string;
+      final: boolean;
+      pending?: ChatResponse;
+    }
+  | { id: string; role: 'assistant'; status: 'done'; data: ChatResponse }
+  | { id: string; role: 'assistant'; status: 'error'; error: string };
 
 let counter = 0;
 const nextId = () => `m${++counter}`;
+
+// A feeling-based hub card in the Ask empty-state browse grid.
+function HubCard({ hub, featured, onPress }: { hub: Hub; featured?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.hubCard,
+        featured && styles.hubCardForYou,
+        pressed && styles.hubCardPressed,
+      ]}
+      onPress={onPress}>
+      <ThemedText style={styles.hubEmoji}>{hub.emoji}</ThemedText>
+      <ThemedText style={styles.hubTitle}>{hub.title}</ThemedText>
+      <ThemedText style={styles.hubBlurb} numberOfLines={2}>
+        {hub.blurb}
+      </ThemedText>
+    </Pressable>
+  );
+}
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -44,6 +76,46 @@ export default function ChatScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const positions = useRef<Record<string, number>>({});
   const pendingScroll = useRef<string | null>(null);
+  const recitation = useRecitation();
+  const { profile } = useProfile();
+  const [kbUp, setKbUp] = useState(false);
+  const emptyAnim = useRef(new Animated.Value(1)).current; // 1 = browse shown, 0 = faded out
+  const [showBrowse, setShowBrowse] = useState(true);
+
+  // The global mini-player floats just above the tab bar — give the composer room so it's never
+  // hidden under it. Only while the keyboard is DOWN (when it's up, it covers the mini-player).
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardWillShow', () => setKbUp(true));
+    const hide = Keyboard.addListener('keyboardWillHide', () => setKbUp(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  const liftForMini = !!recitation.playing && !kbUp;
+
+  // Smoothly fade + slide the browse away the first time a message exists, and back on "New".
+  const hasMessages = messages.length > 0;
+  useEffect(() => {
+    if (hasMessages) {
+      Animated.timing(emptyAnim, {
+        toValue: 0,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) setShowBrowse(false);
+      });
+    } else {
+      setShowBrowse(true);
+      Animated.timing(emptyAnim, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [hasMessages, emptyAnim]);
 
   // Pin the most recent question to the top so a new answer reads from its start
   // (instead of the view snapping to the bottom of a long block).
@@ -60,6 +132,12 @@ export default function ChatScreen() {
   const openVerse = (surah: number, ayah: number) =>
     router.push({ pathname: '/surah/[number]', params: { number: String(surah), ayah: String(ayah) } });
 
+  // The typewriter finished revealing the full text → flip to the finished render (cards appear).
+  const revealComplete = (id: string, data: ChatResponse) =>
+    setMessages((m) =>
+      m.map((msg) => (msg.id === id ? { id, role: 'assistant', status: 'done', data } : msg)),
+    );
+
   // When returning from the voice screen, fold its conversation into the chat thread.
   useFocusEffect(
     useCallback(() => {
@@ -69,7 +147,7 @@ export default function ChatScreen() {
         const added: Message[] = [];
         for (const ex of exchanges) {
           added.push({ id: nextId(), role: 'user', text: ex.question });
-          added.push({ id: nextId(), role: 'assistant', loading: false, data: ex.response });
+          added.push({ id: nextId(), role: 'assistant', status: 'done', data: ex.response });
         }
         return [...m, ...added];
       });
@@ -86,7 +164,7 @@ export default function ChatScreen() {
         .map((m) =>
           m.role === 'user'
             ? { role: 'user' as const, content: m.text }
-            : !m.loading && m.data
+            : m.status === 'done'
               ? { role: 'assistant' as const, content: m.data.answer }
               : null,
         )
@@ -98,16 +176,35 @@ export default function ChatScreen() {
       setMessages((m) => [
         ...m,
         { id: userId, role: 'user', text: q },
-        { id: loadingId, role: 'assistant', loading: true },
+        { id: loadingId, role: 'assistant', status: 'loading' },
       ]);
       pendingScroll.current = userId;
       setSending(true);
       try {
-        const data = await askQuestion(q, history);
+        const data = await streamChat(q, history, (full) => {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === loadingId
+                ? { id: loadingId, role: 'assistant', status: 'streaming', text: full, final: false }
+                : msg,
+            ),
+          );
+        });
         recordActivity('asked'); // counts toward the streak
+        // Stream finished — hand the FULL text to the typewriter; it keeps revealing to the end,
+        // then onComplete flips the message to 'done' (cards appear). Same text → seamless.
         setMessages((m) =>
           m.map((msg) =>
-            msg.id === loadingId ? { id: loadingId, role: 'assistant', loading: false, data } : msg,
+            msg.id === loadingId
+              ? {
+                  id: loadingId,
+                  role: 'assistant',
+                  status: 'streaming',
+                  text: data.answer,
+                  final: true,
+                  pending: data,
+                }
+              : msg,
           ),
         );
       } catch (e) {
@@ -117,7 +214,7 @@ export default function ChatScreen() {
               ? {
                   id: loadingId,
                   role: 'assistant',
-                  loading: false,
+                  status: 'error',
                   error: String((e as Error)?.message ?? e),
                 }
               : msg,
@@ -130,6 +227,28 @@ export default function ChatScreen() {
     [sending, messages],
   );
 
+  // A hub's "Talk it through" seeds a starter question — send it when this tab gains focus.
+  useFocusEffect(
+    useCallback(() => {
+      const seed = takeChatSeed();
+      if (seed) void send(seed);
+    }, [send]),
+  );
+
+  // The empty state IS the guidance browse — adaptive "For you" first, then the rest.
+  const forYou = useForYou(profile.focuses);
+  const forYouIds = new Set(forYou.map((h) => h.id));
+  const rest = HUBS.filter((h) => !forYouIds.has(h.id));
+  const openHub = (id: string) => {
+    haptic.light();
+    router.push({ pathname: '/hub/[id]', params: { id } });
+  };
+  const newChat = () => {
+    haptic.light();
+    setMessages([]);
+    setInput('');
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.container}>
@@ -138,38 +257,92 @@ export default function ChatScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={8}>
           <View style={styles.header}>
-            <ThemedText style={styles.title}>Ask</ThemedText>
-            <ThemedText style={styles.subtitle}>Grounded in the Qur’an + classical tafsir</ThemedText>
+            <View style={styles.headerText}>
+              <ThemedText style={styles.title}>Ask</ThemedText>
+              <ThemedText style={styles.subtitle}>
+                Grounded in the Qur’an + classical tafsir
+              </ThemedText>
+            </View>
+            {messages.length > 0 ? (
+              <Pressable style={styles.newBtn} onPress={newChat} hitSlop={8}>
+                <Ionicons name="add" size={16} color="#0a7ea4" />
+                <ThemedText style={styles.newBtnText}>New</ThemedText>
+              </Pressable>
+            ) : null}
           </View>
 
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={styles.thread}
-            keyboardShouldPersistTaps="handled">
-            {messages.length === 0 ? (
-              <View style={styles.empty}>
-                <ThemedText style={styles.emptyTitle}>Ask anything about the Qur’an</ThemedText>
-                <ThemedText style={styles.emptyBody}>
-                  Answers are grounded in the verses and Ibn Kathir’s tafsir, with citations you can tap to open.
-                </ThemedText>
-                <View style={styles.examples}>
-                  {EXAMPLES.map((ex) => (
-                    <Pressable key={ex} style={styles.chip} onPress={() => send(ex)}>
-                      <ThemedText style={styles.chipText}>{ex}</ThemedText>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            ) : (
-              messages.map((msg) => (
+          <View style={styles.content}>
+            <ScrollView
+              ref={scrollRef}
+              style={styles.fill}
+              contentContainerStyle={styles.thread}
+              keyboardShouldPersistTaps="handled">
+              {messages.map((msg) => (
                 <View key={msg.id} onLayout={(e) => onMsgLayout(msg.id, e.nativeEvent.layout.y)}>
-                  <MessageView msg={msg} onOpenVerse={openVerse} />
+                  <MessageView msg={msg} onOpenVerse={openVerse} onRevealComplete={revealComplete} />
                 </View>
-              ))
-            )}
-          </ScrollView>
+              ))}
+            </ScrollView>
 
-          <View style={styles.inputBar}>
+            {showBrowse ? (
+              <Animated.View
+                style={[
+                  styles.browseOverlay,
+                  {
+                    opacity: emptyAnim,
+                    transform: [
+                      {
+                        translateY: emptyAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-24, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+                pointerEvents={hasMessages ? 'none' : 'auto'}>
+                <ThemedView style={styles.fill}>
+                  <ScrollView
+                    contentContainerStyle={styles.thread}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled">
+                    <View style={styles.browse}>
+                      <ThemedText style={styles.browseIntro}>
+                        However you’re feeling, there’s a place to begin.
+                      </ThemedText>
+                      <ThemedText style={styles.browseHint}>
+                        Tap a topic, or ask anything below.
+                      </ThemedText>
+
+                      {forYou.length > 0 ? (
+                        <View style={styles.section}>
+                          <ThemedText style={styles.sectionLabel}>For you</ThemedText>
+                          <View style={styles.grid}>
+                            {forYou.map((h) => (
+                              <HubCard key={h.id} hub={h} featured onPress={() => openHub(h.id)} />
+                            ))}
+                          </View>
+                        </View>
+                      ) : null}
+
+                      <View style={styles.section}>
+                        <ThemedText style={styles.sectionLabel}>
+                          {forYou.length > 0 ? 'Explore' : 'Browse by feeling'}
+                        </ThemedText>
+                        <View style={styles.grid}>
+                          {rest.map((h) => (
+                            <HubCard key={h.id} hub={h} onPress={() => openHub(h.id)} />
+                          ))}
+                        </View>
+                      </View>
+                    </View>
+                  </ScrollView>
+                </ThemedView>
+              </Animated.View>
+            ) : null}
+          </View>
+
+          <View style={[styles.inputBar, liftForMini && styles.inputBarRaised]}>
             <Pressable
               style={styles.voiceBtn}
               onPress={() => router.push('/voice')}
@@ -201,9 +374,11 @@ export default function ChatScreen() {
 function MessageView({
   msg,
   onOpenVerse,
+  onRevealComplete,
 }: {
   msg: Message;
   onOpenVerse: (surah: number, ayah: number) => void;
+  onRevealComplete: (id: string, data: ChatResponse) => void;
 }) {
   const [showTafsir, setShowTafsir] = useState(false);
   if (msg.role === 'user') {
@@ -215,7 +390,7 @@ function MessageView({
       </View>
     );
   }
-  if (msg.loading) {
+  if (msg.status === 'loading') {
     return (
       <View style={styles.assistantRow}>
         <View style={styles.thinking}>
@@ -225,7 +400,21 @@ function MessageView({
       </View>
     );
   }
-  if (msg.error) {
+  if (msg.status === 'streaming') {
+    return (
+      <View style={styles.assistantRow}>
+        <StreamingText
+          text={msg.text}
+          final={msg.final}
+          style={styles.answer}
+          onComplete={
+            msg.final && msg.pending ? () => onRevealComplete(msg.id, msg.pending!) : undefined
+          }
+        />
+      </View>
+    );
+  }
+  if (msg.status === 'error') {
     return (
       <View style={styles.assistantRow}>
         <ThemedText style={styles.errorText}>{msg.error}</ThemedText>
@@ -233,67 +422,74 @@ function MessageView({
     );
   }
   const data = msg.data;
-  if (!data) return null;
   const [primary, ...others] = data.verses;
   return (
     <View style={styles.assistantRow}>
       <RichAnswer text={data.answer} />
 
-      {/* One prominent verse card... */}
+      {/* One prominent verse card — fades + rises in once the answer settles. */}
       {primary ? (
-        <Pressable
-          style={styles.verseCard}
-          onPress={() => onOpenVerse(primary.surah, primary.ayah)}>
-          <View style={styles.verseHead}>
-            <ThemedText style={styles.verseRef}>
-              {primary.surah}:{primary.ayah}
-            </ThemedText>
-            <View style={styles.verseHeadRight}>
-              <VerseSpeaker surah={primary.surah} ayah={primary.ayah} />
-              <ThemedText style={styles.openLink}>Open →</ThemedText>
+        <FadeIn>
+          <Pressable
+            style={styles.verseCard}
+            onPress={() => onOpenVerse(primary.surah, primary.ayah)}>
+            <View style={styles.verseHead}>
+              <ThemedText style={styles.verseRef}>
+                {primary.surah}:{primary.ayah}
+              </ThemedText>
+              <View style={styles.verseHeadRight}>
+                <VerseSpeaker surah={primary.surah} ayah={primary.ayah} />
+                <ThemedText style={styles.openLink}>Open →</ThemedText>
+              </View>
             </View>
-          </View>
-          <ThemedText style={styles.verseArabic}>{primary.arabic}</ThemedText>
-          <ThemedText style={styles.verseTrans}>{primary.translation}</ThemedText>
-        </Pressable>
+            <ThemedText style={styles.verseArabic}>{primary.arabic}</ThemedText>
+            <ThemedText style={styles.verseTrans}>{primary.translation}</ThemedText>
+          </Pressable>
+        </FadeIn>
       ) : null}
 
       {/* ...the rest as compact, tappable citation chips. */}
       {others.length > 0 ? (
-        <View style={styles.chipRow}>
-          <ThemedText style={styles.chipLabel}>Also</ThemedText>
-          {others.slice(0, 6).map((v) => (
-            <Pressable
-              key={`${v.surah}:${v.ayah}`}
-              style={styles.refChip}
-              onPress={() => onOpenVerse(v.surah, v.ayah)}>
-              <ThemedText style={styles.refChipText}>
-                {v.surah}:{v.ayah}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
+        <FadeIn delay={70}>
+          <View style={styles.chipRow}>
+            <ThemedText style={styles.chipLabel}>Also</ThemedText>
+            {others.slice(0, 6).map((v) => (
+              <Pressable
+                key={`${v.surah}:${v.ayah}`}
+                style={styles.refChip}
+                onPress={() => onOpenVerse(v.surah, v.ayah)}>
+                <ThemedText style={styles.refChipText}>
+                  {v.surah}:{v.ayah}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </FadeIn>
       ) : null}
 
       {/* Tafsir stays behind a tap — only offered when the answer used it. */}
       {data.tafsir.length > 0 ? (
-        <View>
-          <Pressable style={styles.tafsirBtn} onPress={() => setShowTafsir((s) => !s)}>
-            <ThemedText style={styles.tafsirBtnText}>
-              {showTafsir ? '📖  Hide commentary' : '📖  Show Ibn Kathir’s commentary'}
-            </ThemedText>
-          </Pressable>
-          {showTafsir ? (
-            <View style={styles.tafsirWrap}>
-              {data.tafsir.map((t, i) => (
-                <TafsirItem key={`${t.surah}:${t.ayah}:${i}`} t={t} />
-              ))}
-            </View>
-          ) : null}
-        </View>
+        <FadeIn delay={120}>
+          <View>
+            <Pressable style={styles.tafsirBtn} onPress={() => setShowTafsir((s) => !s)}>
+              <ThemedText style={styles.tafsirBtnText}>
+                {showTafsir ? '📖  Hide commentary' : '📖  Show Ibn Kathir’s commentary'}
+              </ThemedText>
+            </Pressable>
+            {showTafsir ? (
+              <View style={styles.tafsirWrap}>
+                {data.tafsir.map((t, i) => (
+                  <TafsirItem key={`${t.surah}:${t.ayah}:${i}`} t={t} />
+                ))}
+              </View>
+            ) : null}
+          </View>
+        </FadeIn>
       ) : null}
 
-      <ThemedText style={styles.disclaimer}>{data.disclaimer}</ThemedText>
+      <FadeIn delay={160}>
+        <ThemedText style={styles.disclaimer}>{data.disclaimer}</ThemedText>
+      </FadeIn>
     </View>
   );
 }
@@ -360,22 +556,61 @@ function TafsirItem({ t }: { t: TafsirSnippet }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, gap: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 6,
+  },
+  headerText: { flex: 1, gap: 1 },
   title: { fontSize: 24, fontWeight: '700', lineHeight: 30 },
   subtitle: { fontSize: 12, opacity: 0.55 },
-  thread: { padding: 16, gap: 16, paddingBottom: 24 },
-
-  empty: { paddingTop: 32, gap: 10, alignItems: 'center' },
-  emptyTitle: { fontSize: 17, fontWeight: '600', textAlign: 'center' },
-  emptyBody: { fontSize: 14, lineHeight: 20, opacity: 0.6, textAlign: 'center', paddingHorizontal: 12 },
-  examples: { gap: 8, marginTop: 12, alignSelf: 'stretch' },
-  chip: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(10,126,164,0.1)',
+  newBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(10,126,164,0.12)',
   },
-  chipText: { fontSize: 14, color: '#0a7ea4', fontWeight: '500' },
+  newBtnText: { fontSize: 13, fontWeight: '700', color: '#0a7ea4' },
+  thread: { padding: 16, gap: 16, paddingBottom: 24 },
+  content: { flex: 1 },
+  fill: { flex: 1 },
+  browseOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+
+  browse: { paddingTop: 10, gap: 16 },
+  browseIntro: {
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+  browseHint: { fontSize: 13, opacity: 0.55, textAlign: 'center', marginTop: -8 },
+  section: { gap: 10 },
+  sectionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, opacity: 0.5 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  hubCard: {
+    width: '48%',
+    minHeight: 100,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(127,127,127,0.07)',
+    gap: 5,
+  },
+  hubCardForYou: {
+    backgroundColor: 'rgba(10,126,164,0.09)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(10,126,164,0.22)',
+  },
+  hubCardPressed: { opacity: 0.6 },
+  hubEmoji: { fontSize: 24 },
+  hubTitle: { fontSize: 15, fontWeight: '700', lineHeight: 19 },
+  hubBlurb: { fontSize: 12, opacity: 0.55, lineHeight: 16 },
 
   userRow: { alignItems: 'flex-end' },
   userBubble: {
@@ -461,6 +696,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(127,127,127,0.25)',
   },
+  inputBarRaised: { marginBottom: 60 }, // clear the floating mini-player
   input: {
     flex: 1,
     maxHeight: 120,
