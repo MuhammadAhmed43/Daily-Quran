@@ -186,11 +186,13 @@ export function getHub(id: string): Hub | undefined {
   return HUBS.find((h) => h.id === id);
 }
 
-// The daily mood check-in → a matching hub (only the moods with a clear fit route somewhere).
+// The daily mood check-in → a matching hub. All five moods route somewhere fitting.
 const MOOD_TO_HUB: Record<string, string> = {
   anxious: 'anxiety',
   low: 'grief',
   grateful: 'gratitude',
+  good: 'gratitude', // a good day -> channel it into thankfulness
+  okay: 'gratitude', // a neutral day -> a gentle nudge to notice the good in it
 };
 export function hubForMood(moodId: string): Hub | undefined {
   const id = MOOD_TO_HUB[moodId];
@@ -205,6 +207,7 @@ const FOCUS_TO_HUB: Record<string, string> = {
   temptation: 'repentance',
   grief: 'grief',
   relationships: 'forgiveness',
+  curious: 'guidance', // wanting to learn/explore -> seeking direction
 };
 export function hubsForFocuses(focuses: string[]): Hub[] {
   const ids = new Set(focuses.map((f) => FOCUS_TO_HUB[f]).filter(Boolean));

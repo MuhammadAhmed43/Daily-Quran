@@ -8,9 +8,9 @@ import { bumpHub, HUB_MOOD_WEIGHT } from '@/lib/hub-affinity';
 import { hubForMood } from '@/lib/hubs';
 import { getTodayTypes, recordActivity } from '@/lib/streak';
 
-// One-tap daily mood check-in. A quick, low-friction action that counts toward the streak and is
-// the future home of the feeling→hub→"a verse for you" flow (hubs not built yet, so for now it
-// records the check-in and acknowledges warmly).
+// One-tap daily mood check-in. A quick, low-friction action that counts toward the streak, routes
+// the feeling to a matching topical hub ("a verse for how you're feeling"), and bumps the adaptive
+// "For you" affinity.
 const MOODS = [
   { id: 'low', emoji: '😔', label: 'Low' },
   { id: 'anxious', emoji: '😟', label: 'Anxious' },
