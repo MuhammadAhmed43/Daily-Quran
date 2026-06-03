@@ -18,7 +18,7 @@ export default function StoriesScreen() {
               Stories
             </ThemedText>
             <ThemedText style={styles.sub}>
-              The Qur'an's narratives, illustrated — fully aniconic, with every verse shown from
+              The Qur’an’s narratives, illustrated — fully aniconic, with every verse shown from
               the verified text.
             </ThemedText>
           </View>
