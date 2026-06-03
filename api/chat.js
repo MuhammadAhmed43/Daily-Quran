@@ -13,6 +13,46 @@ const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 const { streamGroq } = require('./_groq');
 
+// AI->video: a bundled index of the 35 vetted Watch chapters (id + bge-m3 embedding). We cosine the
+// question's embedding against these to OPTIONALLY surface a play-button video card. Loaded
+// defensively — if the file is missing/unreadable, VIDEO_INDEX stays empty and chat is unaffected.
+let VIDEO_INDEX = [];
+try {
+  VIDEO_INDEX = require('./video-index.json');
+} catch {
+  VIDEO_INDEX = [];
+}
+const VIDEO_MATCH_THRESHOLD = 0.55; // calibrated to sit above every tested fiqh/emotional false-positive
+// Never surface a video to someone in distress — wellbeing comes first (mirrors the system prompt).
+const CRISIS_RE =
+  /suicid|kill (myself|me)|end (my life|it all)|want to die|self.?harm|hurt myself|harming myself|no (point|reason) (in|to) (living|life)|hopeless/i;
+
+function cosineSim(a, b) {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  return na && nb ? dot / (Math.sqrt(na) * Math.sqrt(nb)) : 0;
+}
+
+// Best-matching Watch chapter for a question, or null. Returns ONLY a chapter id (the app already
+// holds all chapter data). Isolated + defensive: any problem → null (no card); never affects chat.
+function matchVideo(embedding, question) {
+  if (!embedding || !VIDEO_INDEX.length) return null;
+  if (CRISIS_RE.test(question)) return null;
+  let best = null;
+  for (const v of VIDEO_INDEX) {
+    if (!Array.isArray(v.embedding) || v.embedding.length !== embedding.length) continue;
+    const score = cosineSim(embedding, v.embedding);
+    if (!best || score > best.score) best = { id: v.id, score };
+  }
+  return best && best.score >= VIDEO_MATCH_THRESHOLD ? { id: best.id } : null;
+}
+
 const SYSTEM_PROMPT = `You are a warm, knowledgeable Qur'an study companion inside a mobile app — a thoughtful teacher, not a search engine. You answer the person's actual question, connecting to what they asked or how they feel. You are a study aid, not a mufti.
 
 HOW THE APP WORKS: For each message, the app automatically searches a verified database and gives you RETRIEVED VERSES and TAFSIR as context. The user did NOT provide these — your app looked them up. Never say the user "provided"/"supplied"/"shared" verses; refer to them naturally ("the Qur'an says…", "a verse that speaks to this is…").
@@ -241,6 +281,18 @@ module.exports = async (req, res) => {
     }
     const named = await namedP;
 
+    // Optional play-button video card (retrieval-only, from our vetted Watch set; never in voice
+    // mode). Fully isolated — wrapped so any failure just means "no card", never touching the
+    // verse/tafsir retrieval or the answer below.
+    let video = null;
+    if (!voice) {
+      try {
+        video = matchVideo(embedding, q);
+      } catch {
+        video = null;
+      }
+    }
+
     // Named/numbered verses first (guaranteed citable), then similarity matches; dedup.
     const seenIds = new Set();
     const verses = [];
@@ -300,6 +352,7 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
           done: true,
           verses: verseCards,
           tafsir: tafsirCards,
+          video,
           disclaimer: STUDY_AID_DISCLAIMER,
         }) + '\n',
       );
@@ -332,6 +385,7 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
       answer,
       verses: verseCards,
       tafsir: tafsirCards,
+      video,
       disclaimer: STUDY_AID_DISCLAIMER,
     });
   } catch (e) {

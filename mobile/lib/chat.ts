@@ -10,10 +10,12 @@ export type VerseCard = {
   related?: boolean;
 };
 export type TafsirSnippet = { source: string; surah: number; ayah: number; snippet: string };
+export type VideoRef = { id: string }; // a Watch chapter id; the app looks up the rest from watch.ts
 export type ChatResponse = {
   answer: string;
   verses: VerseCard[];
   tafsir: TafsirSnippet[];
+  video?: VideoRef | null;
   disclaimer: string;
 };
 
@@ -45,7 +47,13 @@ export async function askQuestion(
 
 type ChatStreamEvent =
   | { t: string }
-  | { done: true; verses: VerseCard[]; tafsir: TafsirSnippet[]; disclaimer: string }
+  | {
+      done: true;
+      verses: VerseCard[];
+      tafsir: TafsirSnippet[];
+      video?: VideoRef | null;
+      disclaimer: string;
+    }
   | { error: string };
 
 /** Streaming Q&A: `onToken` receives the cumulative answer text as it arrives; the resolved
@@ -58,7 +66,13 @@ export async function streamChat(
   let answer = '';
   let gotToken = false;
   let lastEmit = 0;
-  const out = { verses: [] as VerseCard[], tafsir: [] as TafsirSnippet[], disclaimer: '', error: '' };
+  const out = {
+    verses: [] as VerseCard[],
+    tafsir: [] as TafsirSnippet[],
+    video: null as VideoRef | null,
+    disclaimer: '',
+    error: '',
+  };
   try {
     await streamNDJSON<ChatStreamEvent>('/api/chat', { question, history, stream: true }, (ev) => {
       if ('t' in ev) {
@@ -72,6 +86,7 @@ export async function streamChat(
       } else if ('done' in ev) {
         out.verses = ev.verses;
         out.tafsir = ev.tafsir;
+        out.video = ev.video ?? null;
         out.disclaimer = ev.disclaimer;
       } else if ('error' in ev) {
         out.error = ev.error;
@@ -82,5 +97,5 @@ export async function streamChat(
     return askQuestion(question, history); // streaming unavailable → buffered fallback
   }
   if (out.error) throw new Error(out.error);
-  return { answer, verses: out.verses, tafsir: out.tafsir, disclaimer: out.disclaimer };
+  return { answer, verses: out.verses, tafsir: out.tafsir, video: out.video, disclaimer: out.disclaimer };
 }
