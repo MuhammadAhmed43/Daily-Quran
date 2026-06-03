@@ -50,7 +50,8 @@ const KEY = 'daily-quran:activity';
 let cache: Ledger | null = null;
 const listeners = new Set<() => void>();
 
-function dayKey(d: Date): string {
+/** Local YYYY-MM-DD day key — the one date scheme shared across the streak and the plan tracker. */
+export function dayKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');

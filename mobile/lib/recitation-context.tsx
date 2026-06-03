@@ -34,6 +34,7 @@ export type RecitationApi = {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  fadeStop: (duration?: number) => void; // ramp volume down, then stop (for leaving a study step)
   setContinuous: (v: boolean) => void;
   chooseReciter: (id: string) => void;
 };
@@ -66,6 +67,8 @@ function useEngine(): RecitationApi {
   const queueRef = useRef<PlayingPos[] | null>(null); // active playlist (e.g. a hub's "narrate all")
   const qIdxRef = useRef(0);
   const failRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fadingRef = useRef(false); // a volume fade-out is in progress (ignore the natural clip-end)
+  const fadeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioReadyRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -97,6 +100,12 @@ function useEngine(): RecitationApi {
       failRef.current = null;
     }
   };
+  const clearFade = () => {
+    if (fadeTimerRef.current) {
+      clearInterval(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+  };
   const safeRemove = (p?: AudioPlayer | null) => {
     try {
       p?.pause();
@@ -118,6 +127,8 @@ function useEngine(): RecitationApi {
   };
   const teardown = () => {
     clearFail();
+    clearFade();
+    fadingRef.current = false;
     dropCurr();
     dropNext();
   };
@@ -130,6 +141,40 @@ function useEngine(): RecitationApi {
     setPaused(false);
     setLoading(false);
     setQueued(false);
+  };
+
+  // Smoothly ramp the current playback's volume to silence, then stop — so leaving a study step
+  // doesn't cut its recitation (a single ayah or the "narrate this step" playlist) off mid-word.
+  // The CALLER decides WHETHER to fade (the step player only fades audio it started), so recitation
+  // started elsewhere — e.g. continuous reading in the reader — is never cut off.
+  const fadeStop = (duration = 800) => {
+    const player = currRef.current?.player;
+    if (!player) {
+      stop(); // nothing playing — just ensure a clean reset
+      return;
+    }
+    queueRef.current = null; // a playlist/one-shot can't advance once the fade starts
+    if (mountedRef.current) setQueued(false);
+    fadingRef.current = true;
+    clearFail();
+    clearFade();
+    const steps = Math.max(8, Math.round(duration / 50));
+    let startVol = 1;
+    try {
+      startVol = player.volume ?? 1;
+    } catch {}
+    let i = 0;
+    fadeTimerRef.current = setInterval(() => {
+      i += 1;
+      try {
+        player.volume = Math.max(0, startVol * (1 - i / steps));
+      } catch {}
+      if (i >= steps) {
+        clearFade();
+        fadingRef.current = false;
+        stop();
+      }
+    }, Math.round(duration / steps));
   };
 
   const makePlayer = (pos: PlayingPos) =>
@@ -164,12 +209,16 @@ function useEngine(): RecitationApi {
         clearFail();
       }
       if (st.didJustFinish) {
+        if (fadingRef.current) return; // a fade-out is finishing the clip — don't advance
         if (queueRef.current) advanceQueue();
         else if (onceRef.current) stop();
         else advance(pos);
       }
     });
     currRef.current = { pos, player, sub };
+    try {
+      player.volume = 1; // reset in case a prior fade-out left a (reused) player turned down
+    } catch {}
     try {
       player.play();
     } catch {
@@ -330,6 +379,7 @@ function useEngine(): RecitationApi {
     pause,
     resume,
     stop,
+    fadeStop,
     setContinuous,
     chooseReciter,
   };
