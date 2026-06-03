@@ -97,6 +97,33 @@ async function synth(text) {
   throw lastErr;
 }
 
+// Stream the synthesized mp3 chunk-by-chunk to `res`, so the client can begin playback almost
+// immediately instead of waiting for the whole clip. Content-Type is set on the first chunk, so a
+// total failure (no audio at all) can still fall back to the buffered path.
+async function streamSynth(text, res) {
+  const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
+  const tts = new MsEdgeTTS();
+  await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+  const { audioStream } = tts.toStream(text, { rate: RATE, pitch: PITCH });
+  await new Promise((resolve, reject) => {
+    let started = false;
+    audioStream.on('data', (c) => {
+      if (!started) {
+        started = true;
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Cache-Control', 'no-store');
+      }
+      res.write(c);
+    });
+    audioStream.on('end', () => (started ? resolve() : reject(new Error('empty audio'))));
+    audioStream.on('error', reject);
+  });
+  try {
+    tts.close();
+  } catch {}
+  res.end();
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -110,15 +137,36 @@ module.exports = async (req, res) => {
   const text = clean(String(raw || '').slice(0, 1500));
   if (!text) return res.status(400).json({ error: 'text is required' });
 
+  // Audio route (no marks): STREAM the mp3 as it's synthesized so playback can start right away.
+  // If the stream can't even begin, fall back to the buffered synth (which retries on transient
+  // msedge resets); the client ultimately falls back to on-device speech.
+  if (!wantMarks) {
+    try {
+      await streamSynth(text, res);
+    } catch (e) {
+      if (!res.headersSent) {
+        try {
+          const { buf } = await synth(text);
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Cache-Control', 'no-store');
+          return res.status(200).send(buf);
+        } catch (e2) {
+          return res.status(502).json({ error: String((e2 && e2.message) || e2) });
+        }
+      }
+      try {
+        res.end();
+      } catch {}
+    }
+    return;
+  }
+
+  // Marks route: needs the whole buffer + word timestamps, so it stays buffered (JSON).
   try {
     const { buf, marks, durMs } = await synth(text);
     res.setHeader('Cache-Control', 'no-store');
-    if (wantMarks) {
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(200).json({ audio: buf.toString('base64'), marks, spoken: text, dur: durMs });
-    }
-    res.setHeader('Content-Type', 'audio/mpeg');
-    return res.status(200).send(buf);
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({ audio: buf.toString('base64'), marks, spoken: text, dur: durMs });
   } catch (e) {
     return res.status(502).json({ error: String((e && e.message) || e) });
   }
