@@ -10,12 +10,14 @@ import { JumpSheet } from '@/components/jump-sheet';
 import { ReciterSheet } from '@/components/reciter-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TranslationSheet } from '@/components/translation-sheet';
 import { useBookmarks } from '@/lib/bookmarks';
 import { haptic } from '@/lib/haptics';
 import { getSurah, type Ayah } from '@/lib/quran';
 import { useRecitation } from '@/lib/recitation-context';
 import { setLastRead } from '@/lib/storage';
 import { recordActivity } from '@/lib/streak';
+import { useTranslation, verseText } from '@/lib/translations';
 
 const BISMILLAH = getSurah(1)?.ayahs[0]?.ar ?? '';
 const ACCENT = '#0a7ea4';
@@ -42,6 +44,8 @@ export default function SurahReader() {
   const [reciterOpen, setReciterOpen] = useState(false);
   const [activeAyah, setActiveAyah] = useState<Ayah | null>(null);
   const [explainTarget, setExplainTarget] = useState<ExplainTarget | null>(null);
+  const [translationOpen, setTranslationOpen] = useState(false);
+  const { id: trId, setId: setTr } = useTranslation();
   const bookmarks = useBookmarks();
 
   const scrollRef = useRef<ScrollView>(null);
@@ -206,6 +210,14 @@ export default function SurahReader() {
               <Pressable
                 onPress={() => {
                   haptic.light();
+                  setTranslationOpen(true);
+                }}
+                hitSlop={10}>
+                <Ionicons name="language" size={21} color={ACCENT} />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  haptic.light();
                   setJumpOpen(true);
                 }}
                 hitSlop={10}>
@@ -265,7 +277,7 @@ export default function SurahReader() {
                 {bookmarked ? (
                   <Ionicons name="bookmark" size={14} color={ACCENT} style={styles.bookmarkMark} />
                 ) : null}
-                <ThemedText style={styles.trans}>{item.en}</ThemedText>
+                <ThemedText style={styles.trans}>{verseText(surah.number, item.n)}</ThemedText>
                 <Pressable
                   onPress={() => {
                     haptic.light();
@@ -352,7 +364,7 @@ export default function SurahReader() {
             ayah: a.n,
             name: surah.englishName,
             ar: a.ar,
-            en: a.en,
+            en: verseText(surah.number, a.n),
           })
         }
       />
@@ -364,6 +376,13 @@ export default function SurahReader() {
         currentId={ctx.reciter.id}
         onClose={() => setReciterOpen(false)}
         onSelect={(id) => ctx.chooseReciter(id)}
+      />
+
+      <TranslationSheet
+        visible={translationOpen}
+        currentId={trId}
+        onClose={() => setTranslationOpen(false)}
+        onSelect={setTr}
       />
     </ThemedView>
   );

@@ -7,12 +7,14 @@ import { ThemedView } from '@/components/themed-view';
 import { toggleBookmark, useBookmarks } from '@/lib/bookmarks';
 import { haptic } from '@/lib/haptics';
 import { getAyah, getSurah } from '@/lib/quran';
+import { useTranslation, verseText } from '@/lib/translations';
 
 const ACCENT = '#0a7ea4';
 
 export default function BookmarksScreen() {
   const router = useRouter();
   const bookmarks = useBookmarks();
+  useTranslation(); // re-render snippets when the translation changes
 
   const open = (surah: number, ayah: number) => {
     haptic.light();
@@ -43,7 +45,7 @@ export default function BookmarksScreen() {
                   </ThemedText>
                   {a ? (
                     <ThemedText style={styles.snippet} numberOfLines={2}>
-                      {a.en}
+                      {verseText(b.surah, b.ayah)}
                     </ThemedText>
                   ) : null}
                 </View>

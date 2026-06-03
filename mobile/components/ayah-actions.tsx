@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { toggleBookmark, useBookmarks } from '@/lib/bookmarks';
 import { haptic } from '@/lib/haptics';
 import type { Ayah, Surah } from '@/lib/quran';
+import { verseText } from '@/lib/translations';
 
 const ACCENT = '#0a7ea4';
 
@@ -47,7 +48,7 @@ export function AyahActions({ ayah, surah, onClose, onPlay, onExplain }: Props) 
   if (!shown) return null;
 
   const refLabel = `${surah.englishName} · ${surah.number}:${shown.n}`;
-  const text = `${shown.ar}\n\n${shown.en}\n\n— Qur'an ${surah.number}:${shown.n} (${surah.englishName})`;
+  const text = `${shown.ar}\n\n${verseText(surah.number, shown.n)}\n\n— Qur'an ${surah.number}:${shown.n} (${surah.englishName})`;
   const sheetY = anim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] });
   const saved = bookmarks.some((b) => b.surah === surah.number && b.ayah === shown.n);
 
@@ -71,7 +72,7 @@ export function AyahActions({ ayah, surah, onClose, onPlay, onExplain }: Props) 
               {shown.ar}
             </ThemedText>
             <ThemedText style={styles.en} numberOfLines={3}>
-              {shown.en}
+              {verseText(surah.number, shown.n)}
             </ThemedText>
           </View>
 

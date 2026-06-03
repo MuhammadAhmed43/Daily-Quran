@@ -15,6 +15,7 @@ import { getHub } from '@/lib/hubs';
 import { getAyah, getSurah } from '@/lib/quran';
 import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
+import { useTranslation, verseText } from '@/lib/translations';
 
 const ACCENT = '#0a7ea4';
 
@@ -24,6 +25,7 @@ export default function HubScreen() {
   const hub = getHub(String(id));
   const rec = useRecitation();
   const [explainTarget, setExplainTarget] = useState<ExplainTarget | null>(null);
+  useTranslation(); // re-render the verses when the translation changes
 
   useEffect(() => {
     if (hub) {
@@ -99,7 +101,7 @@ export default function HubScreen() {
                     ayah: v.ayah,
                     name: s.englishName,
                     ar: a.ar,
-                    en: a.en,
+                    en: verseText(v.surah, v.ayah),
                   })
                 }>
                 <View style={styles.verseHead}>
@@ -111,7 +113,7 @@ export default function HubScreen() {
                 <ThemedText style={styles.ar} numberOfLines={4}>
                   {a.ar}
                 </ThemedText>
-                <ThemedText style={styles.en}>{a.en}</ThemedText>
+                <ThemedText style={styles.en}>{verseText(v.surah, v.ayah)}</ThemedText>
                 <ThemedText style={styles.explainHint}>Tap to explain ›</ThemedText>
               </Pressable>
             );

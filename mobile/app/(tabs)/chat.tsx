@@ -31,6 +31,7 @@ import { parseMarkdownBlocks } from '@/lib/markdown';
 import { useProfile } from '@/lib/profile';
 import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
+import { useTranslation, verseText } from '@/lib/translations';
 import { takeVoiceExchanges } from '@/lib/voice-bridge';
 import { fmtDuration, getChapter, ytThumb } from '@/lib/watch';
 
@@ -417,6 +418,7 @@ function MessageView({
   onRevealComplete: (id: string, data: ChatResponse) => void;
 }) {
   const [showTafsir, setShowTafsir] = useState(false);
+  useTranslation(); // re-render verse cards when the translation changes
   if (msg.role === 'user') {
     return (
       <View style={styles.userRow}>
@@ -476,7 +478,7 @@ function MessageView({
               </View>
             </View>
             <ThemedText style={styles.verseArabic}>{primary.arabic}</ThemedText>
-            <ThemedText style={styles.verseTrans}>{primary.translation}</ThemedText>
+            <ThemedText style={styles.verseTrans}>{verseText(primary.surah, primary.ayah)}</ThemedText>
           </Pressable>
         </FadeIn>
       ) : null}

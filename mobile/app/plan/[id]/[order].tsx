@@ -15,6 +15,7 @@ import { usePlanProgress } from '@/lib/plan-progress';
 import { getAyah, getSurah } from '@/lib/quran';
 import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
+import { useTranslation, verseText } from '@/lib/translations';
 
 // A single day/step of a journey: framing → the verse(s), each tappable for the grounded explanation
 // (the same ExplainSheet used app-wide) → a reflection prompt → mark complete. Completing it feeds
@@ -27,6 +28,7 @@ export default function StepPlayer() {
   const progress = usePlanProgress();
   const [explainTarget, setExplainTarget] = useState<ExplainTarget | null>(null);
   const [justDone, setJustDone] = useState(false);
+  useTranslation(); // re-render the verses when the translation changes
   const ownsAudioRef = useRef(false); // is the recitation playing right now one this step started?
 
   // Reset the local "just completed" flash whenever we move to a different step (router.replace keeps
@@ -118,7 +120,7 @@ export default function StepPlayer() {
                   <Pressable
                     style={({ pressed }) => [styles.verse, pressed && { backgroundColor: accent + '12' }]}
                     onPress={() =>
-                      setExplainTarget({ surah: v.surah, ayah: v.ayah, name: sr.englishName, ar: a.ar, en: a.en })
+                      setExplainTarget({ surah: v.surah, ayah: v.ayah, name: sr.englishName, ar: a.ar, en: verseText(v.surah, v.ayah) })
                     }>
                     <View style={styles.verseHead}>
                       <ThemedText style={[styles.ref, { color: accent }]}>
@@ -127,7 +129,7 @@ export default function StepPlayer() {
                       <VerseSpeaker surah={v.surah} ayah={v.ayah} size={18} />
                     </View>
                     <ThemedText style={styles.ar}>{a.ar}</ThemedText>
-                    <ThemedText style={styles.en}>{a.en}</ThemedText>
+                    <ThemedText style={styles.en}>{verseText(v.surah, v.ayah)}</ThemedText>
                     <ThemedText style={[styles.explainHint, { color: accent }]}>Tap to explain ›</ThemedText>
                   </Pressable>
                 </FadeIn>

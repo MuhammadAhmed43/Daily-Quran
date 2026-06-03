@@ -15,6 +15,7 @@ import { useQuranPlan } from '@/lib/quran-plan-progress';
 import { useRecitation } from '@/lib/recitation-context';
 import { getSurahIntro } from '@/lib/surah-intro';
 import { recordActivity } from '@/lib/streak';
+import { useTranslation, verseText } from '@/lib/translations';
 
 const ACCENT = '#0a7ea4';
 
@@ -226,6 +227,7 @@ const PortionAyahs = memo(function PortionAyahs({
   onExplain: (t: ExplainTarget) => void;
   onLayout: (key: number, y: number) => void;
 }) {
+  useTranslation(); // re-render this memoized block when the translation changes
   const refs = corpusAyahs(corpus).slice(startIdx, endIdx);
   const rows: { surah: number; ayah: number; header: boolean }[] = [];
   let prev = -1;
@@ -256,7 +258,7 @@ const PortionAyahs = memo(function PortionAyahs({
                 pressed && { backgroundColor: ACCENT + '10' },
               ]}
               onPress={() =>
-                onExplain({ surah: row.surah, ayah: row.ayah, name: surahName(row.surah), ar: a.ar, en: a.en })
+                onExplain({ surah: row.surah, ayah: row.ayah, name: surahName(row.surah), ar: a.ar, en: verseText(row.surah, row.ayah) })
               }>
               <View style={styles.ayahHead}>
                 <ThemedText style={styles.ayahRef}>
@@ -265,7 +267,7 @@ const PortionAyahs = memo(function PortionAyahs({
                 {i === 0 ? <ThemedText style={styles.tapHint}>tap any ayah to explain</ThemedText> : null}
               </View>
               <ThemedText style={styles.ar}>{a.ar}</ThemedText>
-              <ThemedText style={styles.en}>{a.en}</ThemedText>
+              <ThemedText style={styles.en}>{verseText(row.surah, row.ayah)}</ThemedText>
             </Pressable>
           </View>
         );

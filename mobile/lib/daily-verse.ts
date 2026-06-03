@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 
 import { cancelByType, ensureNotifPermission } from './notifications';
 import { getVerse, resolveToday } from './today';
+import { verseText } from './translations';
 
 const KEY = 'daily-quran:verse-notif';
 const DAYS = 14;
@@ -55,7 +56,7 @@ export async function scheduleDailyVerse(hour: number, minute: number): Promise<
     await Notifications.scheduleNotificationAsync({
       content: {
         title: `🌙 Today's verse · ${v.surahEnglish} ${v.surah}:${v.ayah}`,
-        body: trim(v.en),
+        body: trim(verseText(v.surah, v.ayah)),
         sound: false,
         data: { type: 'daily_verse', surah: v.surah, ayah: v.ayah },
       },
