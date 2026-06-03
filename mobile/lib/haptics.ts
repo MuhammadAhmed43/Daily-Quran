@@ -13,4 +13,8 @@ export const haptic = {
   tick: () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
   },
+  // A small "done" cue — e.g. finishing a video.
+  success: () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  },
 };

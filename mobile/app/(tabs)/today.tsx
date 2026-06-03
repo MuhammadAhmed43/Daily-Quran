@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MoodCheckIn } from '@/components/home/mood-check-in';
 import { StreakHero } from '@/components/home/streak-hero';
+import { WatchCard } from '@/components/home/watch-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VerseSpeaker } from '@/components/verse-speaker';
@@ -53,6 +54,7 @@ export default function TodayScreen() {
 
           <StreakHero />
           <MoodCheckIn />
+          <WatchCard />
 
           <Pressable style={styles.findPeace} onPress={() => router.push('/hubs')}>
             <ThemedText style={styles.findPeaceEmoji}>🌿</ThemedText>
