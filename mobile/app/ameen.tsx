@@ -30,8 +30,11 @@ import {
   fetchFeed,
   getAgeOk,
   getDisplayName,
+  looksLikeCrisis,
   myIntentionsSummary,
+  PAGE_SIZE,
   type FeedItem,
+  type FeedSort,
   type Intention,
   postIntention,
   reportIntention,
@@ -65,6 +68,8 @@ function timeAgo(iso: string): string {
 }
 
 type AgeState = 'checking' | 'gate' | 'ok' | 'blocked';
+type Draft = { body: string; name: string; attached: string | null; errorKind: 'crisis' | 'other'; message: string };
+type PostInput = { body: string; authorName: string; verseRefs: string[] };
 
 export default function AmeenWall() {
   const [age, setAge] = useState<AgeState>('checking');
@@ -74,18 +79,99 @@ export default function AmeenWall() {
   const [uid, setUid] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [summary, setSummary] = useState<{ posts: number; ameens: number }>({ posts: 0, ameens: 0 });
+  const [sort, setSort] = useState<FeedSort>('recent');
+  const sortRef = useRef<FeedSort>('recent');
+  const offsetRef = useRef(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [composeKey, setComposeKey] = useState(0);
 
   useEffect(() => {
     getAgeOk().then((v) => setAge(v === true ? 'ok' : v === false ? 'blocked' : 'gate'));
   }, []);
 
   const load = useCallback(async () => {
-    const [items, myId, sum] = await Promise.all([fetchFeed(), currentUserId(), myIntentionsSummary()]);
+    const [items, myId, sum] = await Promise.all([
+      fetchFeed(sortRef.current, 0, PAGE_SIZE),
+      currentUserId(),
+      myIntentionsSummary(),
+    ]);
     setFeed(items);
     setUid(myId);
     setSummary(sum);
+    offsetRef.current = items.length;
+    setHasMore(items.length === PAGE_SIZE);
     setLoading(false);
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    const page = await fetchFeed(sortRef.current, offsetRef.current, PAGE_SIZE);
+    offsetRef.current += page.length;
+    setFeed((f) => {
+      const seen = new Set(f.map((x) => x.id));
+      return [...f, ...page.filter((p) => !seen.has(p.id))];
+    });
+    setHasMore(page.length === PAGE_SIZE);
+    setLoadingMore(false);
+  }, [loadingMore, hasMore, loading]);
+
+  const changeSort = (s: FeedSort) => {
+    if (s === sortRef.current) return;
+    haptic.light();
+    sortRef.current = s;
+    offsetRef.current = 0;
+    setSort(s);
+    setLoading(true);
+    setFeed([]);
+    void load();
+  };
+
+  // Optimistic post: show the intention immediately (pending), then confirm or roll back. Crisis text
+  // never reaches here (it stays on the modal's blocking flow), so nothing heavy flashes into the feed.
+  const optimisticPost = (input: PostInput) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: FeedItem = {
+      id: tempId,
+      user_id: uid ?? '',
+      author_name: input.authorName || 'Anonymous',
+      body: input.body,
+      category: null,
+      verse_refs: input.verseRefs.length ? input.verseRefs : null,
+      ameen_count: 0,
+      created_at: new Date().toISOString(),
+      ameenedByMe: false,
+      pending: true,
+    };
+    setFeed((f) => [optimistic, ...f]);
+    haptic.light();
+    void (async () => {
+      const r = await postIntention(input);
+      if (r.ok) {
+        haptic.success();
+        setFeed((f) => {
+          if (f.some((x) => x.id === tempId)) {
+            return f.map((x) => (x.id === tempId ? { ...r.intention, ameenedByMe: false } : x));
+          }
+          if (f.some((x) => x.id === r.intention.id)) return f; // a refresh already pulled it in
+          return [{ ...r.intention, ameenedByMe: false }, ...f];
+        });
+      } else {
+        setFeed((f) => f.filter((x) => x.id !== tempId));
+        setDraft({
+          body: input.body,
+          name: input.authorName === 'Anonymous' ? '' : input.authorName,
+          attached: input.verseRefs[0] ?? null,
+          errorKind: r.kind === 'crisis' ? 'crisis' : 'other',
+          message: r.message,
+        });
+        setComposeKey((k) => k + 1);
+        setComposeOpen(true);
+      }
+    })();
+  };
 
   // Refresh whenever the wall regains focus, so the count climbs the moment you return (someone may
   // have prayed while you were away). Silent - the feed already has data, so no loading spinner flashes.
@@ -186,6 +272,17 @@ export default function AmeenWall() {
           keyExtractor={(it) => it.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
+          onEndReached={() => void loadMore()}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator color={ACCENT} style={{ marginVertical: 18 }} />
+            ) : hasMore && feed.length > 0 ? (
+              <Pressable style={styles.loadMore} onPress={() => void loadMore()}>
+                <ThemedText style={styles.loadMoreText}>Load more</ThemedText>
+              </Pressable>
+            ) : null
+          }
           ListHeaderComponent={
             <View style={styles.head}>
               {summary.ameens > 0 ? <PayoffBanner posts={summary.posts} ameens={summary.ameens} /> : null}
@@ -197,11 +294,31 @@ export default function AmeenWall() {
                 style={styles.postBtn}
                 onPress={() => {
                   haptic.light();
+                  setDraft(null);
+                  setComposeKey((k) => k + 1);
                   setComposeOpen(true);
                 }}>
                 <Ionicons name="add" size={18} color="#fff" />
                 <ThemedText style={styles.postBtnText}>Post an intention</ThemedText>
               </Pressable>
+              {feed.length > 0 ? (
+                <View style={styles.sortRow}>
+                  <Pressable
+                    style={[styles.sortChip, sort === 'recent' && styles.sortChipOn]}
+                    onPress={() => changeSort('recent')}>
+                    <ThemedText style={[styles.sortChipText, sort === 'recent' && styles.sortChipTextOn]}>
+                      Recent
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.sortChip, sort === 'top' && styles.sortChipOn]}
+                    onPress={() => changeSort('top')}>
+                    <ThemedText style={[styles.sortChipText, sort === 'top' && styles.sortChipTextOn]}>
+                      Most prayed
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
           }
           ListEmptyComponent={
@@ -212,6 +329,24 @@ export default function AmeenWall() {
             )
           }
           renderItem={({ item }) => {
+            if (item.pending) {
+              return (
+                <View style={[styles.card, styles.cardPending]}>
+                  <View style={styles.cardHead}>
+                    <ThemedText style={styles.author} numberOfLines={1}>
+                      {item.author_name || 'Anonymous'}
+                    </ThemedText>
+                    <ThemedText style={styles.time}>now</ThemedText>
+                  </View>
+                  <ThemedText style={styles.body}>{item.body}</ThemedText>
+                  {item.verse_refs && item.verse_refs[0] ? <AttachedVerse refStr={item.verse_refs[0]} /> : null}
+                  <View style={styles.pendingRow}>
+                    <ActivityIndicator size="small" color={ACCENT} />
+                    <ThemedText style={styles.pendingText}>Posting…</ThemedText>
+                  </View>
+                </View>
+              );
+            }
             const mine = item.user_id === uid;
             return (
               <View style={styles.card}>
@@ -251,8 +386,11 @@ export default function AmeenWall() {
       </SafeAreaView>
 
       <ComposeModal
+        key={composeKey}
         visible={composeOpen}
+        initial={draft ?? undefined}
         onClose={() => setComposeOpen(false)}
+        onOptimistic={optimisticPost}
         onPosted={(it) => {
           setFeed((f) => [{ ...it, ameenedByMe: false }, ...f]);
           setComposeOpen(false);
@@ -374,31 +512,32 @@ function AttachedVerse({ refStr }: { refStr: string }) {
 
 function ComposeModal({
   visible,
+  initial,
   onClose,
+  onOptimistic,
   onPosted,
 }: {
   visible: boolean;
+  initial?: Draft;
   onClose: () => void;
+  onOptimistic: (input: PostInput) => void;
   onPosted: (it: Intention) => void;
 }) {
-  const [body, setBody] = useState('');
-  const [name, setName] = useState('');
+  const [body, setBody] = useState(initial?.body ?? '');
+  const [name, setName] = useState(initial?.name ?? '');
   const [posting, setPosting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [crisis, setCrisis] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initial && initial.errorKind === 'other' ? initial.message : null);
+  const [crisis, setCrisis] = useState<string | null>(initial && initial.errorKind === 'crisis' ? initial.message : null);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState<{ label: string; verses: SuggestedVerse[] } | null>(null);
-  const [attached, setAttached] = useState<string | null>(null);
+  const [attached, setAttached] = useState<string | null>(initial?.attached ?? null);
 
+  // Seed the saved display name only on a fresh compose; a failed-post retry keeps the name you typed.
+  // (The modal is remounted via a key on every open, so this initializes correctly each time.)
   useEffect(() => {
-    if (visible) {
-      setError(null);
-      setCrisis(null);
-      setSuggestion(null);
-      setAttached(null);
-      getDisplayName().then(setName);
-    }
-  }, [visible]);
+    if (!initial) getDisplayName().then((n) => setName((cur) => cur || n));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const findVerse = async () => {
     const text = body.trim();
@@ -414,26 +553,32 @@ function ComposeModal({
     const text = body.trim();
     if (!text || posting) return;
     Keyboard.dismiss();
-    setPosting(true);
     setError(null);
     setCrisis(null);
     const cleanName = name.trim();
     if (cleanName) await setDisplayName(cleanName);
-    const r = await postIntention({
-      body: text,
-      authorName: cleanName || 'Anonymous',
-      verseRefs: attached ? [attached] : [],
-    });
-    setPosting(false);
-    if (r.ok) {
-      haptic.success();
-      setBody('');
-      onPosted(r.intention);
-    } else if (r.kind === 'crisis') {
-      setCrisis(r.message);
-    } else {
-      setError(r.message);
+    const input: PostInput = { body: text, authorName: cleanName || 'Anonymous', verseRefs: attached ? [attached] : [] };
+    // Crisis-suspected text stays on the gentle BLOCKING flow (shown here with care) - never optimistic,
+    // so a heavy message never flashes into the public feed. The server check remains authoritative.
+    if (looksLikeCrisis(text)) {
+      setPosting(true);
+      const r = await postIntention(input);
+      setPosting(false);
+      if (r.ok) {
+        haptic.success();
+        setBody('');
+        onPosted(r.intention);
+      } else if (r.kind === 'crisis') {
+        setCrisis(r.message);
+      } else {
+        setError(r.message);
+      }
+      return;
     }
+    // Everything else posts optimistically: the parent shows it immediately, we close right away.
+    onOptimistic(input);
+    setBody('');
+    onClose();
   };
 
   return (
@@ -621,6 +766,17 @@ const styles = StyleSheet.create({
   payoffTextWrap: { flex: 1, gap: 2 },
   payoffHead: { fontSize: 15.5, fontWeight: '800', color: ACCENT },
   payoffSub: { fontSize: 13, opacity: 0.7 },
+
+  cardPending: { opacity: 0.6 },
+  pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pendingText: { fontSize: 13, fontWeight: '600', opacity: 0.6 },
+  sortRow: { flexDirection: 'row', gap: 8, paddingTop: 2 },
+  sortChip: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(127,127,127,0.1)' },
+  sortChipOn: { backgroundColor: 'rgba(10,126,164,0.15)' },
+  sortChipText: { fontSize: 13, fontWeight: '700', color: 'rgba(127,127,127,0.8)' },
+  sortChipTextOn: { color: ACCENT },
+  loadMore: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 24, marginTop: 4 },
+  loadMoreText: { color: ACCENT, fontWeight: '700', fontSize: 14 },
 
   gateEmoji: { fontSize: 44 },
   gateTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center' },

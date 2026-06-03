@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { classifierThemes, themeById } from './intention-verses';
 import { getAyah, getSurah } from './quran';
 import { communityReady, ensureAnonSession, supabase } from './supabase';
+import { verseText } from './translations';
 
 export { communityReady };
 
@@ -20,7 +21,9 @@ export type Intention = {
   ameen_count: number;
   created_at: string;
 };
-export type FeedItem = Intention & { ameenedByMe: boolean };
+export type FeedItem = Intention & { ameenedByMe: boolean; pending?: boolean };
+export type FeedSort = 'recent' | 'top';
+export const PAGE_SIZE = 20;
 
 export type SuggestedVerse = { ref: string; surah: number; ayah: number; name: string; ar: string; en: string };
 
@@ -59,15 +62,20 @@ export async function currentUserId(): Promise<string | null> {
   return s?.user.id ?? null;
 }
 
-export async function fetchFeed(limit = 40): Promise<FeedItem[]> {
+// Fetch a page of the feed. sort = 'recent' (newest first) or 'top' (most-prayed first). Pagination via
+// offset; returns up to `limit` items, so a full page tells the caller there may be more to load.
+export async function fetchFeed(sort: FeedSort = 'recent', offset = 0, limit = PAGE_SIZE): Promise<FeedItem[]> {
   if (!supabase) return [];
   await ensureAnonSession();
-  const { data: rows } = await supabase
+  let q = supabase
     .from('intentions')
     .select('id,user_id,author_name,body,category,verse_refs,ameen_count,created_at')
-    .eq('hidden', false)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    .eq('hidden', false);
+  q =
+    sort === 'top'
+      ? q.order('ameen_count', { ascending: false }).order('created_at', { ascending: false })
+      : q.order('created_at', { ascending: false });
+  const { data: rows } = await q.range(offset, offset + limit - 1);
   const items = (rows ?? []) as Intention[];
   if (!items.length) return [];
   const { data: mine } = await supabase
@@ -100,6 +108,14 @@ export async function myIntentionsSummary(): Promise<{ posts: number; ameens: nu
 export type PostResult =
   | { ok: true; intention: Intention }
   | { ok: false; kind: 'crisis' | 'rejected' | 'rate' | 'error'; message: string };
+
+// Client-side mirror of the server's crisis check (api/ameen-post). Used only to keep crisis-suspected
+// text on the gentle blocking flow - never an optimistic public flash. The SERVER stays authoritative.
+const CRISIS_RE =
+  /suicid|kill (?:myself|me)|end (?:my life|it all)|want to die|self.?harm|hurt myself|harming myself|no (?:point|reason) (?:in|to) (?:living|life)|kill her|kill him/i;
+export function looksLikeCrisis(text: string): boolean {
+  return CRISIS_RE.test(text);
+}
 
 export async function postIntention(input: {
   body: string;
@@ -185,7 +201,7 @@ export async function suggestVerses(intention: string): Promise<{ label: string;
         ayah: r.ayah,
         name: getSurah(r.surah)?.englishName ?? '',
         ar: a.ar,
-        en: a.en,
+        en: verseText(r.surah, r.ayah),
       });
     }
   }
@@ -200,5 +216,5 @@ export function verseForRef(ref: string): SuggestedVerse | null {
   const ayah = Number(m[2]);
   const a = getAyah(surah, ayah);
   if (!a) return null;
-  return { ref, surah, ayah, name: getSurah(surah)?.englishName ?? '', ar: a.ar, en: a.en };
+  return { ref, surah, ayah, name: getSurah(surah)?.englishName ?? '', ar: a.ar, en: verseText(surah, ayah) };
 }
