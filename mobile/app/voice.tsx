@@ -254,6 +254,9 @@ export default function VoiceScreen() {
     } catch {}
     subRef.current = null;
     try {
+      playerRef.current?.pause(); // pause before remove so the reply audio can't linger
+    } catch {}
+    try {
       playerRef.current?.remove();
     } catch {}
     playerRef.current = null;
