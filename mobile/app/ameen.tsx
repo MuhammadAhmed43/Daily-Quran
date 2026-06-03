@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -85,9 +87,13 @@ export default function AmeenWall() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (age === 'ok') void load();
-  }, [age, load]);
+  // Refresh whenever the wall regains focus, so the count climbs the moment you return (someone may
+  // have prayed while you were away). Silent - the feed already has data, so no loading spinner flashes.
+  useFocusEffect(
+    useCallback(() => {
+      if (age === 'ok') void load();
+    }, [age, load]),
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -96,8 +102,9 @@ export default function AmeenWall() {
   }, [load]);
 
   const onAmeen = async (item: FeedItem) => {
-    haptic.light();
     const on = !item.ameenedByMe;
+    if (on) haptic.success();
+    else haptic.light();
     setFeed((f) =>
       f.map((x) => (x.id === item.id ? { ...x, ameenedByMe: on, ameen_count: Math.max(0, x.ameen_count + (on ? 1 : -1)) } : x)),
     );
@@ -181,18 +188,7 @@ export default function AmeenWall() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
           ListHeaderComponent={
             <View style={styles.head}>
-              {summary.ameens > 0 ? (
-                <View style={styles.payoffBanner}>
-                  <ThemedText style={styles.payoffEmoji}>🤲</ThemedText>
-                  <View style={styles.payoffTextWrap}>
-                    <ThemedText style={styles.payoffHead}>
-                      {summary.ameens} {summary.ameens === 1 ? 'prayer' : 'prayers'} for your{' '}
-                      {summary.posts === 1 ? 'intention' : 'intentions'}
-                    </ThemedText>
-                    <ThemedText style={styles.payoffSub}>Others are praying with you.</ThemedText>
-                  </View>
-                </View>
-              ) : null}
+              {summary.ameens > 0 ? <PayoffBanner posts={summary.posts} ameens={summary.ameens} /> : null}
               <ThemedText style={styles.intro}>
                 Share an intention or du’a, and add your ameen to others’. A space for prayer — please
                 keep it kind.
@@ -238,13 +234,7 @@ export default function AmeenWall() {
                       </ThemedText>
                     </View>
                   ) : (
-                    <Pressable
-                      style={[styles.ameen, item.ameenedByMe && styles.ameenOn]}
-                      onPress={() => onAmeen(item)}>
-                      <ThemedText style={[styles.ameenText, item.ameenedByMe && styles.ameenTextOn]}>
-                        🤲 Ameen{item.ameen_count > 0 ? ` · ${item.ameen_count}` : ''}
-                      </ThemedText>
-                    </Pressable>
+                    <AmeenButton on={item.ameenedByMe} count={item.ameen_count} onPress={() => onAmeen(item)} />
                   )}
                   <Pressable hitSlop={10} style={styles.overflow} onPress={() => (mine ? onDelete(item) : onReport(item))}>
                     <Ionicons
@@ -269,6 +259,55 @@ export default function AmeenWall() {
         }}
       />
     </ThemedView>
+  );
+}
+
+// The Ameen toggle for OTHER people's posts. Springs a little bounce when you join the prayer (turn it
+// on) - leaving is quiet. The bounce is the tactile "your ameen landed" moment.
+function AmeenButton({ on, count, onPress }: { on: boolean; count: number; onPress: () => void }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const handle = () => {
+    if (!on) {
+      scale.stopAnimation();
+      scale.setValue(1);
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.16, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.spring(scale, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }),
+      ]).start();
+    }
+    onPress();
+  };
+  return (
+    <Pressable onPress={handle}>
+      <Animated.View style={[styles.ameen, on && styles.ameenOn, { transform: [{ scale }] }]}>
+        <ThemedText style={[styles.ameenText, on && styles.ameenTextOn]}>
+          🤲 Ameen{count > 0 ? ` · ${count}` : ''}
+        </ThemedText>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+// The "people prayed for you" payoff banner - gently fades and rises in the first time it appears.
+function PayoffBanner({ posts, ameens }: { posts: number; ameens: number }) {
+  const a = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(a, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [a]);
+  return (
+    <Animated.View
+      style={[
+        styles.payoffBanner,
+        { opacity: a, transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] },
+      ]}>
+      <ThemedText style={styles.payoffEmoji}>🤲</ThemedText>
+      <View style={styles.payoffTextWrap}>
+        <ThemedText style={styles.payoffHead}>
+          {ameens} {ameens === 1 ? 'prayer' : 'prayers'} for your {posts === 1 ? 'intention' : 'intentions'}
+        </ThemedText>
+        <ThemedText style={styles.payoffSub}>Others are praying with you.</ThemedText>
+      </View>
+    </Animated.View>
   );
 }
 
