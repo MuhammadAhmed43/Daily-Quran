@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Easing,
   Keyboard,
@@ -31,6 +31,7 @@ import { useProfile } from '@/lib/profile';
 import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
 import { takeVoiceExchanges } from '@/lib/voice-bridge';
+import { fmtDuration, getChapter, ytThumb } from '@/lib/watch';
 
 type Message =
   | { id: string; role: 'user'; text: string }
@@ -74,8 +75,9 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const positions = useRef<Record<string, number>>({});
-  const pendingScroll = useRef<string | null>(null);
+  // While the answer streams, keep the latest text in view — but only if the user is already near
+  // the bottom, so scrolling up to re-read never yanks them back down.
+  const stick = useRef(true);
   const recitation = useRecitation();
   const { profile } = useProfile();
   const [kbUp, setKbUp] = useState(false);
@@ -117,18 +119,6 @@ export default function ChatScreen() {
     }
   }, [hasMessages, emptyAnim]);
 
-  // Pin the most recent question to the top so a new answer reads from its start
-  // (instead of the view snapping to the bottom of a long block).
-  const onMsgLayout = (id: string, y: number) => {
-    positions.current[id] = y;
-    const target = pendingScroll.current;
-    if (target && positions.current[target] != null) {
-      requestAnimationFrame(() =>
-        scrollRef.current?.scrollTo({ y: Math.max(0, positions.current[target] - 8), animated: true }),
-      );
-    }
-  };
-
   const openVerse = (surah: number, ayah: number) =>
     router.push({ pathname: '/surah/[number]', params: { number: String(surah), ayah: String(ayah) } });
 
@@ -151,6 +141,7 @@ export default function ChatScreen() {
         }
         return [...m, ...added];
       });
+      stick.current = true;
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 150);
     }, []),
   );
@@ -178,7 +169,7 @@ export default function ChatScreen() {
         { id: userId, role: 'user', text: q },
         { id: loadingId, role: 'assistant', status: 'loading' },
       ]);
-      pendingScroll.current = userId;
+      stick.current = true; // follow the new question + the answer as it streams
       setSending(true);
       try {
         const data = await streamChat(q, history, (full) => {
@@ -276,9 +267,18 @@ export default function ChatScreen() {
               ref={scrollRef}
               style={styles.fill}
               contentContainerStyle={styles.thread}
-              keyboardShouldPersistTaps="handled">
+              keyboardShouldPersistTaps="handled"
+              scrollEventThrottle={16}
+              onScroll={(e) => {
+                const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+                const fromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+                stick.current = fromBottom < 90; // near the bottom → keep following the answer
+              }}
+              onContentSizeChange={() => {
+                if (stick.current) scrollRef.current?.scrollToEnd({ animated: false });
+              }}>
               {messages.map((msg) => (
-                <View key={msg.id} onLayout={(e) => onMsgLayout(msg.id, e.nativeEvent.layout.y)}>
+                <View key={msg.id}>
                   <MessageView msg={msg} onOpenVerse={openVerse} onRevealComplete={revealComplete} />
                 </View>
               ))}
@@ -371,6 +371,41 @@ export default function ChatScreen() {
   );
 }
 
+// Three pulsing dots — the "thinking" indicator shown while the answer is being fetched.
+function TypingDots() {
+  const dots = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    const loops = dots.map((d, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 180),
+          Animated.timing(d, { toValue: 1, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+          Animated.timing(d, { toValue: 0, duration: 300, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+          Animated.delay((2 - i) * 180),
+        ]),
+      ),
+    );
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [dots]);
+  return (
+    <View style={styles.dotsRow}>
+      {dots.map((d, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.dot,
+            {
+              opacity: d.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] }),
+              transform: [{ translateY: d.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) }],
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 function MessageView({
   msg,
   onOpenVerse,
@@ -393,10 +428,7 @@ function MessageView({
   if (msg.status === 'loading') {
     return (
       <View style={styles.assistantRow}>
-        <View style={styles.thinking}>
-          <ActivityIndicator size="small" color="#0a7ea4" />
-          <ThemedText style={styles.thinkingText}>Searching the Qur’an…</ThemedText>
-        </View>
+        <TypingDots />
       </View>
     );
   }
@@ -467,6 +499,9 @@ function MessageView({
         </FadeIn>
       ) : null}
 
+      {/* A relevant Watch video, when the question matches one of the vetted chapters. */}
+      {data.video ? <ChatVideoCard id={data.video.id} /> : null}
+
       {/* Tafsir stays behind a tap — only offered when the answer used it. */}
       {data.tafsir.length > 0 ? (
         <FadeIn delay={120}>
@@ -491,6 +526,45 @@ function MessageView({
         <ThemedText style={styles.disclaimer}>{data.disclaimer}</ThemedText>
       </FadeIn>
     </View>
+  );
+}
+
+// A "Watch" suggestion shown when the question matched one of the vetted timeline chapters.
+function ChatVideoCard({ id }: { id: string }) {
+  const router = useRouter();
+  const ch = getChapter(id);
+  if (!ch) return null;
+  return (
+    <FadeIn delay={105}>
+      <Pressable
+        style={styles.videoCard}
+        onPress={() => {
+          haptic.light();
+          router.push({ pathname: '/watch/[id]', params: { id } });
+        }}>
+        <View style={styles.videoThumb}>
+          <Image
+            source={{ uri: ytThumb(ch.videos[0].youtubeId) }}
+            style={styles.videoThumbImg}
+            contentFit="cover"
+            transition={200}
+          />
+          <View style={styles.videoPlay}>
+            <Ionicons name="play" size={13} color="#fff" />
+          </View>
+        </View>
+        <View style={styles.videoBody}>
+          <ThemedText style={styles.videoKicker}>WATCH</ThemedText>
+          <ThemedText style={styles.videoTitle} numberOfLines={2}>
+            {ch.title}
+          </ThemedText>
+          <ThemedText style={styles.videoMeta}>
+            {ch.track === 'seerah' ? 'Seerah' : 'History'} · {fmtDuration(ch.videos[0].durationSec)}
+          </ThemedText>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="rgba(127,127,127,0.4)" />
+      </Pressable>
+    </FadeIn>
   );
 }
 
@@ -626,6 +700,8 @@ const styles = StyleSheet.create({
   assistantRow: { gap: 12 },
   thinking: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   thinkingText: { fontSize: 14, opacity: 0.6 },
+  dotsRow: { flexDirection: 'row', gap: 6, paddingVertical: 10, paddingLeft: 2 },
+  dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#0a7ea4' },
   errorText: { fontSize: 14, color: '#e0245e' },
   answer: { fontSize: 15.5, lineHeight: 24 },
   answerBlock: { gap: 8 },
@@ -686,6 +762,39 @@ const styles = StyleSheet.create({
   tafsirToggle: { fontSize: 11, fontWeight: '600', color: '#0a7ea4', opacity: 0.9 },
   tafsirRef: { fontWeight: '700', opacity: 0.9 },
   disclaimer: { fontSize: 11, opacity: 0.45, lineHeight: 16, fontStyle: 'italic' },
+  videoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(10,126,164,0.07)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(10,126,164,0.2)',
+  },
+  videoThumb: {
+    width: 92,
+    height: 52,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(127,127,127,0.12)',
+  },
+  videoThumbImg: { width: '100%', height: '100%' },
+  videoPlay: {
+    position: 'absolute',
+    top: 16,
+    left: 35,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoBody: { flex: 1, gap: 2 },
+  videoKicker: { fontSize: 10.5, fontWeight: '800', letterSpacing: 0.6, color: '#0a7ea4' },
+  videoTitle: { fontSize: 14.5, fontWeight: '700', lineHeight: 19 },
+  videoMeta: { fontSize: 12, opacity: 0.55 },
 
   inputBar: {
     flexDirection: 'row',
