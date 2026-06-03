@@ -1,0 +1,1219 @@
+{
+  "1": {
+    "summary": "A short, complete prayer that opens the Qur’an: it begins with praise of God, the Most Merciful, affirms Him as Master of the Day of Judgment, and then turns to asking — for guidance along the straight path. In a few lines it moves from praise, to devotion, to a heartfelt request, framing the rest of the Qur’an as the answer.",
+    "themes": [
+      "Praise",
+      "Mercy",
+      "Guidance",
+      "Prayer"
+    ],
+    "nameReason": "Called ‘The Opening’ because it opens the Qur’an and is recited at the start of every unit of prayer."
+  },
+  "2": {
+    "summary": "The longest chapter, revealed in Medina as a charter for the new community. It opens by sorting people by their response to guidance, retells the story of Adam and the trials of the Children of Israel, and sets out core practices and principles — faith, prayer, charity, fasting — closing with some of the Qur’an’s most beloved verses, including Ayat al-Kursi and the two final verses of refuge.",
+    "themes": [
+      "Guidance",
+      "Community",
+      "Faith",
+      "Practice"
+    ],
+    "nameReason": "Named after the account of the cow the Children of Israel were asked to sacrifice (verses 67–73)."
+  },
+  "3": {
+    "summary": "Faith and righteousness are central to this surah, emphasizing God's oneness, the importance of following His guidance, and the distinction between believers and disbelievers. It urges believers to hold fast to their faith, warning against division, and referencing the afterlife and God's ultimate judgment. The surah highlights the rewards of righteousness and the consequences of disbelief.",
+    "themes": [
+      "Faith",
+      "Righteousness",
+      "Guidance",
+      "Unity",
+      "Judgment"
+    ],
+    "nameReason": "Named 'The Family of Imraan' because it tells the story of the family of Imran, including Mary, the mother of Jesus, and her son."
+  },
+  "4": {
+    "summary": "Family and social relationships are the focus, with guidance on the treatment of orphans, women's rights, and inheritance laws, as well as warnings against immorality and the importance of repentance. The surah also outlines the distribution of wealth and property, emphasizing fairness and justice. It sets boundaries and consequences for those who disobey God's commands.",
+    "themes": [
+      "Family",
+      "Justice",
+      "Morality",
+      "Repentance",
+      "Inheritance"
+    ],
+    "nameReason": "Named 'The Women' because it addresses various issues related to women's lives and rights."
+  },
+  "5": {
+    "summary": "Regulations for the Muslim community cover a wide range of topics, from permissible foods and pilgrimage rituals to marriage, prayer, and justice. The surah emphasizes the importance of fulfilling commitments, cooperating in virtuous conduct, and fearing God. It also touches on the relationship between Muslims and other communities, including those who have been given the Scripture before them.",
+    "themes": [
+      "Lawfulness",
+      "Pilgrimage",
+      "Justice",
+      "Piety",
+      "Forgiveness"
+    ],
+    "nameReason": "Named 'The Table' because it contains a verse where Jesus' disciples ask him to bring down a table from God, although this specific story is not included in the provided sample verses."
+  },
+  "6": {
+    "summary": "The creation of the universe and the role of God as its Master are central themes, with warnings to those who disbelieve and ascribe equals to Him, while believers are reassured of God's mercy and guidance. The surah also recounts the stories of previous prophets, including Abraham, and emphasizes the importance of submitting to God alone. It concludes by addressing the consequences of dividing one's faith and the ultimate judgment of God.",
+    "themes": [
+      "Monotheism",
+      "Guidance",
+      "Judgment",
+      "Faith",
+      "Mercy"
+    ],
+    "nameReason": "Named 'The Cattle' because it contains regulations regarding cattle and other livestock."
+  },
+  "7": {
+    "summary": "The story of Adam and the fall of Satan sets the stage for the surah's exploration of human responsibility, divine justice, and the consequences of disbelief. It recounts the histories of various towns and their prophets, including Moses and Pharaoh, to illustrate God's power and the importance of faith. The surah concludes with practical advice on how to live a righteous life, including the importance of patience, decency, and remembrance of God.",
+    "themes": [
+      "Accountability",
+      "Justice",
+      "Faith",
+      "Guidance",
+      "Righteousness"
+    ],
+    "nameReason": "Named 'The Heights' because it refers to the heights or barriers between heaven and earth, or the heights of moral excellence."
+  },
+  "8": {
+    "summary": "War spoils and the bond between believers and God are key themes, as the surah recounts a pivotal battle and its lessons. It stresses obedience, trust in God, and the distinction between true believers and disbelievers, emphasizing the Prophet's role and the conduct of believers in battle. God's sovereignty and the triumph of truth over falsehood are ultimately upheld.",
+    "themes": [
+      "Warfare",
+      "Obedience",
+      "Sovereignty of God",
+      "Faith",
+      "Justice"
+    ],
+    "nameReason": "Named 'The Spoils of War' because it discusses the distribution of spoils from battle."
+  },
+  "9": {
+    "summary": "The relationship between believers and non-believers is a central theme, with emphasis on the treatment of polytheists and hypocrites, as well as the importance of faith, prayer, and charity. The surah also addresses the Prophet's role and the consequences of opposing God and His Messenger. It provides guidance on how to interact with those who do not share the same faith, including the fulfillment of treaties and the protection of those seeking refuge.",
+    "themes": [
+      "Faith",
+      "Warfare",
+      "Hypocrisy",
+      "Guidance",
+      "Punishment"
+    ],
+    "nameReason": "Named 'The Repentance' because it calls polytheists to repent and turn to God."
+  },
+  "10": {
+    "summary": "The creation of the universe, the role of God as its Master, and the consequences of disbelief are major themes, along with the stories of prophets like Jonah, who are sent to guide people to the right path. The surah emphasizes God's power, wisdom, and justice, warning those who reject faith of a severe punishment, while promising believers a blissful reward. It also touches on the importance of patience, trust, and obedience to God's will.",
+    "themes": [
+      "Creation",
+      "Guidance",
+      "Justice",
+      "Faith",
+      "Accountability"
+    ],
+    "nameReason": "Named 'Jonas' because it tells the story of the prophet Jonas, who was sent to warn his people of God's punishment."
+  },
+  "11": {
+    "summary": "The story of the prophets Hud and Saleh and their peoples, Aad and Thamood, serves as a backdrop to explore the themes of worship, obedience, and the consequences of disbelief. God's signs and messengers are rejected, leading to punishment, while those who believe and repent are saved by God's mercy. The surah also touches on the nature of God, the importance of seeking forgiveness, and the inevitability of judgment.",
+    "themes": [
+      "Worship",
+      "Obedience",
+      "Mercy",
+      "Judgment",
+      "Repentance"
+    ],
+    "nameReason": "Named after the prophet Hud, whose story is a central part of the surah."
+  },
+  "12": {
+    "summary": "The story of Joseph, a prophet, is told in detail, from his childhood vision to his rise to power in Egypt, and his eventual reunion with his family. Alongside the narrative, the surah explores themes of faith, morality, and the consequences of one's actions. It also touches on the importance of patience, forgiveness, and God's mercy.",
+    "themes": [
+      "Morality",
+      "Forgiveness",
+      "Patience",
+      "Mercy",
+      "Faith"
+    ],
+    "nameReason": "Named 'Joseph' because it tells the story of the prophet Joseph."
+  },
+  "13": {
+    "summary": "God's unity and power shine through descriptions of nature and the universe, where humanity's place and responsibilities are revealed, including judgment and the importance of faith and righteousness. The surah contrasts those who respond to God with those who do not, highlighting the consequences of disbelief and the rewards of faith. It illustrates God's majesty through natural phenomena like thunder and the growth of plants.",
+    "themes": [
+      "Unity of God",
+      "Nature",
+      "Judgment",
+      "Faith",
+      "Righteousness"
+    ],
+    "nameReason": "Named 'The Thunder' because it contains a vivid description of a thunderstorm, with the thunder praising God's glory."
+  },
+  "14": {
+    "summary": "The path of God is contrasted with the path of those who disbelieve and lead others astray, as seen in the stories of prophets like Moses and Abraham, and the fates of ancient peoples like Noah's and Thamood. The surah emphasizes the importance of gratitude, trust in God, and the consequences of ungratefulness and disbelief. It also presents parables of good and bad words, likening them to trees with firm roots and those uprooted, respectively.",
+    "themes": [
+      "Guidance",
+      "Disbelief",
+      "Gratitude",
+      "Parable",
+      "Accountability"
+    ],
+    "nameReason": "Named 'Abraham' because it contains stories and references to the prophet Abraham."
+  },
+  "15": {
+    "summary": "The Qur'an's clarity and preservation are emphasized, alongside warnings to those who disbelieve and ridicule the message, while the faithful are reassured of God's forgiveness and mercy, as seen in the stories of Abraham and the punishment of guilty towns. The surah also touches on the futility of idolatry and the importance of glorifying God. It concludes with a call to proclaim the message and worship God to attain certainty.",
+    "themes": [
+      "Preservation",
+      "Forgiveness",
+      "Mercy",
+      "Idolatry",
+      "Worship"
+    ],
+    "nameReason": "Named 'The Rock' because it refers to the secure and unshakeable nature of God's message and the mountains that witnessed the covenant with God."
+  },
+  "16": {
+    "summary": "The creation of the universe, the natural world, and the role of humans within it are all explored in this surah, which emphasizes God's power, justice, and mercy. It also touches on the stories of previous prophets and the importance of following the straight path, as exemplified by Abraham. The surah encourages believers to invite others to the way of God with wisdom and dignity, and to trust in God's guidance and judgment.",
+    "themes": [
+      "Creation",
+      "Guidance",
+      "Mercy",
+      "Justice",
+      "Monotheism"
+    ],
+    "nameReason": "Named 'The Bee' because it mentions the inspiration of the bee to construct its hives."
+  },
+  "17": {
+    "summary": "The Night Journey of the Prophet is the backdrop for a wide-ranging surah that explores God's power and mercy, the stories of previous prophets like Moses and the Children of Israel, and the consequences of human actions. It emphasizes the importance of righteousness, the inevitability of judgment, and the role of the Quran as a guide. The surah also touches on the fleeting nature of worldly life and the ultimate accountability of every individual.",
+    "themes": [
+      "Guidance",
+      "Accountability",
+      "Mercy",
+      "Righteousness",
+      "Judgment"
+    ],
+    "nameReason": "Named 'The Night Journey' because it begins with the story of the Prophet's miraculous journey from the Sacred Mosque to the Farthest Mosque."
+  },
+  "18": {
+    "summary": "Built around four stories that each weigh faith against a worldly trial: the young believers of the Cave who flee persecution, the proud owner of two gardens humbled in his wealth, Moses learning patience from the mysterious guide al-Khidr, and the just king Dhul-Qarnayn. Together they test faith against power, wealth, knowledge, and time, and call the reader back to sincerity and trust in God.",
+    "themes": [
+      "Faith",
+      "Trials",
+      "Humility",
+      "Patience",
+      "Knowledge"
+    ],
+    "nameReason": "Named 'The Cave' because it tells the story of the People of the Cave, one of God's wondrous signs."
+  },
+  "19": {
+    "summary": "The story of Zechariah and the birth of John, followed by the story of Mary and the birth of Jesus, highlight God's mercy and power. The surah also recounts the stories of Abraham, Moses, and other prophets, emphasizing their devotion to God and their rejection of idolatry. The surah concludes by affirming the Oneness of God and warning those who attribute a son to Him.",
+    "themes": [
+      "Prophethood",
+      "Mercy",
+      "Oneness of God",
+      "Righteousness"
+    ],
+    "nameReason": "Named 'Mary' because it tells the story of Mary, the mother of Jesus."
+  },
+  "20": {
+    "summary": "The story of Moses and his encounters with God and the Pharaoh are central to this surah, which also explores the nature of God, the importance of prayer and remembrance, and the fleeting nature of worldly wealth and power. It emphasizes the need for patience and trust in God's plan, and reminds believers of the signs and lessons from previous generations. The surah also touches on the theme of accountability and the inevitability of judgment.",
+    "themes": [
+      "Guidance",
+      "Accountability",
+      "Patience",
+      "Remembrance",
+      "Oneness of God"
+    ],
+    "nameReason": "Named 'Taa-Haa' because it begins with these mysterious, disconnected letters that only God knows the meaning of."
+  },
+  "21": {
+    "summary": "The approaching Day of Judgment is emphasized, as people are warned against turning away from God's reminders and are reminded of the fate of previous towns that were destroyed due to their disbelief. The surah also recounts the stories of various prophets, including Abraham, who called his people to worship the one true God. It concludes by affirming God's mercy and justice, and the prophet's role in conveying the message of monotheism.",
+    "themes": [
+      "Day of Judgment",
+      "Prophethood",
+      "Monotheism",
+      "Mercy",
+      "Justice"
+    ],
+    "nameReason": "Named 'The Prophets' because it tells the stories of several prophets and their missions."
+  },
+  "22": {
+    "summary": "The Hour of Judgment is a certainty, and people are warned to be conscious of God, as He will resurrect and judge all individuals, regardless of their beliefs or actions. The surah emphasizes God's power, truth, and ability to give life to the dead, and it highlights the importance of righteousness and gratitude. It also touches on the pilgrimage and the treatment of animals offered for sacrifice, emphasizing the value of righteousness and the glorification of God.",
+    "themes": [
+      "Resurrection",
+      "Judgment",
+      "Righteousness",
+      "Gratitude",
+      "Pilgrimage"
+    ],
+    "nameReason": "Named 'The Pilgrimage' because it contains regulations and guidance on the ritual of pilgrimage to Mecca."
+  },
+  "23": {
+    "summary": "The characteristics and behaviors of true believers are outlined, including humility in prayer, charity, and faithfulness to trusts, as well as the creation of humans and the inevitability of death and resurrection. The surah contrasts those who are mindful of God with those who are not, and describes the final judgment and the triumph of the patient believers. It concludes with a statement of God's power and a prayer for forgiveness and mercy.",
+    "themes": [
+      "Faith",
+      "Judgment",
+      "Creation",
+      "Mercy",
+      "Accountability"
+    ],
+    "nameReason": "Named 'The Believers' because it describes the characteristics of true believers."
+  },
+  "24": {
+    "summary": "Social and moral guidance is the core of this chapter, which covers topics such as punishment for adultery, slander, and the importance of modesty and chastity. It also emphasizes the role of faith and repentance in personal reform and provides advice on marriage, treatment of servants, and the prohibition of forcing women into prostitution. The chapter concludes with a powerful metaphor of God as the Light of the heavens and the earth.",
+    "themes": [
+      "Morality",
+      "Chastity",
+      "Repentance",
+      "Guidance",
+      "Light"
+    ],
+    "nameReason": "Named 'The Light' because it sheds light on moral and social issues and describes God as the Light of the heavens and the earth."
+  },
+  "25": {
+    "summary": "Guiding humanity to distinguish truth from falsehood, God sends down the Criterion, yet those who disbelieve attribute the message to human fabrication. The surah recounts the stories of destroyed nations like the people of Noah, Aad, and Thamood as warnings to rejectors of God's signs. The righteous, who repent and act righteously, are rewarded with a beautiful destination.",
+    "themes": [
+      "Guidance",
+      "Truth",
+      "Accountability",
+      "Righteousness",
+      "Mercy"
+    ],
+    "nameReason": "Named 'The Criterion' because it provides a standard to distinguish right from wrong."
+  },
+  "26": {
+    "summary": "Rejection of faith prompts the Prophet's concerns, as he recalls the stories of Moses and Pharaoh, and Noah, to demonstrate God's power and the consequences for those who deny the truth. The surah also cautions against the influence of poets who spread falsehood and emphasizes God's mercy, power, and all-encompassing awareness. God's judgment is inevitable.",
+    "themes": [
+      "Faith",
+      "Mercy",
+      "Accountability",
+      "Guidance",
+      "Truth"
+    ],
+    "nameReason": "Named 'The Poets' because it discusses the character and influence of poets, distinguishing between those who believe and do good, and those who spread falsehood."
+  },
+  "27": {
+    "summary": "Prophets and miracles serve as testament to God's power and wisdom, as seen in the stories of Moses, Solomon, and others. The surah recounts the Queen of Sheba and the people of Thamood, illustrating the consequences of disbelief and the importance of seeking forgiveness. Ultimately, it emphasizes the signs of God's existence and the inevitable judgment that awaits all.",
+    "themes": [
+      "Guidance",
+      "Forgiveness",
+      "Judgment",
+      "Prophethood",
+      "Oneness of God"
+    ],
+    "nameReason": "Named 'The Ant' because of the story of Solomon and the Valley of Ants, where an ant warns its fellow ants of the approaching army."
+  },
+  "28": {
+    "summary": "The story of Moses and Pharaoh is central to this surah, detailing Pharaoh's oppression, Moses' early life, and his call to prophethood, as well as the story of the Israelites and their deliverance. It also touches on the themes of faith, disbelief, and the consequences of each, highlighting God's mercy and justice. Additionally, it addresses the Prophet Muhammad, reassuring him of his role and the truth of his message.",
+    "themes": [
+      "Faith",
+      "Disbelief",
+      "Mercy",
+      "Justice",
+      "Prophethood"
+    ],
+    "nameReason": "Named 'The Stories' because it contains narratives, particularly the story of Moses and Pharaoh."
+  },
+  "29": {
+    "summary": "Faith is tested through trials and tribulations, and true believers will be distinguished from the hypocrites. The surah recounts stories of prophets like Noah, Abraham, and Lot, who called their people to worship God alone, and warns of the consequences of disbelief and corruption. It emphasizes God's power, knowledge, and provision, and the importance of gratitude and devotion.",
+    "themes": [
+      "Faith",
+      "Trials",
+      "Prophethood",
+      "Gratitude",
+      "Devotion"
+    ],
+    "nameReason": "Named 'The Spider' because it mentions the spider's web as a metaphor for the fragile and futile plans of the disbelievers."
+  },
+  "30": {
+    "summary": "The ebb and flow of human history is highlighted, with the defeat and subsequent victory of the Romans serving as a backdrop to explore the nature of God's power and support. The surah emphasizes the importance of faith, the inevitability of judgment, and the futility of idolatry, while also touching on the themes of creation, guidance, and the accountability of humanity. It encourages believers to remain steadfast and patient, trusting in God's promise.",
+    "themes": [
+      "Faith",
+      "Guidance",
+      "Accountability",
+      "Creation",
+      "Patience"
+    ],
+    "nameReason": "Named 'The Romans' because it begins with a reference to the Romans' defeat and subsequent victory."
+  },
+  "31": {
+    "summary": "Guidance and wisdom are offered, highlighting the value of righteousness, prayer, and gratitude towards God. The story of Luqman serves as a model, teaching his son the basics of faith and morality. Arrogance, idolatry, and ignorance about God's nature are cautioned against.",
+    "themes": [
+      "Wisdom",
+      "Righteousness",
+      "Gratitude",
+      "Guidance"
+    ],
+    "nameReason": "Named after Luqman, the wise man who is mentioned in the surah as advising his son on matters of faith and morality."
+  },
+  "32": {
+    "summary": "The creation of the universe and humanity, and God's guidance and judgment are central themes, as the surah warns against denying the meeting with God and emphasizes the importance of faith and righteous deeds. It also touches on the story of Moses and the Children of Israel, and the destruction of past generations. The surah contrasts the fates of the faithful and the sinful, with the former being rewarded with the Gardens of Shelter and the latter being punished in the Fire.",
+    "themes": [
+      "Creation",
+      "Guidance",
+      "Judgment",
+      "Faith",
+      "Righteousness"
+    ],
+    "nameReason": "Named 'The Prostration' because verse 15 describes the faithful as falling down prostrate when reminded of God's communications."
+  },
+  "33": {
+    "summary": "God's community faces trials from within and outside, as hypocrites and unbelievers test their faith, while God reminds them of His blessings and warns against disobedience through the Prophet, who guides and cares for them. The surah addresses issues like the treatment of wives, trust in God, and the Prophet's household. It emphasizes obedience to God and His Messenger, with rewards for patience, truth, and charity.",
+    "themes": [
+      "Obedience",
+      "Loyalty",
+      "Purification",
+      "Guidance",
+      "Community"
+    ],
+    "nameReason": "Named 'The Clans' because it refers to the various groups that gathered against the Muslims."
+  },
+  "34": {
+    "summary": "God's wisdom and power are on full display, as the fates of believers and disbelievers serve as a stark reminder of the consequences of faith and ingratitude. The stories of David, Solomon, and the people of Sheba illustrate the importance of appreciation for God's blessings, as well as the consequences of turning away from them.",
+    "themes": [
+      "Guidance",
+      "Judgment",
+      "Gratitude",
+      "Provision",
+      "Power"
+    ],
+    "nameReason": "Named 'Sheba' because it tells the story of the people of Sheba and their response to God's blessings."
+  },
+  "35": {
+    "summary": "The creation of the universe and the balance within it reflect God's power and wisdom, while human existence is marked by the struggle between belief and disbelief, with God guiding and judging all. The surah emphasizes the importance of remembering God's blessings and warns against the temptations of Satan. It also touches on the themes of resurrection, honor, and the ultimate return to God.",
+    "themes": [
+      "Creation",
+      "Guidance",
+      "Disbelief",
+      "Judgment",
+      "Resurrection"
+    ],
+    "nameReason": "Called 'The Originator' because it describes God as the creator of the heavens and the earth."
+  },
+  "36": {
+    "summary": "A messenger is guided on a straight path, entrusted with a warning to those unaware, and reminded of a town's messengers rejected by their people. The movement of the sun, moon, and creation of humanity from a seed serve as signs of God's design and knowledge. God's power to revive the dead and create anew is reaffirmed.",
+    "themes": [
+      "Creation",
+      "Messenger",
+      "Warning",
+      "Afterlife",
+      "Omnipotence"
+    ],
+    "nameReason": "Named 'Yaseen' because it begins with the disconnected letters 'Ya' and 'Seen', which are among the mysterious initials found at the beginning of some surahs."
+  },
+  "37": {
+    "summary": "The unity and power of God are emphasized, as the surah describes the creation of the universe, the futility of idol worship, and the accountability of humans on the Day of Judgment. It also recounts the stories of prophets, including Abraham, who smashed the idols of his people. The surah concludes by affirming God's glory and sending peace upon the messengers.",
+    "themes": [
+      "Oneness of God",
+      "Accountability",
+      "Creation",
+      "Prophethood"
+    ],
+    "nameReason": "Named 'Those drawn up in Ranks' because it describes the angels aligning in ranks, as well as the organization of the universe."
+  },
+  "38": {
+    "summary": "The disbelievers' arrogance and defiance are contrasted with the stories of obedient servants of God, including David, Job, Abraham, Isaac, and Jacob, who were endowed with ability and vision. The surah also touches on the theme of seduction by Satan and the ultimate fate of those who follow him. It concludes with a reminder to mankind of the message of the Quran.",
+    "themes": [
+      "Obedience",
+      "Disbelief",
+      "Satan",
+      "Remembrance",
+      "Accountability"
+    ],
+    "nameReason": "Named 'The letter Saad' because it begins with the isolated letter Saad."
+  },
+  "39": {
+    "summary": "The unity and uniqueness of God are emphasized, along with the consequences of disbelief and the rewards of faithfulness, as the surah explores the relationship between God and humanity, highlighting the importance of devotion, gratitude, and sincerity. It also touches on the creation of the universe, the nature of worship, and the ultimate judgment of God. The surah encourages believers to remain steadfast and to trust in God's mercy and guidance.",
+    "themes": [
+      "Monotheism",
+      "Devotion",
+      "Judgment",
+      "Guidance",
+      "Sincerity"
+    ],
+    "nameReason": "Named 'The Groups' because it refers to the groups of people who will be judged by God on the Day of Resurrection."
+  },
+  "40": {
+    "summary": "The Forgiver emphasizes God's power, mercy, and judgment, warning disbelievers of punishment and inviting all to repentance and faith, while also highlighting the transience of worldly life and the importance of righteousness for eternal salvation. It recalls the stories of past messengers and their rejection by their communities, and affirms the oneness and uniqueness of God. The surah also touches on the themes of accountability, the afterlife, and the futility of idolatry.",
+    "themes": [
+      "Mercy",
+      "Judgment",
+      "Repentance",
+      "Oneness of God",
+      "Accountability"
+    ],
+    "nameReason": "Named 'The Forgiver' because it frequently describes God as the Forgiver of sins."
+  },
+  "41": {
+    "summary": "God's creation of the universe and the stories of Aad and Thamood serve as warnings of His power and the consequences of rejecting faith. Belief, righteousness, and patience are emphasized as essential in the face of adversity, with severe punishment promised to those who disbelieve and comfort offered to those who affirm their faith. Accountability, the Hereafter, and God's relationship with humanity are central themes.",
+    "themes": [
+      "Accountability",
+      "Faith",
+      "Righteousness",
+      "Punishment",
+      "Hereafter"
+    ],
+    "nameReason": "Called 'Explained in detail' because it elaborates on various aspects of faith and the message of God."
+  },
+  "42": {
+    "summary": "The unity and uniqueness of God are emphasized, along with His role as the Creator and Sustainer of all things, and the importance of faith, repentance, and good deeds. The surah also touches on the themes of divine guidance, the consequences of disbelief, and the accountability of all people before God. It addresses the Prophet's role and the importance of following God's guidance.",
+    "themes": [
+      "Faith",
+      "Guidance",
+      "Repentance",
+      "Accountability",
+      "Oneness of God"
+    ],
+    "nameReason": "Named 'Consultation' because it mentions the consultation between God and the angels regarding the creation of humanity."
+  },
+  "43": {
+    "summary": "The creation of the universe and the provision of guidance to humanity are central themes, as God reminds people of His power and wisdom in creating the earth, sending prophets, and reviving dead lands. The surah also critiques the idolatry and ingratitude of those who attribute God's creation to false deities, and it affirms the oneness of God, contrasting this with the futility of worshiping idols. It concludes with a message of pardon and peace for those who do not believe.",
+    "themes": [
+      "Creation",
+      "Guidance",
+      "Oneness of God",
+      "Idolatry",
+      "Mercy"
+    ],
+    "nameReason": "Named 'Ornaments of gold' because it refers to the idols that people worship as mere ornaments, lacking true value."
+  },
+  "44": {
+    "summary": "Punishment for the unfaithful and bliss for the righteous are contrasted in a vivid portrayal of God's judgment. The story of Pharaoh serves as a cautionary tale of oppression and rejection, while God's mercy is tempered by the importance of remembering and heeding His warnings. Gardens, springs, and lovely companions await those who believe.",
+    "themes": [
+      "Day of Judgment",
+      "Punishment",
+      "Mercy",
+      "Afterlife",
+      "Remembrance"
+    ],
+    "nameReason": "Named 'The Smoke' because it describes a day when the sky will produce a visible smoke that will envelop mankind as a painful punishment."
+  },
+  "45": {
+    "summary": "The creation of the universe and the natural order are signs of God's existence and wisdom, while human creation and the alternation of night and day are marvels that guide people of faith. The surah warns those who reject God's revelations and persist in arrogance, announcing a painful punishment for them. It also emphasizes the importance of forgiveness and doing good deeds, as every soul will be repaid for what it has earned.",
+    "themes": [
+      "Guidance",
+      "Punishment",
+      "Faith",
+      "Justice",
+      "Mercy"
+    ],
+    "nameReason": "Called 'Crouching' because it describes the posture of those who are humble and submissive to God."
+  },
+  "46": {
+    "summary": "The creation of the universe and life have a purpose, and those who disbelieve in God's signs will face the consequences. The surah emphasizes the importance of righteousness and warns against arrogance and ignorance, referencing the story of the brother of Aad, who warned his people of God's punishment. It also highlights the contrast between the righteous, who will dwell in Paradise, and the wrongdoers, who will face torment.",
+    "themes": [
+      "Righteousness",
+      "Arrogance",
+      "Punishment",
+      "Guidance",
+      "Accountability"
+    ],
+    "nameReason": "Named 'The Dunes' because it mentions the brother of Aad, who warned his people at the dunes."
+  },
+  "47": {
+    "summary": "Believers are contrasted with disbelievers, with the former following the truth from God and the latter following falsehoods, leading to distinct outcomes in this life and the afterlife. The surah emphasizes the importance of supporting God and being steadfast in faith, while also warning against the consequences of disbelief and turning away from God. It touches on themes of guidance, perseverance, and the ultimate judgment of God.",
+    "themes": [
+      "Faith",
+      "Guidance",
+      "Perseverance",
+      "Judgment",
+      "Righteousness"
+    ],
+    "nameReason": "Named 'Muhammad' because it references the Prophet Muhammad in its second verse."
+  },
+  "48": {
+    "summary": "A great victory granted by God is commemorated, promising forgiveness, guidance, and triumph to believers, while warning hypocrites and idolaters of punishment. This triumph underscores God's power, wisdom, and control over all things, and reminds believers of their covenant and the importance of fulfilling their pledges. The Desert-Arabs who lagged behind are also addressed, with a warning of a future test of their faith.",
+    "themes": [
+      "Victory",
+      "Faith",
+      "Guidance",
+      "Obedience",
+      "Punishment"
+    ],
+    "nameReason": "Named 'The Victory' because it announces a conspicuous victory granted by God to the believers."
+  },
+  "49": {
+    "summary": "The importance of respecting the Prophet and God's message is emphasized, along with the need for believers to reconcile their differences, avoid suspicion and backbiting, and recognize the diversity of human creation. The surah also clarifies the nature of true faith and the relationship between believers and God. It warns against empty claims of faith and emphasizes the need for sincerity and obedience.",
+    "themes": [
+      "Respect",
+      "Reconciliation",
+      "Sincerity",
+      "Obedience",
+      "Forgiveness"
+    ],
+    "nameReason": "Named 'The Inner Apartments' because it refers to the private chambers of the Prophet's wives, where some incidents took place that led to the revelation of these verses."
+  },
+  "50": {
+    "summary": "Qaaf explores the nature of creation, the inevitability of death and resurrection, and the consequences of denying the messengers. It describes God's power and control over life and death, and the final judgment that awaits all people.",
+    "themes": [
+      "Creation",
+      "Death and Resurrection",
+      "Judgment Day",
+      "God's Power",
+      "Denial of Messengers"
+    ],
+    "nameReason": "Called 'The letter Qaaf' because it begins with the letter Qaaf, the 17th letter of the Arabic alphabet."
+  },
+  "51": {
+    "summary": "A messenger and his wife are visited by envoys from God, warning them of the consequences of their people's sin, and the surah contrasts the fate of the righteous with the wicked, affirming God's sovereignty and the inevitability of the Day of Judgment.",
+    "themes": [
+      "Judgment",
+      "Righteousness",
+      "Sovereignty",
+      "Warning",
+      "Faithfulness"
+    ],
+    "nameReason": "Called 'The Winnowing Winds' because it describes the winds that scatter and separate the good from the bad."
+  },
+  "52": {
+    "summary": "At-Tur explores the contrast between the fate of the righteous and the disbelievers on the Day of Judgment, when the heavens and mountains will be in turmoil. The disbelievers will be punished, while the righteous will enjoy bliss and be rewarded for their good deeds. The surah also touches on the theme of God's transcendence and the futility of human plans.",
+    "themes": [
+      "Day of Judgment",
+      "Righteousness",
+      "Disbelief",
+      "God's Transcendence"
+    ],
+    "nameReason": "Named 'The Mount' because it begins with a reference to the mountain, a symbol of stability and strength."
+  },
+  "53": {
+    "summary": "An-Najm explores the nature of prophecy, the relationship between the Prophet Muhammad and God, and the consequences of rejecting God's message. It describes a night journey where the Prophet ascends to heaven, witnessing the majesty of God, and then returns to guide humanity. The surah also warns against those who reject God's revelation and encourages believers to turn to Him.",
+    "themes": [
+      "Prophecy",
+      "Guidance",
+      "Revelation",
+      "Faith",
+      "Warning"
+    ],
+    "nameReason": "Named 'The Star' because it describes the Prophet's night journey, traditionally associated with the star that guided him."
+  },
+  "54": {
+    "summary": "Al-Qamar warns of the approaching Day of Judgment, when God's power will be evident in the destruction of past civilizations, including the people of Noah and Aad. It emphasizes the inevitability of God's punishment and the importance of heeding the Quran's warnings.",
+    "themes": [
+      "Day of Judgment",
+      "Punishment",
+      "Warning",
+      "Accountability"
+    ],
+    "nameReason": "Named 'The Moon' because it describes the moon's miraculous splitting as a sign of the Hour's nearness."
+  },
+  "55": {
+    "summary": "The creation of the universe and the balance within it are highlighted, as God's signs and marvels are repeatedly pointed out, from the movement of the sun and moon to the creation of man and jinn, and the luxuries of Paradise. The refrain 'So which of your Lord’s marvels will you deny?' emphasizes the abundance of God's blessings and signs. The surah also contrasts the beauty of Paradise with the punishment of Hell, where the guilty will be recognized and punished.",
+    "themes": [
+      "Creation",
+      "Justice",
+      "Blessings",
+      "Accountability",
+      "Paradise"
+    ],
+    "nameReason": "Named 'The Beneficent' because it begins by describing God as the Compassionate, highlighting His benevolence and kindness."
+  },
+  "56": {
+    "summary": "On the Day of Judgment, the earth shakes, mountains crumble, and humanity is divided into three groups: the righteous on the right, the wicked on the left, and the forerunners. The righteous find bliss in the Gardens of Paradise, while the wicked suffer in the Inferno, their fate sealed by the consequences of their deeds. This serves as a stark reminder of the inevitability of judgment day.",
+    "themes": [
+      "Day of Judgment",
+      "Paradise",
+      "Hell",
+      "Accountability",
+      "Inevitability"
+    ],
+    "nameReason": "Named 'The Inevitable' because it emphasizes the certainty of the Day of Judgment and its consequences."
+  },
+  "57": {
+    "summary": "God's eternal kingdom is contrasted with the transitory world, highlighting the importance of sincerity, charity, and devotion, while warning against hypocrisy and the consequences of disbelief. The surah emphasizes the significance of faith, sincerity, and righteous deeds. True believers will be rewarded with eternal life.",
+    "themes": [
+      "Sovereignty",
+      "Faith",
+      "Sincerity",
+      "Charity",
+      "Hypocrisy"
+    ],
+    "nameReason": "Named 'The Iron' because it describes God's power and strength, like iron, which is unyielding and unbreakable."
+  },
+  "58": {
+    "summary": "A marital dispute sparks a warning against hypocrisy and the consequences of opposing God and His Messenger. Sincerity and humility are emphasized as essential qualities for believers, who must be mindful of their actions and maintain devotion. God's displeasure is reserved for those who turn away from His guidance.",
+    "themes": [
+      "Sincerity",
+      "Hypocrisy",
+      "Opposition to God",
+      "Humility",
+      "Devotion"
+    ],
+    "nameReason": "Named 'The Pleading Woman' because it revolves around a dispute between a woman and her husband."
+  },
+  "59": {
+    "summary": "Exile and opposition to God's message serve as a backdrop to highlight the sincerity and generosity of believers, who remain loyal and selfless despite adversity, in stark contrast to hypocrites who deceive and prioritize their own interests. God condemns those who turn away from His guidance and His Messenger. True devotion is demonstrated through unwavering loyalty and selfless actions.",
+    "themes": [
+      "Sincerity",
+      "Exile",
+      "Hypocrisy",
+      "Generosity",
+      "Loyalty"
+    ],
+    "nameReason": "Called 'The Exile' because it discusses the theme of exile and the consequences of opposing God and His Messenger."
+  },
+  "60": {
+    "summary": "In addressing believers' relationships with their enemies, God cautions them against secretly loving those who have disbelieved in the truth. Abraham's example serves as a model of righteous behavior, standing against his people in the face of adversity. God provides guidance on how to deal with those who have not fought against the believers.",
+    "themes": [
+      "Enemies",
+      "Faith",
+      "Guidance",
+      "Righteousness",
+      "Separation"
+    ],
+    "nameReason": "Named 'She that is to be examined' because it addresses the believers' relationships with their enemies and the need to examine their intentions and actions."
+  },
+  "61": {
+    "summary": "God's praise is set against the hypocrisy of some believers, while His love is reserved for those who fight in His cause and sincerely seek guidance. The surah tells the stories of Moses and Jesus, emphasizing faith and the consequences of rejecting the truth. It highlights God's power to guide the sincere.",
+    "themes": [
+      "Hypocrisy",
+      "Faith",
+      "Guidance",
+      "Praise",
+      "Sincerity"
+    ],
+    "nameReason": "Called 'The Ranks' because it describes believers as being in ranks, united in their struggle for God's cause."
+  },
+  "62": {
+    "summary": "God's guidance brings blessings, while rejection leads to failure, as seen in the case of the Jews and other disbelievers. Those who follow God's will, including attending Friday prayers and remembering Him in all aspects of life, are rewarded with success and salvation.",
+    "themes": [
+      "Blessings of Islam",
+      "Guidance",
+      "Friday Prayers",
+      "Remembrance of God"
+    ],
+    "nameReason": "Named 'Friday' because it traditionally addresses the importance of this day, which is a congregational day of prayer."
+  },
+  "63": {
+    "summary": "Hypocrisy is exposed, revealing an outward appearance of faith that conceals a heart of deceit and arrogance. Believers are cautioned to beware of the hypocrites and urged to prioritize giving charity before death. True devotion lies not in external displays, but in the sincerity of the heart.",
+    "themes": [
+      "Hypocrisy",
+      "Faith",
+      "Charity",
+      "Vigilance",
+      "Remembrance of God"
+    ],
+    "nameReason": "Named 'The Hypocrites' because it addresses those who claim to believe but secretly harbor deceit and arrogance."
+  },
+  "64": {
+    "summary": "God's power is absolute, yet those who disbelieve will face consequences, while the faithful will be rewarded for trusting in Him, obeying His Messenger, and being mindful of their relationships and possessions. On the Day of Judgment, individuals will be accountable for their actions. Mutual accountability is a reality that weighs heavily on the heart.",
+    "themes": [
+      "Omnipotence",
+      "Disbelief",
+      "Faith",
+      "Trust",
+      "Accountability"
+    ],
+    "nameReason": "Named 'Mutual Disillusion' because it describes the Day of Judgment as a day of mutual exchange, where individuals will be held accountable for their actions."
+  },
+  "65": {
+    "summary": "Divorce in Islam is governed by strict rules and guidelines, requiring justice, compassion, and kindness towards women. Defying God's command on divorce leads to severe consequences, while those who believe and act with integrity are rewarded. God's power and wisdom are evident in these laws.",
+    "themes": [
+      "Divorce",
+      "Justice",
+      "Compassion",
+      "Faith",
+      "Consequences"
+    ],
+    "nameReason": "Named 'Divorce' because it deals with the rules and regulations surrounding divorce in Islam."
+  },
+  "66": {
+    "summary": "Muhammad's marital life and leadership are scrutinized, with stern warnings for disbelievers and hypocrites. He is advised to be firm against the former, while contrasting examples of believers and disbelievers illustrate the consequences of their choices.",
+    "themes": [
+      "Marriage",
+      "Stewardship",
+      "Consequences",
+      "Faith",
+      "Repentance"
+    ],
+    "nameReason": "Named 'The Prohibition' because it prohibits the Prophet from seeking to please his wives at the expense of God's will."
+  },
+  "67": {
+    "summary": "God's sovereignty and power are on full display as those who submit to Him are distinguished from those who reject and deny Him. The consequences of disbelief are weighed against the blessings of faith, revealing God's mercy and forgiveness. Those who acknowledge God's authority are promised a life of peace and prosperity.",
+    "themes": [
+      "Sovereignty",
+      "Mercy",
+      "Forgiveness",
+      "Disbelief",
+      "Faith"
+    ],
+    "nameReason": "Named 'The Sovereignty' because it emphasizes God's power and authority over all creation."
+  },
+  "68": {
+    "summary": "God reassures the Prophet Muhammad of his sanity and promises a reward for his efforts, while warning against disbelievers who mock and undermine him. The story of the owners of the garden serves as a cautionary tale, testing their arrogance and refusal to share with the poor, and contrasting them with the righteous chosen by God. Those guided by God are rewarded, while the arrogant are punished.",
+    "themes": [
+      "Guidance",
+      "Reward",
+      "Sanity",
+      "Disbelievers",
+      "Righteousness"
+    ],
+    "nameReason": "Called 'The Pen' because it emphasizes the power of the written word and the importance of recording and preserving God's message."
+  },
+  "69": {
+    "summary": "The stories of Thamood, Aad, and Pharaoh serve as cautionary tales of punishment for disobedience, while the believers are saved, highlighting God's power and glory. Their fate contrasts sharply with that of those who acknowledge God's might and majesty. This reminds us of God's ultimate authority.",
+    "themes": [
+      "Reality",
+      "Disobedience",
+      "Punishment",
+      "Belief",
+      "God's Power"
+    ],
+    "nameReason": "Called 'The Reality' because it asks and answers the question of what the Reality is."
+  },
+  "70": {
+    "summary": "Human existence is marked by restlessness and adversity, yet it is within humanity's capacity to affirm the Day of Judgment and live a righteous life. Those who disbelieve will face torment, while believers are rewarded with a life of prayer and generosity.",
+    "themes": [
+      "Day of Judgment",
+      "Torment",
+      "Patience",
+      "Prayer",
+      "Generosity"
+    ],
+    "nameReason": "Called 'The Ascending Stairways' because it describes the angels and the Spirit ascending to God on the Day of Judgment."
+  },
+  "71": {
+    "summary": "Noah's message to his people is a call to worship God and reverence Him, warning them of a painful punishment if they do not change their ways. He emphasizes God's forgiveness and mercy, but his people refuse to listen, and ultimately, they are punished for their wrongdoings.",
+    "themes": [
+      "Worship",
+      "Mercy",
+      "Punishment",
+      "Disobedience"
+    ],
+    "nameReason": "Named 'Noah' because it tells the story of the Prophet Noah and his mission to his people."
+  },
+  "72": {
+    "summary": "Jinn and humans coexist, their fates intertwined by choices and consequences. Those who submit to God's guidance find peace, while those who compromise their faith face ruin. The uniqueness of God remains unshakeable, a refuge beyond human power or control.",
+    "themes": [
+      "Jinn",
+      "Submission",
+      "Guidance",
+      "Oneness of God",
+      "Faithfulness"
+    ],
+    "nameReason": "Called 'The Jinn' because it discusses the jinn and their interactions with humans."
+  },
+  "73": {
+    "summary": "God summons the faithful to devotion and perseverance, urging them to stay up at night reciting the Quran and endure criticism patiently. The Day of Judgment looms, when earth and mountains will tremble, and unbelief will be punished. Those who persevere will be rewarded.",
+    "themes": [
+      "Devotion",
+      "Perseverance",
+      "Day of Judgment",
+      "Faith"
+    ],
+    "nameReason": "Called 'The Enshrouded One' because it addresses the Prophet Muhammad, who was often secluded and enwrapped in prayer."
+  },
+  "74": {
+    "summary": "A call to the Prophet Muhammad to warn his people of impending doom, the surah underscores the urgency of devotion and purity. Those who reject God's message face the Fire of Hell, Saqar, guarded by angels, while the reminder and God's will prevail. The surah concludes with a solemn emphasis on the importance of the reminder.",
+    "themes": [
+      "Warning",
+      "Purity",
+      "Hell",
+      "Angels",
+      "Reminders"
+    ],
+    "nameReason": "Called 'The Cloaked One' because it begins with the phrase 'O you Enrobed one', which is the name of the Prophet Muhammad in this context."
+  },
+  "75": {
+    "summary": "The Resurrection explores the inevitability of the Day of Judgment, when all will be held accountable for their actions. It describes the final reckoning, where individuals will be informed of their past and future deeds, and the consequences of neglecting the Hereafter. The surah also touches on the fleeting nature of worldly life and the importance of living with purpose.",
+    "themes": [
+      "Day of Judgment",
+      "Accountability",
+      "Fleeting Life",
+      "Purpose"
+    ],
+    "nameReason": "Carries this name because it discusses the resurrection and the final reckoning."
+  },
+  "76": {
+    "summary": "Human existence is shaped by creation and the choices made between faith and disbelief. The righteous, guided by God's will, will be rewarded with paradise, while the faithless will face a painful punishment. Faith and disbelief have eternal consequences.",
+    "themes": [
+      "Creation",
+      "Faith",
+      "Paradise",
+      "Punishment",
+      "Free Will"
+    ],
+    "nameReason": "Named 'Man' because it reflects on the human condition and the nature of humanity."
+  },
+  "77": {
+    "summary": "God's messengers will sound the alarm for the guilty on Judgment Day, while the earth is ravaged and the unrepentant punished for rejecting God's signs and warnings. The righteous, however, will be rewarded with a life of comfort. Their faith will have secured them a peaceful existence.",
+    "themes": [
+      "Day of Judgment",
+      "Punishment",
+      "Reward",
+      "Accountability",
+      "Denial"
+    ],
+    "nameReason": "Named 'The Emissaries' because it describes God's messengers delivering a message to the guilty on the Day of Judgment."
+  },
+  "78": {
+    "summary": "Creation unfolds on earth, a temporary abode, while the Great Event looms. The consequences of deeds, good or evil, will be revealed on the Day of Judgment, when the Spirit and angels play their roles.",
+    "themes": [
+      "Creation",
+      "Day of Judgment",
+      "Good and Evil",
+      "Angels",
+      "Accountability"
+    ],
+    "nameReason": "Called 'The Announcement' because it heralds the coming Day of Judgment and the consequences of human actions."
+  },
+  "79": {
+    "summary": "The Day of Judgment unfolds as souls are judged, sent to Hell or Paradise, while Moses and the Pharaoh serve as examples of denying God's signs, with dire consequences. The story of the Pharaoh's defiance serves as a cautionary tale. It emphasizes the importance of fearing the unknown Hour.",
+    "themes": [
+      "Day of Judgment",
+      "Paradise",
+      "Hell",
+      "Moses",
+      "Pharaoh"
+    ],
+    "nameReason": "Called 'Those who drag forth' because it describes the souls being dragged forth on the Day of Judgment."
+  },
+  "80": {
+    "summary": "A blind man seeks guidance from the Prophet, but is rebuffed, highlighting the contrast between those who seek knowledge and those who are indifferent. The surah reflects on human existence, from birth to death and the resurrection, emphasizing the importance of seeking knowledge and guidance. It underscores the accountability of every individual for their actions.",
+    "themes": [
+      "Sincerity",
+      "Knowledge",
+      "Human Condition",
+      "Accountability",
+      "Faith"
+    ],
+    "nameReason": "Named 'Abasa' because it describes the Prophet's action of frowning and turning away from the blind man."
+  },
+  "81": {
+    "summary": "At-Takwir paints a vivid picture of the end times, describing the chaos and upheaval as the world is 'overthrown': mountains move, oceans burn, and souls are paired. Amidst this turmoil, the surah emphasizes the importance of individual accountability, as each soul will be judged on what it has prepared. The surah also affirms the authenticity and authority of the Qur'an, dismissing any doubts about its divine origin.",
+    "themes": [
+      "End Times",
+      "Accountability",
+      "Divine Authority",
+      "Remembrance"
+    ],
+    "nameReason": "Named 'The Overthrowing' because it describes the cosmic upheaval at the end of the world."
+  },
+  "82": {
+    "summary": "Cosmic destruction unfolds as the universe disintegrates, and souls face judgment for their deeds. The righteous are destined for bliss, while the wicked will suffer in Hell, their fate a direct consequence of their actions.",
+    "themes": [
+      "Judgment Day",
+      "Accountability",
+      "Righteousness",
+      "Hell"
+    ],
+    "nameReason": "Named 'The Cleaving' because it describes the universe breaking apart at the end of time."
+  },
+  "83": {
+    "summary": "Meccan merchants who cheat and deceive others are warned of the consequences of their actions on the Day of Judgment, where the wicked will be screened from their Lord and roast in Hell. In contrast, the righteous will be rewarded with luxurious furnishings and a drink of sealed wine. Their fate is sealed by the choices they make in life.",
+    "themes": [
+      "Cheating",
+      "Day of Judgment",
+      "Bliss",
+      "Reward",
+      "Consequences"
+    ],
+    "nameReason": "Named 'Defrauding' because it addresses those who cheat and deceive others."
+  },
+  "84": {
+    "summary": "At the end of time, the sky and earth are reshaped, and humanity is judged based on its deeds. Those who receive their book in their right hand will be rewarded with an easy settlement, while those who receive it behind their back will face a painful punishment. Their deeds determine their fate.",
+    "themes": [
+      "Judgment Day",
+      "Reward and Punishment",
+      "Faith",
+      "Deeds"
+    ],
+    "nameReason": "Named 'The Splitting Open' because it describes the dramatic reshaping of the sky and earth at the end of time."
+  },
+  "85": {
+    "summary": "God's power and justice are on full display as He warns of punishment for those who tempt believers, yet promises a great triumph for those who believe and do good. His sovereignty, forgiveness, and loving nature are underscored, as well as the majesty of His throne.",
+    "themes": [
+      "Power",
+      "Justice",
+      "Sovereignty",
+      "Forgiveness",
+      "Loving Nature"
+    ],
+    "nameReason": "Named 'The Constellations' because it begins with an oath by the sky with the constellations."
+  },
+  "86": {
+    "summary": "A piercing star shines in the night sky, yet people are absorbed in worldly concerns — called to reflect on their own origins and the One who watches over every soul, and warned of the consequences of turning from God's guidance.",
+    "themes": [
+      "Existence",
+      "Judgment",
+      "Protection",
+      "Accountability",
+      "Disbelief"
+    ],
+    "nameReason": "Named 'The Morning Star' because it starts with a reference to the morning star, at-Tariq."
+  },
+  "87": {
+    "summary": "God's majesty is a reminder of His all-encompassing power to create, regulate, and guide. He exhorts the faithful to remember and purify themselves, lest they neglect the consequences of the Hereafter. This serves as a warning against the consequences of neglecting the Hereafter.",
+    "themes": [
+      "Praise",
+      "Guidance",
+      "Remembrance",
+      "Purification",
+      "Hereafter"
+    ],
+    "nameReason": "Called 'The Most High' because it begins by praising God as the Most High."
+  },
+  "88": {
+    "summary": "On the Day of Judgment, the fate of those who reject God's message is contrasted with the bliss of those who accept it, as disbelievers suffer and believers rejoice in a lush Garden. The surah emphasizes the importance of reflection and the reminder of God's message. It vividly portrays the consequences of one's choices.",
+    "themes": [
+      "Day of Judgment",
+      "Bliss",
+      "Suffering",
+      "Remembrance",
+      "Guidance"
+    ],
+    "nameReason": "Named 'The Overwhelming' because it describes the overwhelming punishment that awaits those who reject God's message."
+  },
+  "89": {
+    "summary": "Blessed with wealth and power, yet failing to help others, is a path that leads to punishment. In contrast, those who live a righteous life are rewarded, and God promises paradise to those who please Him.",
+    "themes": [
+      "Warning",
+      "Accountability",
+      "Righteousness",
+      "Paradise"
+    ],
+    "nameReason": "Called 'The Dawn' because it begins with an oath by the daybreak, symbolizing a new beginning and a time of reckoning."
+  },
+  "90": {
+    "summary": "City dwellers, lost in their heedlessness, are destined for misery, but those who live by faith, kindness, and patience are promised happiness and a life of fulfillment. Their paths diverge sharply, with one leading to despair and the other to peace.",
+    "themes": [
+      "Responsibility",
+      "Faith",
+      "Kindness",
+      "Patience",
+      "Accountability"
+    ],
+    "nameReason": "Called 'The City' because it addresses the people of Mecca, who were living in a city, but neglecting their duties to God."
+  },
+  "91": {
+    "summary": "A series of vivid, natural images from the world of creation, used to illustrate the concept of accountability and the consequences of moral choices. The surah contrasts the success of those who purify their souls with the failure of those who corrupt them, citing the example of the Thamood people who were punished for their sin.",
+    "themes": [
+      "Accountability",
+      "Moral Choices",
+      "Creation",
+      "Punishment",
+      "Success"
+    ],
+    "nameReason": "Named 'The Sun' because it begins with a description of the sun and its radiance."
+  },
+  "92": {
+    "summary": "A burning contrast unfolds between those who give generously and act righteously, and those who hoard and are complacent. The wicked will face a Fierce Blaze, while the righteous seek the acceptance of God, the Most High.",
+    "themes": [
+      "Giving",
+      "Righteousness",
+      "Guidance",
+      "Accountability",
+      "Day of Judgment"
+    ],
+    "nameReason": "Called 'The Night' because it begins with a description of the night as it covers and the day as it reveals."
+  },
+  "93": {
+    "summary": "God's care and provision for the Prophet Muhammad are highlighted, recalling His kindness and guidance from a state of need and abandonment to one of comfort and satisfaction, ultimately ending with a call to acknowledge and share God's blessings.",
+    "themes": [
+      "God's Care",
+      "Guidance",
+      "Provision",
+      "Gratitude"
+    ],
+    "nameReason": "Called 'The Morning Hours' because it begins with a reference to the morning light."
+  },
+  "94": {
+    "summary": "God's past favors remind the Prophet Muhammad of the promise of relief after hardship, striking a balance between life's challenges and the ease that follows. The Prophet is encouraged to devote himself to God, trusting in the ultimate reward.",
+    "themes": [
+      "Comfort",
+      "Reassurance",
+      "Hardship and Ease",
+      "Devotion"
+    ],
+    "nameReason": "Named 'The Consolation' because it offers soothing words to the Prophet Muhammad."
+  },
+  "95": {
+    "summary": "Creation's splendor is juxtaposed with humanity's decline from nobility to lowliness, highlighting faith and good deeds as means to elevate one's status. It emphasizes a return to a higher state through submission to God. The surah underscores the transformative power of faith and righteous actions.",
+    "themes": [
+      "Creation",
+      "Fall of Man",
+      "Faith",
+      "Wisdom"
+    ],
+    "nameReason": "Named 'The Fig' because it begins with the phrase 'By the fig and the olive'."
+  },
+  "96": {
+    "summary": "Creation from a clot is a wondrous miracle, yet some turn away from guidance, preventing others from prayer and facing dire consequences. Those who mislead others from the path of righteousness will be held accountable for their actions.",
+    "themes": [
+      "Creation",
+      "Guidance",
+      "Prayer",
+      "Accountability"
+    ],
+    "nameReason": "Named 'The Clot' because it describes the creation of man from a blood clot."
+  },
+  "97": {
+    "summary": "The Night of Decree, a night of great spiritual significance, is described as better than a thousand months, a time when angels and the Spirit descend to convey God's will. The surah emphasizes the peaceful nature of this night, from dusk till dawn.",
+    "themes": [
+      "Spiritual Significance",
+      "Angels",
+      "Peace",
+      "Divine Will"
+    ],
+    "nameReason": "Called 'The Power, Fate' because it highlights God's all-encompassing power and control over fate."
+  },
+  "98": {
+    "summary": "Monotheistic worship, regular prayer, and charity are emphasized as essential practices, while those who refuse to submit to God's will are condemned. The Clear Evidence serves as a turning point, highlighting the stark contrast between believers and rejectors. Those who accept the truth are distinguished from those who refuse.",
+    "themes": [
+      "Monotheism",
+      "Worship",
+      "Righteousness",
+      "Judgment"
+    ],
+    "nameReason": "Named 'The Evidence' because it presents the clear proof of God's message to those who were previously in doubt."
+  },
+  "99": {
+    "summary": "The Day of Judgment unfolds with the earth's revelation of its secrets: it speaks of the deeds of humanity, good and evil, which will be held accountable. On this day, people will be gathered to be shown their works, and each person will see the consequences of their actions.",
+    "themes": [
+      "Day of Judgment",
+      "Accountability",
+      "Revelation",
+      "Deeds"
+    ],
+    "nameReason": "Named 'The Earthquake' because it describes the earth's role in revealing the truth on the Day of Judgment."
+  },
+  "100": {
+    "summary": "A series of vivid images, like racing horses and storming armies, introduce a stark reality: human beings are ungrateful to their Lord and consumed by love of wealth. The surah then shifts to a Day of Judgment, where the contents of graves and hearts are revealed, and God is fully aware of all.",
+    "themes": [
+      "Gratitude",
+      "Day of Judgment",
+      "Love of Wealth",
+      "Accountability"
+    ],
+    "nameReason": "Called 'The Chargers' because it begins with a vivid image of racing horses."
+  },
+  "101": {
+    "summary": "On the Day of Judgment, people will be scattered like moths and mountains like tufted wool, their fates decided by the balance of good and bad deeds. Those whose good outweighed their bad will be spared, while the tormented will face the consequences of their evil actions.",
+    "themes": [
+      "Day of Judgment",
+      "Punishment",
+      "Accountability",
+      "Torment"
+    ],
+    "nameReason": "Called 'The Calamity' because it describes the devastating and calamitous state of the people on the Day of Judgment."
+  },
+  "102": {
+    "summary": "A warning against the distraction of worldly abundance, which blinds people to the reality of death and the afterlife: they will be confronted with the consequences of their choices when they see the Inferno and are questioned about their lives.",
+    "themes": [
+      "Competition",
+      "Abundance",
+      "Death",
+      "Afterlife"
+    ],
+    "nameReason": "Called 'Competition' because it warns against the competition in worldly pursuits that distracts people from the reality of their mortality."
+  },
+  "103": {
+    "summary": "By the passing of time, humanity stands at loss — except those who believe, do good, and counsel one another to truth and patience. A few short verses make the case that a life is measured by faith and what it builds.",
+    "themes": [
+      "Loss",
+      "Virtue",
+      "Belief",
+      "Patience"
+    ],
+    "nameReason": "Called 'The Declining Day' because it reflects on the passing of time and its implications for human life."
+  },
+  "104": {
+    "summary": "A stern warning about the consequences of spreading malicious gossip and being consumed by worldly wealth: those who engage in such behavior will face a terrible fate, being cast into a fiery pit that will engulf their very souls.",
+    "themes": [
+      "Gossip",
+      "Worldly Wealth",
+      "Consequences",
+      "Punishment",
+      "Hellfire"
+    ],
+    "nameReason": "Named 'The Traducer' because it addresses those who spread false and malicious information about others."
+  },
+  "105": {
+    "summary": "A failed invasion of Mecca unfolds as Abraha, aided by an elephant, leads the Abyssinian army against God's will. God thwarts their plans with birds pecking at them and clay stones pummeling them, leaving them defeated and humiliated. The outcome is a testament to God's power and protection.",
+    "themes": [
+      "God's Power",
+      "Defeat of Idolaters",
+      "Meccan History"
+    ],
+    "nameReason": "Called 'The Elephant' because it recounts the failed invasion led by an elephant."
+  },
+  "106": {
+    "summary": "A short surah that expresses gratitude and devotion to God, the Protector of the Quraysh tribe, who have been provided for and kept safe from harm during their journeys.",
+    "themes": [
+      "Gratitude",
+      "Protection",
+      "Devotion",
+      "Security"
+    ],
+    "nameReason": "Called 'Quraysh' because it addresses and expresses thanks to the tribe of Quraysh."
+  },
+  "107": {
+    "summary": "Faith without action is hypocrisy, as those who claim devotion neglect orphans, the needy, and their own prayers. They are contrasted with those who embody the true spirit of devotion. God's judgment awaits those who fail to live up to their faith.",
+    "themes": [
+      "Faith",
+      "Charity",
+      "Hypocrisy",
+      "Prayer",
+      "Responsibility"
+    ],
+    "nameReason": "Named 'Almsgiving' because it highlights the importance of giving to those in need."
+  },
+  "108": {
+    "summary": "A short surah that emphasizes God's blessings and the futility of opposition: it reminds the Prophet Muhammad of God's favor, then instructs him to worship and offer sacrifice, and finally warns that those who reject him will ultimately lose.",
+    "themes": [
+      "Blessings",
+      "Worship",
+      "Opposition",
+      "Loss"
+    ],
+    "nameReason": "Called 'Abundance' because it mentions God's gift of plenty."
+  },
+  "109": {
+    "summary": "A brief, direct exchange between believers and disbelievers, each side stating its own distinct path and refusing to compromise or follow the other's way.",
+    "themes": [
+      "Disagreement",
+      "Divergence",
+      "Faith",
+      "Distinction"
+    ],
+    "nameReason": "Named 'The Disbelievers' because it addresses those who refuse to believe."
+  },
+  "110": {
+    "summary": "A short surah that celebrates the triumph of God's will and the conversion of people to Islam: it foresees a time of victory and conquest, then urges believers to praise and thank God, and to seek His forgiveness.",
+    "themes": [
+      "Victory",
+      "Conversion",
+      "Praise",
+      "Forgiveness"
+    ],
+    "nameReason": "Named 'Divine Support' because it speaks of God's help and assistance in times of triumph."
+  },
+  "111": {
+    "summary": "A scathing critique of Abu Lahab, a prominent Meccan leader who opposed the Prophet Muhammad, and his wife, who supported him. The surah emphasizes their fate in the afterlife, despite their wealth and power.",
+    "themes": [
+      "Opposition",
+      "Disbelief",
+      "Punishment"
+    ],
+    "nameReason": "Named 'The Palm Fibre' because it likens the fate of Abu Lahab's wife to a bundle of palm fibres, which are dry and useless."
+  },
+  "112": {
+    "summary": "Four short verses that distil the Islamic understanding of God: He is One, Eternal and Self-Sufficient; He neither fathers nor is fathered; and nothing is comparable to Him. Brief as it is, it answers the most fundamental question — who is God — with striking clarity.",
+    "themes": [
+      "Oneness of God",
+      "Sincerity",
+      "Creed"
+    ],
+    "nameReason": "Known as ‘Sincerity’ (al-Ikhlāṣ) because it states, purely and completely, what God is."
+  },
+  "113": {
+    "summary": "Seeking refuge from evil, humanity turns to God, the Lord of Daybreak, for protection against the darkness of night, the harm of sorcerers, and the envy of others. It is a prayer for shelter from malevolent acts and unseen dangers. God is invoked as the ultimate refuge.",
+    "themes": [
+      "Protection",
+      "Evil",
+      "Sorcery",
+      "Envy",
+      "Prayer"
+    ],
+    "nameReason": "Called 'The Dawn' because it invokes the Lord of Daybreak, the time of dawn, for protection."
+  },
+  "114": {
+    "summary": "A prayer for protection from the evil whisperer, who tempts both humans and jinn, seeking refuge in God as the Lord, King, and God of all mankind. It identifies the source of evil as a sneaky whisperer and asks for protection from its influence. The surah provides a concise and powerful invocation for daily life.",
+    "themes": [
+      "Protection",
+      "Evil",
+      "Refuge",
+      "God"
+    ],
+    "nameReason": "Named 'Mankind' because it seeks God's protection for all people."
+  }
+}
