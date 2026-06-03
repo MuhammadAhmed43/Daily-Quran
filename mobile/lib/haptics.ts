@@ -9,4 +9,8 @@ export const haptic = {
   medium: () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   },
+  // Soft, gentle tap — used as the ongoing "typing" pulse while a reply streams in.
+  tick: () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+  },
 };
