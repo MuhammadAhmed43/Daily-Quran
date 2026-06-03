@@ -15,6 +15,7 @@ import { haptic } from '@/lib/haptics';
 import { getSurah, type Ayah } from '@/lib/quran';
 import { useRecitation } from '@/lib/recitation-context';
 import { setLastRead } from '@/lib/storage';
+import { recordActivity } from '@/lib/streak';
 
 const BISMILLAH = getSurah(1)?.ayahs[0]?.ar ?? '';
 const ACCENT = '#0a7ea4';
@@ -54,6 +55,20 @@ export default function SurahReader() {
   const didAutostartRef = useRef(false);
   const initialRenderRef = useRef(true);
   const prevPlayingSurahRef = useRef<number | null>(ctx.playing?.surah ?? null);
+
+  // Count reading toward the streak once the reader is actually engaged (a dwell OR any real scroll)
+  // — so a quick bounce never counts. read_ayahs was previously credited only by the Explain sheet.
+  const readCredited = useRef(false);
+  const creditRead = () => {
+    if (readCredited.current || !surah) return;
+    readCredited.current = true;
+    recordActivity('read_ayahs');
+  };
+  useEffect(() => {
+    const t = setTimeout(creditRead, 5000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Is the player on the surah we're showing, and if so which ayah?
   const playingHere = ctx.playing?.surah === displayedSurah;
@@ -216,6 +231,7 @@ export default function SurahReader() {
         scrollEventThrottle={100}
         onScroll={(e) => {
           scrollY.current = e.nativeEvent.contentOffset.y;
+          if (scrollY.current > 240) creditRead();
         }}>
         <View style={styles.head}>
           <ThemedText style={styles.surahName}>{surah.name}</ThemedText>
