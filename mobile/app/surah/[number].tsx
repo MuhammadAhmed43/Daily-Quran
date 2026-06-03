@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { AboutSurah } from '@/components/about-surah';
 import { AyahActions } from '@/components/ayah-actions';
 import { ExplainSheet, type ExplainTarget } from '@/components/explain-sheet';
 import { JumpSheet } from '@/components/jump-sheet';
@@ -222,6 +223,7 @@ export default function SurahReader() {
             {surah.englishNameTranslation} · {surah.numberOfAyahs} ayat · {surah.revelationType}
           </ThemedText>
           {showBismillah ? <ThemedText style={styles.bismillah}>{BISMILLAH}</ThemedText> : null}
+          <AboutSurah key={surah.number} surah={surah} />
         </View>
 
         {surah.ayahs.map((item) => {
