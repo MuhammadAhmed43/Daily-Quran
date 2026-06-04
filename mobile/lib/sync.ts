@@ -11,6 +11,7 @@ import { reloadAffinity, subscribeAffinity } from './hub-affinity';
 import { reloadPlans, subscribePlans } from './plan-progress';
 import { reloadPrayerLog, subscribePrayerLog } from './prayer-log';
 import { reloadProfile, subscribeProfile } from './profile';
+import { reloadQuiz, subscribeQuiz } from './quiz';
 import { reloadQuranPlan, subscribeQuranPlan } from './quran-plan-progress';
 import { reloadStreak, subscribeStreak } from './streak';
 import { supabase } from './supabase';
@@ -23,6 +24,7 @@ import {
   mergeLedger,
   mergePrayerLog,
   mergeProfile,
+  mergeQuiz,
   mergeQuranPlan,
   mergeTranslation,
 } from './sync-merge';
@@ -46,6 +48,7 @@ const ENTRIES: Entry[] = [
   { key: SYNC_KEYS.quranPlan, merge: mergeQuranPlan, apply: reloadQuranPlan },
   { key: SYNC_KEYS.journeys, merge: mergeJourneys, apply: reloadPlans },
   { key: SYNC_KEYS.affinity, merge: mergeAffinity, apply: reloadAffinity },
+  { key: SYNC_KEYS.quiz, merge: mergeQuiz, apply: reloadQuiz },
   { key: SYNC_KEYS.translation, raw: true, merge: mergeTranslation, apply: hydrateTranslation },
   { key: SYNC_KEYS.verseNotif, merge: mergeKeepLocal, apply: refreshDailyVerse },
   { key: SYNC_KEYS.lastRead, merge: mergeKeepLocal, apply: noop },
@@ -155,6 +158,7 @@ export function startSync(): void {
     subscribeQuranPlan,
     subscribePlans,
     subscribeAffinity,
+    subscribeQuiz,
   ]) {
     sub(scheduleSync);
   }

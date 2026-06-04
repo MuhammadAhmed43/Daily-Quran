@@ -17,6 +17,7 @@ export const SYNC_KEYS = {
   translation: 'daily-quran:translation',
   verseNotif: 'daily-quran:verse-notif',
   lastRead: 'daily-quran:lastRead',
+  quiz: 'daily-quran:quiz',
 } as const;
 
 type Obj = Record<string, any>;
@@ -120,4 +121,21 @@ export function mergeTranslation(local: any, remote: any): any {
 // generic timestampless pref (verse-notif prefs, last-read): keep local if set, else inherit cloud.
 export function mergeKeepLocal(local: any, remote: any): any {
   return local != null ? local : (remote ?? null);
+}
+
+// daily quiz { v, days: { 'YYYY-MM-DD': { score, total, answers, at } } }: union per day; if both
+// devices played the same day, keep the better attempt (higher score). Days are never deleted, so the
+// union is loss-free + commutative — same family as the activity ledger.
+export function mergeQuiz(local: any, remote: any): any {
+  const ld = (local && local.days) || {};
+  const rd = (remote && remote.days) || {};
+  const days: Obj = {};
+  for (const day of new Set([...Object.keys(ld), ...Object.keys(rd)])) {
+    const l = ld[day];
+    const r = rd[day];
+    if (!l) days[day] = r;
+    else if (!r) days[day] = l;
+    else days[day] = (r.score ?? 0) > (l.score ?? 0) ? r : l;
+  }
+  return { v: 1, days };
 }

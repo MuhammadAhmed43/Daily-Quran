@@ -83,6 +83,19 @@ function mergeTranslation(local, remote) {
 function mergeKeepLocal(local, remote) {
   return local != null ? local : remote ?? null;
 }
+function mergeQuiz(local, remote) {
+  const ld = (local && local.days) || {};
+  const rd = (remote && remote.days) || {};
+  const days = {};
+  for (const day of new Set([...Object.keys(ld), ...Object.keys(rd)])) {
+    const l = ld[day];
+    const r = rd[day];
+    if (!l) days[day] = r;
+    else if (!r) days[day] = l;
+    else days[day] = (r.score ?? 0) > (l.score ?? 0) ? r : l;
+  }
+  return { v: 1, days };
+}
 
 // ---- harness ----
 function canon(v) {
@@ -174,6 +187,17 @@ ok(mergeTranslation('yusufali', 'pickthall') === 'yusufali', 'explicit local cho
 ok(mergeTranslation(null, 'pickthall') === 'pickthall', 'no local -> cloud');
 ok(mergeKeepLocal({ enabled: true }, { enabled: false }).enabled === true, 'keep-local pref: local wins');
 ok(mergeKeepLocal(null, { enabled: false }).enabled === false, 'keep-local pref: inherit when unset');
+
+console.log('daily quiz (union per day, best attempt kept)');
+const qL = { v: 1, days: { '2024-01-01': { score: 7, total: 10, answers: [], at: 1 } } };
+const qR = { v: 1, days: { '2024-01-01': { score: 9, total: 10, answers: [], at: 2 }, '2024-01-02': { score: 5, total: 10, answers: [], at: 3 } } };
+const qm = mergeQuiz(qL, qR);
+ok(qm.days['2024-01-01'].score === 9, 'same day: higher score wins');
+ok(!!qm.days['2024-01-02'], 'remote-only day kept');
+ok(eq(mergeQuiz(qL, qR), mergeQuiz(qR, qL)), 'union is commutative');
+ok(eq(mergeQuiz(qL, mergeQuiz(qL, qR)), mergeQuiz(qL, qR)), 'union is idempotent');
+ok(eq(mergeQuiz(null, qR), qR), 'null local -> remote');
+ok(eq(mergeQuiz({ v: 1, days: {} }, { v: 1, days: {} }), { v: 1, days: {} }), 'both empty');
 
 console.log(fails === 0 ? '\nALL MERGE CASES PASS' : `\n${fails} FAILURE(S)`);
 process.exit(fails === 0 ? 0 : 1);

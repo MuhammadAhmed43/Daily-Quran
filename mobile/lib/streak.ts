@@ -16,7 +16,8 @@ export type ActType =
   | 'checkin' // did the daily mood check-in
   | 'prayer_logged' // private prayer tracker
   | 'hub_opened' // opened a topical hub
-  | 'ameen'; // tapped Ameen on the wall
+  | 'ameen' // tapped Ameen on the wall
+  | 'quiz'; // completed the daily quiz
 
 // Which activities count toward the streak. Light/social taps (ameen, hub_opened) and the private
 // prayer tracker deliberately DON'T — so the streak stays about genuinely engaging with the
@@ -29,6 +30,7 @@ const QUALIFYING: ActType[] = [
   'asked',
   'watched',
   'checkin',
+  'quiz',
 ];
 
 // Milestone tiers — early ones (3, 7) give quick wins; later ones reward the long haul. Research:

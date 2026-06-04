@@ -11,15 +11,18 @@ import { TranslationSheet } from '@/components/translation-sheet';
 import { signOut, useAuth } from '@/lib/auth';
 import { haptic } from '@/lib/haptics';
 import { updateProfile } from '@/lib/profile';
+import { useQuizStats } from '@/lib/quiz';
 import { syncNow } from '@/lib/sync';
 import { translationMeta, useTranslation } from '@/lib/translations';
 
 const ACCENT = '#0a7ea4';
+const GREEN = '#2e9e6b';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { id: trId, setId: setTr } = useTranslation();
+  const quiz = useQuizStats();
   const [trOpen, setTrOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
@@ -89,6 +92,51 @@ export default function ProfileScreen() {
               <Ionicons name="person-add-outline" size={18} color="#fff" />
               <ThemedText style={styles.primaryText}>Create an account or log in</ThemedText>
             </Pressable>
+          ) : null}
+
+          <ThemedText style={styles.sectionLabel}>DAILY QUIZ</ThemedText>
+          <Pressable
+            style={styles.quizCard}
+            onPress={() => {
+              haptic.light();
+              router.push('/quiz');
+            }}>
+            <View style={styles.quizIcon}>
+              <Ionicons name="school" size={22} color="#fff" />
+            </View>
+            <View style={styles.rowText}>
+              <ThemedText style={styles.rowTitle}>Daily Quiz</ThemedText>
+              <ThemedText style={styles.rowSub}>
+                {quiz.todayDone
+                  ? `Today: ${quiz.todayScore}/${quiz.todayTotal} — come back tomorrow`
+                  : '10 questions · test your knowledge'}
+              </ThemedText>
+            </View>
+            {quiz.todayDone ? (
+              <Ionicons name="checkmark-circle" size={24} color={GREEN} />
+            ) : (
+              <View style={styles.quizGo}>
+                <ThemedText style={styles.quizGoText}>Start</ThemedText>
+              </View>
+            )}
+          </Pressable>
+          {quiz.daysPlayed > 0 ? (
+            <View style={styles.statRow}>
+              <View style={styles.stat}>
+                <ThemedText style={styles.statNum}>{quiz.daysPlayed}</ThemedText>
+                <ThemedText style={styles.statLabel}>{quiz.daysPlayed === 1 ? 'day' : 'days'}</ThemedText>
+              </View>
+              <View style={styles.stat}>
+                <ThemedText style={styles.statNum}>{Math.round(quiz.accuracy * 100)}%</ThemedText>
+                <ThemedText style={styles.statLabel}>accuracy</ThemedText>
+              </View>
+              <View style={styles.stat}>
+                <ThemedText style={styles.statNum}>
+                  {quiz.bestScore}/{quiz.bestTotal}
+                </ThemedText>
+                <ThemedText style={styles.statLabel}>best</ThemedText>
+              </View>
+            </View>
           ) : null}
 
           <ThemedText style={styles.sectionLabel}>SETTINGS</ThemedText>
@@ -180,6 +228,31 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: '#fff', fontSize: 15.5, fontWeight: '700' },
   sectionLabel: { fontSize: 12, fontWeight: '800', opacity: 0.45, letterSpacing: 0.6, marginTop: 8, marginLeft: 4 },
+  quizCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(127,127,127,0.25)',
+  },
+  quizIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
+  quizGo: { backgroundColor: ACCENT, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  quizGoText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  statRow: { flexDirection: 'row', gap: 10 },
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(127,127,127,0.25)',
+  },
+  statNum: { fontSize: 18, fontWeight: '800', color: ACCENT },
+  statLabel: { fontSize: 12, opacity: 0.6, fontWeight: '600' },
   card: {
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
