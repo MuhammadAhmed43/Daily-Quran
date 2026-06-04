@@ -1,12 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Txt } from '@/components/ui/primitives';
 import { haptic } from '@/lib/haptics';
+import { c, font, radius, space } from '@/lib/theme';
 import { TRANSLATIONS, type TranslationId } from '@/lib/translations';
-
-const ACCENT = '#0a7ea4';
 
 type Props = {
   visible: boolean;
@@ -22,9 +20,11 @@ export function TranslationSheet({ visible, currentId, onClose, onSelect }: Prop
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <ThemedView style={styles.panel}>
+        <View style={styles.panel}>
           <View style={styles.handle} />
-          <ThemedText style={styles.title}>TRANSLATION</ThemedText>
+          <Txt variant="eyebrow" style={styles.title}>
+            Translation
+          </Txt>
           <ScrollView contentContainerStyle={styles.list}>
             {TRANSLATIONS.map((t) => {
               const active = t.id === currentId;
@@ -38,15 +38,17 @@ export function TranslationSheet({ visible, currentId, onClose, onSelect }: Prop
                     onClose();
                   }}>
                   <View style={styles.rowText}>
-                    <ThemedText style={[styles.name, active && styles.nameActive]}>{t.label}</ThemedText>
-                    <ThemedText style={styles.note}>{t.note}</ThemedText>
+                    <Txt variant="body" color={active ? c.accent : c.textPrimary} style={active ? styles.nameActive : undefined}>
+                      {t.label}
+                    </Txt>
+                    <Txt variant="caption">{t.note}</Txt>
                   </View>
-                  {active ? <Ionicons name="checkmark-circle" size={22} color={ACCENT} /> : null}
+                  {active ? <Ionicons name="checkmark-circle" size={22} color={c.accent} /> : null}
                 </Pressable>
               );
             })}
           </ScrollView>
-        </ThemedView>
+        </View>
       </View>
     </Modal>
   );
@@ -54,24 +56,20 @@ export function TranslationSheet({ visible, currentId, onClose, onSelect }: Prop
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   panel: {
     maxHeight: '70%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 28,
+    backgroundColor: c.surface2,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
+    paddingHorizontal: space.gutter,
+    paddingTop: space.sm,
+    paddingBottom: space.section,
   },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(127,127,127,0.4)',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  title: { fontSize: 13, fontWeight: '700', opacity: 0.5, letterSpacing: 0.5, marginBottom: 4 },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.16)', alignSelf: 'center', marginBottom: space.md },
+  title: { marginBottom: space.xs },
   list: { paddingVertical: 6 },
   row: {
     flexDirection: 'row',
@@ -79,14 +77,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(127,127,127,0.2)',
+    borderBottomColor: c.hairlineSoft,
     gap: 12,
   },
-  rowPressed: { backgroundColor: 'rgba(127,127,127,0.12)' },
+  rowPressed: { backgroundColor: c.surface3 },
   rowText: { flex: 1, gap: 2 },
-  name: { fontSize: 16, fontWeight: '500' },
-  nameActive: { color: ACCENT, fontWeight: '700' },
-  note: { fontSize: 12.5, opacity: 0.6 },
+  nameActive: { fontFamily: font.sansSemi },
 });

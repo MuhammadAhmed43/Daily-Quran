@@ -1,32 +1,23 @@
+// QUR'AN — the surah index + search (browse). Dark-premium onyx re-skin (UI-REDESIGN-SPEC.md §5.C / frame 36's
+// sibling — Bible Chat opens straight into a reader; we keep an index for 114 surahs and make it premium):
+// a serif masthead, a glass search pill (jump-to-ref / fuzzy / voice), "Listen to the whole Qur'an" + "Continue
+// reading" cards, then the surahs as premium rows. ALL resolver / voice / search logic is preserved verbatim
+// from the old screen — this is a re-skin only.
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import {
-  SURAHS,
-  getSurah,
-  rankSurahs,
-  resolveReference,
-  searchVerses,
-  type Surah,
-} from '@/lib/quran';
-import { useBookmarks } from '@/lib/bookmarks';
-import { haptic } from '@/lib/haptics';
-import { getLastRead, type LastRead } from '@/lib/storage';
+import { IconButton, Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Screen } from '@/components/ui/screen';
 import { useVoiceSearch } from '@/hooks/use-voice-search';
+import { useBookmarks } from '@/lib/bookmarks';
+import { SURAHS, getSurah, rankSurahs, resolveReference, searchVerses, type Surah } from '@/lib/quran';
+import { getLastRead, type LastRead } from '@/lib/storage';
+import { c, font, grad, radius, space } from '@/lib/theme';
 
 export default function QuranScreen() {
   const router = useRouter();
@@ -82,29 +73,27 @@ export default function QuranScreen() {
       const words = base.split(/\s+/).filter(Boolean);
       const candidates = words.length > 1 ? [base, words.slice(1).join(' ')] : [base];
 
-      const go = (surah: number, ayah?: number, q?: string) => {
-        if (q !== undefined) setQuery(q);
+      const go = (surah: number, ayah?: number, qy?: string) => {
+        if (qy !== undefined) setQuery(qy);
         router.push({
           pathname: '/surah/[number]',
-          params: ayah
-            ? { number: String(surah), ayah: String(ayah) }
-            : { number: String(surah) },
+          params: ayah ? { number: String(surah), ayah: String(ayah) } : { number: String(surah) },
         });
       };
 
       // 1) Exact reference (number, or alias like "Ayat al-Kursi").
-      for (const c of candidates) {
-        const r = resolveReference(c);
-        if (r) return go(r.surah, r.ayah, c);
+      for (const cand of candidates) {
+        const r = resolveReference(cand);
+        if (r) return go(r.surah, r.ayah, cand);
       }
       // 2) Best fuzzy surah match across candidates — tolerant of wrong letters anywhere.
       let best: { surah: Surah; score: number } | null = null;
       let bestText = base;
-      for (const c of candidates) {
-        const top = rankSurahs(c, 1)[0];
+      for (const cand of candidates) {
+        const top = rankSurahs(cand, 1)[0];
         if (top && (!best || top.score > best.score)) {
           best = top;
-          bestText = c;
+          bestText = cand;
         }
       }
       // Confident → jump straight to it; otherwise drop the closest text into the box
@@ -116,247 +105,270 @@ export default function QuranScreen() {
   );
   const voice = useVoiceSearch(onVoiceResult);
 
-  const renderSurahRow = (item: Surah) => (
-    <Pressable key={item.number} style={styles.row} onPress={() => open(item.number)}>
-      <View style={styles.badge}>
-        <ThemedText style={styles.badgeText}>{item.number}</ThemedText>
-      </View>
-      <View style={styles.rowMid}>
-        <ThemedText type="defaultSemiBold">{item.englishName}</ThemedText>
-        <ThemedText style={styles.sub}>
-          {item.englishNameTranslation} · {item.numberOfAyahs} ayat · {item.revelationType}
-        </ThemedText>
-      </View>
-      <ThemedText style={styles.arabicName}>{item.name}</ThemedText>
-    </Pressable>
-  );
-
   const lastSurah = last ? getSurah(last.surah) : undefined;
 
+  const renderSurahRow = (item: Surah) => (
+    <PressableScale key={item.number} style={styles.row} onPress={() => open(item.number)}>
+      <View style={styles.badge}>
+        <Txt style={styles.badgeNum}>{item.number}</Txt>
+      </View>
+      <View style={styles.rowMid}>
+        <Txt variant="cardTitle" numberOfLines={1}>
+          {item.englishName}
+        </Txt>
+        <Txt variant="caption" numberOfLines={1}>
+          {item.englishNameTranslation} · {item.numberOfAyahs} ayat · {item.revelationType}
+        </Txt>
+      </View>
+      <Txt style={styles.arabicName}>{item.name}</Txt>
+    </PressableScale>
+  );
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.container}>
-        <View style={styles.searchWrap}>
-          <View style={styles.searchRow}>
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search, or jump to 2:255 / Ayat al-Kursi"
-              placeholderTextColor="rgba(127,127,127,0.7)"
-              style={[styles.search, styles.searchInput]}
-              autoCorrect={false}
-              clearButtonMode="while-editing"
-              returnKeyType="search"
-            />
-            <Pressable
-              onPress={() => {
-                haptic.light();
-                router.push('/bookmarks');
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Bookmarks"
-              style={styles.bookmarkBtn}>
-              <Ionicons
-                name={bookmarks.length > 0 ? 'bookmark' : 'bookmark-outline'}
-                size={20}
-                color="#c8a24a"
-              />
-            </Pressable>
-            {voice.enabled ? (
-              <Pressable
-                onPress={voice.toggle}
-                accessibilityRole="button"
-                accessibilityLabel={voice.listening ? 'Stop listening' : 'Search by voice'}
-                style={[styles.mic, voice.listening && styles.micActive]}>
-                {voice.busy ? (
-                  <ActivityIndicator color={voice.listening ? '#fff' : '#0a7ea4'} />
-                ) : (
-                  <Ionicons
-                    name={voice.listening ? 'stop' : 'mic'}
-                    size={20}
-                    color={voice.listening ? '#fff' : '#0a7ea4'}
-                  />
-                )}
-              </Pressable>
-            ) : null}
+    <Screen>
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <View style={styles.titleCol}>
+            <Txt variant="h1">Qur&apos;an</Txt>
+            <Txt variant="subtitle">114 surahs</Txt>
           </View>
-          {voice.listening ? (
-            <ThemedText style={styles.listening}>Listening… tap to stop</ThemedText>
-          ) : null}
+          <IconButton
+            name={bookmarks.length > 0 ? 'bookmark' : 'bookmark-outline'}
+            color={c.accent}
+            onPress={() => router.push('/bookmarks')}
+            diameter={42}
+            size={19}
+          />
         </View>
 
-        {searching ? (
-          <ScrollView contentContainerStyle={styles.results} keyboardShouldPersistTaps="handled">
-            {ref ? (
-              <Pressable style={styles.goTo} onPress={() => open(ref.surah, ref.ayah)}>
-                <ThemedText style={styles.goToText}>
-                  Go to {ref.label ? `${ref.label} · ` : ''}
-                  {getSurah(ref.surah)?.englishName ?? `Surah ${ref.surah}`}
-                  {ref.ayah ? ` ${ref.surah}:${ref.ayah}` : ''}
-                </ThemedText>
-              </Pressable>
-            ) : null}
-
-            {guess ? (
-              <Pressable style={styles.goTo} onPress={() => open(guess.number)}>
-                <ThemedText style={styles.goToText}>
-                  Did you mean {guess.englishName}? · Surah {guess.number}
-                </ThemedText>
-              </Pressable>
-            ) : null}
-
-            {surahHits.length > 0 ? <ThemedText style={styles.section}>Surahs</ThemedText> : null}
-            {surahHits.map(renderSurahRow)}
-
-            {verseHits.length > 0 ? <ThemedText style={styles.section}>Verses</ThemedText> : null}
-            {verseHits.map((v) => (
-              <Pressable
-                key={`${v.surah}:${v.ayah}`}
-                style={styles.verseHit}
-                onPress={() => open(v.surah, v.ayah)}>
-                <ThemedText style={styles.verseRef}>
-                  {v.surahEnglish} · {v.surah}:{v.ayah}
-                </ThemedText>
-                <ThemedText style={styles.verseText} numberOfLines={2}>
-                  {v.en}
-                </ThemedText>
-              </Pressable>
-            ))}
-
-            {!ref && surahHits.length === 0 && verseHits.length === 0 ? (
-              <ThemedText style={styles.empty}>No matches for “{q}”.</ThemedText>
-            ) : null}
-          </ScrollView>
-        ) : (
-          <FlatList
-            data={SURAHS}
-            keyExtractor={(s) => String(s.number)}
-            contentContainerStyle={styles.list}
-            keyboardShouldPersistTaps="handled"
-            ListHeaderComponent={
-              <>
-                <Pressable style={styles.listenAll} onPress={listenWholeQuran}>
-                  <View style={styles.listenIcon}>
-                    <Ionicons name="play" size={18} color="#fff" />
-                  </View>
-                  <View style={styles.listenMid}>
-                    <ThemedText type="defaultSemiBold">Listen to the whole Qur’an</ThemedText>
-                    <ThemedText style={styles.sub}>Continuous recitation from Al-Fatiha</ThemedText>
-                  </View>
-                  <Ionicons name="infinite" size={20} color="#0a7ea4" />
-                </Pressable>
-                {lastSurah && last ? (
-                  <Pressable style={styles.continue} onPress={() => open(last.surah, last.ayah)}>
-                    <ThemedText style={styles.continueLabel}>CONTINUE READING</ThemedText>
-                    <ThemedText type="defaultSemiBold">
-                      {lastSurah.englishName} · Ayah {last.ayah}
-                    </ThemedText>
-                  </Pressable>
-                ) : null}
-              </>
-            }
-            renderItem={({ item }) => renderSurahRow(item)}
+        <View style={styles.searchPill}>
+          <Ionicons name="search" size={17} color={c.textMuted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search, or jump to 2:255 / Ayat al-Kursi"
+            placeholderTextColor={c.textMuted}
+            style={styles.searchInput}
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
           />
-        )}
-      </SafeAreaView>
-    </ThemedView>
+          {voice.enabled ? (
+            <PressableScale
+              onPress={voice.toggle}
+              accessibilityRole="button"
+              accessibilityLabel={voice.listening ? 'Stop listening' : 'Search by voice'}
+              style={[styles.mic, voice.listening && styles.micActive]}>
+              {voice.busy ? (
+                <ActivityIndicator color={voice.listening ? c.bg : c.accent} size="small" />
+              ) : (
+                <Ionicons name={voice.listening ? 'stop' : 'mic'} size={17} color={voice.listening ? c.bg : c.accent} />
+              )}
+            </PressableScale>
+          ) : null}
+        </View>
+        {voice.listening ? (
+          <Txt variant="caption" color={c.accent} style={styles.listening}>
+            Listening… tap to stop
+          </Txt>
+        ) : null}
+      </View>
+
+      {searching ? (
+        <ScrollView style={styles.fill} contentContainerStyle={styles.results} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {ref ? (
+            <PressableScale style={styles.goTo} onPress={() => open(ref.surah, ref.ayah)}>
+              <Ionicons name="arrow-forward-circle" size={19} color={c.accent} />
+              <Txt variant="body" color={c.accent} style={styles.goToText} numberOfLines={1}>
+                Go to {ref.label ? `${ref.label} · ` : ''}
+                {getSurah(ref.surah)?.englishName ?? `Surah ${ref.surah}`}
+                {ref.ayah ? ` ${ref.surah}:${ref.ayah}` : ''}
+              </Txt>
+            </PressableScale>
+          ) : null}
+
+          {guess ? (
+            <PressableScale style={styles.goTo} onPress={() => open(guess.number)}>
+              <Ionicons name="help-circle" size={19} color={c.accent} />
+              <Txt variant="body" color={c.accent} style={styles.goToText} numberOfLines={1}>
+                Did you mean {guess.englishName}? · Surah {guess.number}
+              </Txt>
+            </PressableScale>
+          ) : null}
+
+          {surahHits.length > 0 ? (
+            <Txt variant="eyebrow" style={styles.section}>
+              Surahs
+            </Txt>
+          ) : null}
+          {surahHits.map(renderSurahRow)}
+
+          {verseHits.length > 0 ? (
+            <Txt variant="eyebrow" style={styles.section}>
+              Verses
+            </Txt>
+          ) : null}
+          {verseHits.map((v) => (
+            <PressableScale key={`${v.surah}:${v.ayah}`} style={styles.verseHit} onPress={() => open(v.surah, v.ayah)}>
+              <Txt variant="caption" color={c.accent} style={styles.verseRef}>
+                {v.surahEnglish} · {v.surah}:{v.ayah}
+              </Txt>
+              <Txt style={styles.verseText} numberOfLines={2}>
+                {v.en}
+              </Txt>
+            </PressableScale>
+          ))}
+
+          {!ref && surahHits.length === 0 && verseHits.length === 0 ? (
+            <Txt variant="body" color={c.textMuted} style={styles.empty}>
+              No matches for “{q}”.
+            </Txt>
+          ) : null}
+        </ScrollView>
+      ) : (
+        <FlatList
+          style={styles.fill}
+          data={SURAHS}
+          keyExtractor={(s) => String(s.number)}
+          contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              <PressableScale style={styles.bigCard} onPress={listenWholeQuran}>
+                <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.playCircle}>
+                  <Ionicons name="headset" size={16} color={c.bg} />
+                </LinearGradient>
+                <View style={styles.bigCardMid}>
+                  <Txt variant="cardTitle">Listen to the whole Qur&apos;an</Txt>
+                  <Txt variant="caption">Continuous recitation from Al-Fatiha</Txt>
+                </View>
+                <Ionicons name="infinite" size={20} color={c.accent} />
+              </PressableScale>
+
+              {lastSurah && last ? (
+                <PressableScale style={styles.continueCard} onPress={() => open(last.surah, last.ayah)}>
+                  <View style={styles.continueMid}>
+                    <Txt variant="eyebrow">Continue reading</Txt>
+                    <Txt variant="cardTitle" style={styles.continueTitle}>
+                      {lastSurah.englishName} · Ayah {last.ayah}
+                    </Txt>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
+                </PressableScale>
+              ) : null}
+            </View>
+          }
+          renderItem={({ item }) => renderSurahRow(item)}
+        />
+      )}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  searchWrap: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  searchInput: { flex: 1 },
-  search: {
-    backgroundColor: 'rgba(127,127,127,0.12)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 16,
-    color: 'rgba(127,127,127,1)',
+  fill: { flex: 1 },
+
+  header: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.md, gap: space.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleCol: { flex: 1, gap: 2 },
+
+  searchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 48,
+    paddingLeft: 14,
+    paddingRight: 6,
+    borderRadius: radius.full,
+    backgroundColor: c.surface2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
+  searchInput: { flex: 1, fontFamily: font.sans, fontSize: 15.5, color: c.textPrimary, padding: 0 },
   mic: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(10,126,164,0.12)',
+    backgroundColor: 'rgba(201,189,166,0.14)',
   },
-  bookmarkBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  micActive: { backgroundColor: c.accent },
+  listening: { marginTop: 2, marginLeft: 4 },
+
+  results: { paddingHorizontal: space.gutter, paddingBottom: 120 },
+  list: { paddingHorizontal: space.gutter, paddingBottom: 120 },
+
+  listHeader: { gap: space.md, paddingTop: space.xs, paddingBottom: space.sm },
+  bigCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(200,162,74,0.14)',
+    gap: 14,
+    padding: 14,
+    borderRadius: radius.lg,
+    backgroundColor: c.surface1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
-  micActive: { backgroundColor: '#e0245e' },
-  listening: { marginTop: 8, fontSize: 13, color: '#e0245e', fontWeight: '600' },
-  list: { paddingHorizontal: 16, paddingBottom: 32 },
-  results: { paddingHorizontal: 16, paddingBottom: 32, gap: 4 },
+  playCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  bigCardMid: { flex: 1, gap: 2 },
+  continueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: radius.lg,
+    backgroundColor: c.surface1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
+  },
+  continueMid: { flex: 1, gap: 3 },
+  continueTitle: { marginTop: 1 },
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(127,127,127,0.25)',
+    borderBottomColor: c.hairlineSoft,
   },
   badge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(127,127,127,0.15)',
+    backgroundColor: c.surface2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
-  badgeText: { fontSize: 13, fontWeight: '600' },
+  badgeNum: { fontFamily: font.serifMed, fontSize: 14, lineHeight: 18, color: c.accent },
   rowMid: { flex: 1, gap: 2 },
-  sub: { opacity: 0.6, fontSize: 12 },
-  arabicName: { fontFamily: 'AmiriQuran', fontSize: 22, lineHeight: 36, writingDirection: 'rtl' },
-  listenAll: {
+  arabicName: { fontFamily: font.arabic, fontSize: 21, lineHeight: 36, color: c.scriptureInk, writingDirection: 'rtl' },
+
+  goTo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 12,
+    gap: 10,
     padding: 14,
-    borderRadius: 14,
-    backgroundColor: 'rgba(10,126,164,0.12)',
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(201,189,166,0.10)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(201,189,166,0.22)',
+    marginTop: 10,
   },
-  listenIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0a7ea4',
-  },
-  listenMid: { flex: 1, gap: 2 },
-  continue: {
-    marginVertical: 12,
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: 'rgba(10,126,164,0.12)',
+  goToText: { flex: 1, fontFamily: font.sansSemi },
+  section: { marginTop: 18, marginBottom: 4 },
+  verseHit: {
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.hairlineSoft,
     gap: 4,
   },
-  continueLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: '#0a7ea4' },
-  goTo: {
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(10,126,164,0.15)',
-    marginBottom: 8,
-  },
-  goToText: { fontWeight: '700', color: '#0a7ea4' },
-  section: { fontSize: 12, fontWeight: '700', opacity: 0.5, marginTop: 14, marginBottom: 4, letterSpacing: 0.5 },
-  verseHit: {
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(127,127,127,0.2)',
-    gap: 3,
-  },
-  verseRef: { fontSize: 12, fontWeight: '600', color: '#0a7ea4' },
-  verseText: { fontSize: 14, lineHeight: 20, opacity: 0.85 },
-  empty: { opacity: 0.5, textAlign: 'center', marginTop: 40 },
+  verseRef: { fontFamily: font.sansSemi, letterSpacing: 0.4 },
+  verseText: { fontFamily: font.serifReg, fontSize: 14.5, lineHeight: 21, color: c.textSecondary },
+  empty: { textAlign: 'center', marginTop: 48 },
 });

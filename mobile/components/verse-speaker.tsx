@@ -3,8 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
 import { haptic } from '@/lib/haptics';
 import { useRecitation } from '@/lib/recitation-context';
-
-const ACCENT = '#0a7ea4';
+import { c } from '@/lib/theme';
 
 /** A speaker button that recites a single ayah (Arabic, from the same reciter the reader uses).
  *  Routed through the global recitation engine, so tapping it stops anything else that's playing
@@ -13,7 +12,7 @@ export function VerseSpeaker({
   surah,
   ayah,
   size = 20,
-  color = ACCENT,
+  color = c.accent,
 }: {
   surah: number;
   ayah: number;
@@ -25,7 +24,7 @@ export function VerseSpeaker({
   const loading = isThis && rec.loading;
   const playing = isThis && !rec.paused && !rec.loading;
   const paused = isThis && rec.paused;
-  const icon = playing ? 'pause-circle' : paused ? 'play-circle' : 'volume-high';
+  const icon = playing ? 'pause-circle' : paused ? 'play-circle' : 'headset-outline';
 
   return (
     <Pressable

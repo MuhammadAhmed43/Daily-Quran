@@ -2,12 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Txt } from '@/components/ui/primitives';
 import { haptic } from '@/lib/haptics';
 import { getSurah, resolveReference, SURAHS } from '@/lib/quran';
-
-const ACCENT = '#0a7ea4';
+import { c, font, radius, space } from '@/lib/theme';
 
 type Props = {
   visible: boolean;
@@ -16,7 +14,7 @@ type Props = {
   onJump: (surah: number, ayah: number) => void;
 };
 
-// A bottom sheet to jump anywhere in the muṣḥaf: type a reference (2:255 / a name), pick a
+// A bottom sheet to jump anywhere in the mushaf: type a reference (2:255 / a name), pick a
 // surah, then tap an ayah in the grid.
 export function JumpSheet({ visible, onClose, currentSurahNo, onJump }: Props) {
   const [selectedNo, setSelectedNo] = useState(currentSurahNo);
@@ -47,17 +45,17 @@ export function JumpSheet({ visible, onClose, currentSurahNo, onJump }: Props) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <ThemedView style={styles.panel}>
+        <View style={styles.panel}>
           <View style={styles.handle} />
 
           <View style={styles.searchRow}>
-            <Ionicons name="search" size={18} color="rgba(127,127,127,0.7)" />
+            <Ionicons name="search" size={18} color={c.textMuted} />
             <TextInput
               value={query}
               onChangeText={setQuery}
               onSubmitEditing={submitRef}
               placeholder="Go to 2:255 or a surah name"
-              placeholderTextColor="rgba(127,127,127,0.7)"
+              placeholderTextColor={c.textMuted}
               style={styles.input}
               autoCorrect={false}
               returnKeyType="go"
@@ -65,10 +63,10 @@ export function JumpSheet({ visible, onClose, currentSurahNo, onJump }: Props) {
           </View>
 
           <Pressable style={styles.surahBtn} onPress={() => setPicking((p) => !p)}>
-            <ThemedText style={styles.surahBtnText} numberOfLines={1}>
+            <Txt variant="body" color={c.accent} style={styles.surahBtnText} numberOfLines={1}>
               {selected ? `${selected.englishName} · Surah ${selected.number}` : 'Pick a surah'}
-            </ThemedText>
-            <Ionicons name={picking ? 'chevron-up' : 'chevron-down'} size={18} color={ACCENT} />
+            </Txt>
+            <Ionicons name={picking ? 'chevron-up' : 'chevron-down'} size={18} color={c.accent} />
           </Pressable>
 
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
@@ -87,15 +85,17 @@ export function JumpSheet({ visible, onClose, currentSurahNo, onJump }: Props) {
                     setPicking(false);
                   }}>
                   <View style={styles.badge}>
-                    <ThemedText style={styles.badgeText}>{s.number}</ThemedText>
+                    <Txt style={styles.badgeText}>{s.number}</Txt>
                   </View>
                   <View style={styles.surahMid}>
-                    <ThemedText type="defaultSemiBold">{s.englishName}</ThemedText>
-                    <ThemedText style={styles.sub}>
+                    <Txt variant="cardTitle" numberOfLines={1}>
+                      {s.englishName}
+                    </Txt>
+                    <Txt variant="caption">
                       {s.numberOfAyahs} ayat · {s.revelationType}
-                    </ThemedText>
+                    </Txt>
                   </View>
-                  <ThemedText style={styles.arabicName}>{s.name}</ThemedText>
+                  <Txt style={styles.arabicName}>{s.name}</Txt>
                 </Pressable>
               ))
             ) : selected ? (
@@ -105,13 +105,13 @@ export function JumpSheet({ visible, onClose, currentSurahNo, onJump }: Props) {
                     key={n}
                     style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
                     onPress={() => jump(selected.number, n)}>
-                    <ThemedText style={styles.cellText}>{n}</ThemedText>
+                    <Txt style={styles.cellText}>{n}</Txt>
                   </Pressable>
                 ))}
               </View>
             ) : null}
           </ScrollView>
-        </ThemedView>
+        </View>
       </View>
     </Modal>
   );
@@ -119,33 +119,31 @@ export function JumpSheet({ visible, onClose, currentSurahNo, onJump }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   panel: {
     maxHeight: '74%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 24,
+    backgroundColor: c.surface2,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
+    paddingHorizontal: space.gutter,
+    paddingTop: space.sm,
+    paddingBottom: space.section,
   },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(127,127,127,0.4)',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.16)', alignSelf: 'center', marginBottom: space.md },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(127,127,127,0.12)',
-    borderRadius: 12,
+    backgroundColor: c.surface3,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
     paddingHorizontal: 12,
     height: 46,
   },
-  input: { flex: 1, fontSize: 16, color: 'rgba(127,127,127,1)' },
+  input: { flex: 1, fontFamily: font.sans, fontSize: 16, color: c.textPrimary, padding: 0 },
   surahBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -155,19 +153,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 2,
   },
-  surahBtnText: { flex: 1, fontSize: 15, fontWeight: '700', color: ACCENT },
+  surahBtnText: { flex: 1, fontFamily: font.sansSemi },
   body: { paddingVertical: 10 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   cell: {
     width: 46,
     height: 46,
-    borderRadius: 10,
-    backgroundColor: 'rgba(10,126,164,0.1)',
+    borderRadius: radius.badge,
+    backgroundColor: c.surface3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cellText: { fontSize: 15, fontWeight: '600' },
-  cellPressed: { opacity: 0.5, transform: [{ scale: 0.92 }], backgroundColor: 'rgba(10,126,164,0.22)' },
+  cellText: { fontFamily: font.sansSemi, fontSize: 15, color: c.textPrimary },
+  cellPressed: { transform: [{ scale: 0.92 }], backgroundColor: 'rgba(201,189,166,0.18)', borderColor: 'transparent' },
   pressed: { opacity: 0.6 },
   surahRow: {
     flexDirection: 'row',
@@ -176,19 +176,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(127,127,127,0.2)',
+    borderBottomColor: c.hairlineSoft,
   },
-  surahRowOn: { backgroundColor: 'rgba(10,126,164,0.1)', borderRadius: 8 },
+  surahRowOn: { backgroundColor: 'rgba(201,189,166,0.10)', borderRadius: radius.sm },
   badge: {
     width: 34,
     height: 34,
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(127,127,127,0.15)',
+    backgroundColor: c.surface3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
-  badgeText: { fontSize: 13, fontWeight: '600' },
+  badgeText: { fontFamily: font.serifMed, fontSize: 13, color: c.accent },
   surahMid: { flex: 1, gap: 2 },
-  sub: { opacity: 0.6, fontSize: 12 },
-  arabicName: { fontFamily: 'AmiriQuran', fontSize: 20, lineHeight: 34, writingDirection: 'rtl' },
+  arabicName: { fontFamily: font.arabic, fontSize: 20, lineHeight: 34, color: c.scriptureInk, writingDirection: 'rtl' },
 });

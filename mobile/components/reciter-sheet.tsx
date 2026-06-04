@@ -1,12 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Txt } from '@/components/ui/primitives';
 import { haptic } from '@/lib/haptics';
 import { RECITERS } from '@/lib/recitation';
-
-const ACCENT = '#0a7ea4';
+import { c, font, radius, space } from '@/lib/theme';
 
 type Props = {
   visible: boolean;
@@ -15,16 +13,18 @@ type Props = {
   onSelect: (id: string) => void;
 };
 
-// A bottom sheet to pick the qāri. The choice persists and (if something is playing) the
+// A bottom sheet to pick the qari. The choice persists and (if something is playing) the
 // current ayah restarts in the new voice immediately.
 export function ReciterSheet({ visible, currentId, onClose, onSelect }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <ThemedView style={styles.panel}>
+        <View style={styles.panel}>
           <View style={styles.handle} />
-          <ThemedText style={styles.title}>Reciter</ThemedText>
+          <Txt variant="eyebrow" style={styles.title}>
+            Reciter
+          </Txt>
           <ScrollView contentContainerStyle={styles.list}>
             {RECITERS.map((r) => {
               const active = r.id === currentId;
@@ -37,13 +37,15 @@ export function ReciterSheet({ visible, currentId, onClose, onSelect }: Props) {
                     onSelect(r.id);
                     onClose();
                   }}>
-                  <ThemedText style={[styles.name, active && styles.nameActive]}>{r.name}</ThemedText>
-                  {active ? <Ionicons name="checkmark-circle" size={22} color={ACCENT} /> : null}
+                  <Txt variant="body" color={active ? c.accent : c.textPrimary} style={active ? styles.nameActive : undefined}>
+                    {r.name}
+                  </Txt>
+                  {active ? <Ionicons name="checkmark-circle" size={22} color={c.accent} /> : null}
                 </Pressable>
               );
             })}
           </ScrollView>
-        </ThemedView>
+        </View>
       </View>
     </Modal>
   );
@@ -51,24 +53,20 @@ export function ReciterSheet({ visible, currentId, onClose, onSelect }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   panel: {
     maxHeight: '70%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 28,
+    backgroundColor: c.surface2,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
+    paddingHorizontal: space.gutter,
+    paddingTop: space.sm,
+    paddingBottom: space.section,
   },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(127,127,127,0.4)',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  title: { fontSize: 13, fontWeight: '700', opacity: 0.5, letterSpacing: 0.5, marginBottom: 4 },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.16)', alignSelf: 'center', marginBottom: space.md },
+  title: { marginBottom: space.xs },
   list: { paddingVertical: 6 },
   row: {
     flexDirection: 'row',
@@ -76,11 +74,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 15,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(127,127,127,0.2)',
+    borderBottomColor: c.hairlineSoft,
   },
-  rowPressed: { backgroundColor: 'rgba(127,127,127,0.12)' },
-  name: { fontSize: 16, fontWeight: '500' },
-  nameActive: { color: ACCENT, fontWeight: '700' },
+  rowPressed: { backgroundColor: c.surface3 },
+  nameActive: { fontFamily: font.sansSemi },
 });

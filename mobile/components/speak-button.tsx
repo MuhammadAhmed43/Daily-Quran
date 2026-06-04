@@ -2,20 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 
-import { haptic } from '@/lib/haptics';
+import { Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { useRecitation } from '@/lib/recitation-context';
+import { c, font, radius } from '@/lib/theme';
 
-const ACCENT = '#0a7ea4';
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 
 type SpeakState = 'idle' | 'loading' | 'playing';
 
 /** Reads English text aloud via /api/speak (Andrew neural), with on-device speech as a fallback.
- *  Pauses the qāri first so audio never overlaps, and tears down on unmount. Reusable wherever we
- *  want a "read this aloud" control (verse explanations now, hubs later). */
-export function SpeakButton({ text, size = 22 }: { text: string; size?: number }) {
+ *  Renders as a "Listen" pill, consistent with the app's audio controls. Pauses the qari first so audio
+ *  never overlaps, and tears down on unmount. */
+export function SpeakButton({ text }: { text: string }) {
   const recitation = useRecitation();
   const [state, setState] = useState<SpeakState>('idle');
   const playerRef = useRef<AudioPlayer | null>(null);
@@ -53,8 +54,7 @@ export function SpeakButton({ text, size = 22 }: { text: string; size?: number }
   const play = async () => {
     const t = text.trim().slice(0, 1500);
     if (!t) return;
-    haptic.light();
-    recitation.pause(); // never overlap the qāri
+    recitation.pause(); // never overlap the qari
     setState('loading');
     try {
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
@@ -79,29 +79,38 @@ export function SpeakButton({ text, size = 22 }: { text: string; size?: number }
     }
   };
 
+  const label = state === 'playing' ? 'Stop' : state === 'loading' ? 'Loading' : 'Listen';
+
   return (
-    <Pressable
+    <PressableScale
       onPress={() => (state === 'idle' ? void play() : stop())}
-      hitSlop={10}
-      style={styles.btn}
+      style={styles.pill}
       accessibilityRole="button"
       accessibilityLabel={state === 'idle' ? 'Read aloud' : 'Stop'}>
       {state === 'loading' ? (
-        <ActivityIndicator size="small" color={ACCENT} />
+        <ActivityIndicator size="small" color={c.textPrimary} />
       ) : (
-        <Ionicons name={state === 'playing' ? 'stop' : 'volume-high'} size={size} color={ACCENT} />
+        <Ionicons name={state === 'playing' ? 'stop' : 'headset-outline'} size={17} color={c.textPrimary} />
       )}
-    </Pressable>
+      <Txt variant="caption" color={c.textPrimary} style={styles.label}>
+        {label}
+      </Txt>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  btn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  pill: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(10,126,164,0.10)',
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: radius.sm,
+    backgroundColor: c.surface2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
+  label: { fontFamily: font.sansSemi, fontSize: 13 },
 });

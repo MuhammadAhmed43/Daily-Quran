@@ -1,66 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Easing,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FadeIn } from '@/components/fade-in';
 import { SpeakButton } from '@/components/speak-button';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { IconButton, Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { explainAyah, type Explanation } from '@/lib/explain';
 import { haptic } from '@/lib/haptics';
 import { useProfile } from '@/lib/profile';
 import { recordActivity } from '@/lib/streak';
-
-const ACCENT = '#0a7ea4';
+import { c, font, radius, space, type as ty } from '@/lib/theme';
 
 export type ExplainTarget = { surah: number; ayah: number; name: string; ar: string; en: string };
 
-// A focused sheet that explains a single ayah, grounded in its Ibn Kathir tafsir (via /api/explain).
-// Depth/voice adapt to the reader's profile. Opening one counts toward the streak.
-export function ExplainSheet({
-  target,
-  onClose,
-}: {
-  target: ExplainTarget | null;
-  onClose: () => void;
-}) {
+// A slide-up sheet (matched to the Today reflection sheet: centered, serif, airy) that explains a single
+// ayah, grounded in its Ibn Kathir tafsir (via /api/explain). Depth/voice adapt to the reader's profile.
+// Opening one counts toward the streak. Rendered via a Modal so it works from every screen that hosts it.
+export function ExplainSheet({ target, onClose }: { target: ExplainTarget | null; onClose: () => void }) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { profile } = useProfile();
-  const anim = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState<ExplainTarget | null>(target);
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
   const [data, setData] = useState<Explanation | null>(null);
 
-  // animate in when a target arrives, out when it clears
+  // keep the last target rendered while the sheet slides out
   useEffect(() => {
-    if (target) {
-      setShown(target);
-      Animated.timing(anim, {
-        toValue: 1,
-        duration: 220,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start();
-    } else if (shown) {
-      Animated.timing(anim, { toValue: 0, duration: 160, useNativeDriver: true }).start(
-        ({ finished }) => {
-          if (finished) setShown(null);
-        },
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (target) setShown(target);
   }, [target]);
 
-  // fetch the explanation whenever a new ayah is opened — buffered, then revealed all at once with
-  // a calm fade (token-by-token streaming is kept for chat only; it reads poorly in a sheet).
+  // fetch the explanation whenever a new ayah is opened — buffered, then revealed all at once with a calm
+  // fade (token-by-token streaming is kept for chat only; it reads poorly in a sheet).
   useEffect(() => {
     if (!target) return;
     let active = true;
@@ -85,107 +58,144 @@ export function ExplainSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target?.surah, target?.ayah]);
 
-  if (!shown) return null;
-  const sheetY = anim.interpolate({ inputRange: [0, 1], outputRange: [80, 0] });
+  const askAboutVerse = () => {
+    onClose();
+    router.push('/(tabs)/chat');
+  };
 
   return (
-    <Animated.View style={[styles.root, { opacity: anim }]}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-        <BlurView intensity={26} tint="dark" style={StyleSheet.absoluteFill} />
-      </Pressable>
-
-      <Animated.View style={[styles.sheetWrap, { transform: [{ translateY: sheetY }] }]}>
-        <ThemedView style={styles.sheet}>
-          <View style={styles.header}>
-            <View style={styles.headerText}>
-              <ThemedText style={styles.title}>Explain this verse</ThemedText>
-              <ThemedText style={styles.ref}>
-                {shown.name} · {shown.surah}:{shown.ayah}
-              </ThemedText>
-            </View>
-            {target && status === 'done' && data ? <SpeakButton text={data.explanation} /> : null}
-            <Pressable onPress={onClose} hitSlop={10} style={styles.close}>
-              <Ionicons name="close" size={20} color={ACCENT} />
-            </Pressable>
-          </View>
-
-          <View style={styles.verse}>
-            <ThemedText style={styles.ar} numberOfLines={3}>
-              {shown.ar}
-            </ThemedText>
-            <ThemedText style={styles.en}>{shown.en}</ThemedText>
-          </View>
-
-          <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-            {status === 'loading' ? (
-              <View style={styles.center}>
-                <ActivityIndicator color={ACCENT} />
-                <ThemedText style={styles.loadingText}>Reflecting on the commentary…</ThemedText>
+    <Modal visible={!!target} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.root}>
+        <Pressable style={styles.backdrop} onPress={onClose} />
+        <View style={styles.sheet}>
+          {shown ? (
+            <>
+              <View style={styles.header}>
+                <IconButton name="chevron-down" onPress={onClose} bg={c.surface3} diameter={38} size={20} />
+                <Txt variant="cardTitle">Explanation</Txt>
+                <View style={styles.headerSpacer} />
               </View>
-            ) : status === 'error' ? (
-              <ThemedText style={styles.errorText}>
-                Couldn’t load the explanation. Check your connection and try again.
-              </ThemedText>
-            ) : data ? (
-              <FadeIn duration={650}>
-                <ThemedText style={styles.explanation}>{data.explanation}</ThemedText>
-                <ThemedText style={styles.source}>
-                  {data.hasTafsir
-                    ? 'Explained from Ibn Kathir’s tafsir.'
-                    : 'Plain-meaning explanation — detailed commentary isn’t available for this verse.'}
-                </ThemedText>
-              </FadeIn>
-            ) : null}
-          </ScrollView>
 
-          <ThemedText style={styles.disclaimer}>
-            {data?.disclaimer ?? 'AI study aid — not a fatwa or a substitute for a qualified scholar.'}
-          </ThemedText>
-        </ThemedView>
-      </Animated.View>
-    </Animated.View>
+              <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                <View style={styles.verseBlock}>
+                  <Txt variant="eyebrow" style={styles.center}>
+                    Verse
+                  </Txt>
+                  <Txt style={[ty.verseAr, styles.verseAr]}>{shown.ar}</Txt>
+                  <Txt style={[ty.verseEn, styles.center]}>{shown.en}</Txt>
+                  <Txt variant="caption" color={c.accent} style={[styles.center, styles.ref]}>
+                    {shown.name} · {shown.surah}:{shown.ayah}
+                  </Txt>
+                </View>
+
+                <View style={styles.rule}>
+                  <View style={styles.ruleLine} />
+                  <View style={styles.ruleDot} />
+                  <View style={styles.ruleLine} />
+                </View>
+
+                <View style={styles.meaningBlock}>
+                  <Txt variant="eyebrow" style={styles.center}>
+                    The meaning
+                  </Txt>
+                  {status === 'loading' ? (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator size="small" color={c.accent} />
+                      <Txt variant="body" color={c.textMuted}>
+                        Reflecting on the commentary…
+                      </Txt>
+                    </View>
+                  ) : status === 'error' ? (
+                    <Txt variant="body" color={c.textSecondary} style={styles.center}>
+                      Couldn&apos;t load the explanation. Check your connection and try again.
+                    </Txt>
+                  ) : data ? (
+                    <FadeIn duration={650}>
+                      <Txt style={styles.explanation}>{data.explanation}</Txt>
+                      <Txt variant="caption" color={c.textMuted} style={[styles.center, styles.source]}>
+                        {data.hasTafsir
+                          ? 'Explained from Ibn Kathir’s tafsir.'
+                          : 'Plain-meaning explanation — detailed commentary isn’t available for this verse.'}
+                      </Txt>
+                    </FadeIn>
+                  ) : null}
+                </View>
+              </ScrollView>
+
+              <View style={[styles.actions, { paddingBottom: insets.bottom + space.sm }]}>
+                <View style={styles.actionRow}>
+                  {status === 'done' && data ? <SpeakButton text={data.explanation} /> : null}
+                  <PressableScale onPress={askAboutVerse} style={styles.pill}>
+                    <Ionicons name="sparkles" size={17} color={c.textPrimary} />
+                    <Txt variant="caption" color={c.textPrimary} style={styles.pillLabel}>
+                      Ask about this verse
+                    </Txt>
+                  </PressableScale>
+                </View>
+                <Txt variant="caption" color={c.textMuted} style={[styles.center, styles.disclaimer]}>
+                  {data?.disclaimer ?? 'AI study aid — not a fatwa or a substitute for a qualified scholar.'}
+                </Txt>
+              </View>
+            </>
+          ) : null}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
-  sheetWrap: { paddingHorizontal: 10 },
+  root: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
-    borderRadius: 22,
-    padding: 16,
-    paddingBottom: 22,
-    marginBottom: 10,
-    maxHeight: '82%',
-    overflow: 'hidden',
-    gap: 12,
+    height: '90%',
+    backgroundColor: c.bg,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  headerText: { flex: 1 },
-  title: { fontSize: 17, fontWeight: '800' },
-  ref: { color: ACCENT, fontSize: 13, fontWeight: '700', marginTop: 2 },
-  close: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: space.gutter,
+    paddingTop: space.md,
+    paddingBottom: space.sm,
+  },
+  headerSpacer: { width: 38 },
+  scroll: { paddingHorizontal: space.section, paddingTop: space.md, paddingBottom: space.section, gap: space.hero },
+  center: { textAlign: 'center' },
+  verseBlock: { alignItems: 'center', gap: 10 },
+  verseAr: { textAlign: 'center', marginTop: 4, color: c.scriptureInk },
+  ref: { letterSpacing: 1 },
+  rule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  ruleLine: { width: 44, height: StyleSheet.hairlineWidth, backgroundColor: c.accent, opacity: 0.4 },
+  ruleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: c.accent, opacity: 0.7 },
+  meaningBlock: { alignItems: 'center', gap: 16 },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  explanation: { fontFamily: font.serifReg, fontSize: 16.5, lineHeight: 27, color: c.scriptureInk, textAlign: 'center' },
+  source: { marginTop: 10 },
+  actions: {
+    paddingHorizontal: space.gutter,
+    paddingTop: space.sm,
+    gap: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.hairline,
+  },
+  actionRow: { flexDirection: 'row', gap: 10 },
+  pill: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(127,127,127,0.12)',
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: radius.sm,
+    backgroundColor: c.surface2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
-  verse: { backgroundColor: 'rgba(10,126,164,0.08)', borderRadius: 14, padding: 14, gap: 8 },
-  ar: {
-    fontFamily: 'AmiriQuran',
-    fontSize: 20,
-    lineHeight: 42,
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
-  en: { fontSize: 14, lineHeight: 21, opacity: 0.85 },
-  body: { flexShrink: 1 },
-  bodyContent: { paddingVertical: 4, gap: 12 },
-  center: { alignItems: 'center', gap: 10, paddingVertical: 30 },
-  loadingText: { fontSize: 14, opacity: 0.6 },
-  errorText: { fontSize: 15, lineHeight: 22, opacity: 0.8, paddingVertical: 10 },
-  explanation: { fontSize: 16, lineHeight: 25 },
-  source: { fontSize: 12, opacity: 0.55, fontStyle: 'italic', marginTop: 4 },
-  disclaimer: { fontSize: 11, opacity: 0.45, lineHeight: 16 },
+  pillLabel: { fontFamily: font.sansSemi, fontSize: 13 },
+  disclaimer: { lineHeight: 16 },
 });
