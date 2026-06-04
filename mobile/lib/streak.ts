@@ -155,6 +155,46 @@ export async function getTodayTypes(): Promise<ActType[]> {
   return ledger[dayKey(new Date())]?.t ?? [];
 }
 
+// The current calendar week (Sun-Sat) for the Today week-streak strip: each day's qualifying-activity
+// state, with today + future flagged. Derived/read-only.
+export type WeekDay = { key: string; letter: string; dayNum: number; done: boolean; isToday: boolean; isFuture: boolean };
+const WEEK_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+function computeWeek(ledger: Ledger): WeekDay[] {
+  const done = qualifyingDays(ledger);
+  const today = new Date();
+  const todayIdx = today.getDay();
+  const start = new Date(today);
+  start.setDate(today.getDate() - todayIdx);
+  const out: WeekDay[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const key = dayKey(d);
+    out.push({ key, letter: WEEK_LETTERS[i], dayNum: d.getDate(), done: done.has(key), isToday: i === todayIdx, isFuture: i > todayIdx });
+  }
+  return out;
+}
+
+export async function getWeek(): Promise<WeekDay[]> {
+  return computeWeek(await load());
+}
+
+export function useWeekStreak(): WeekDay[] {
+  const [week, setWeek] = useState<WeekDay[]>(cache ? computeWeek(cache) : []);
+  useEffect(() => {
+    let active = true;
+    const refresh = () => getWeek().then((w) => active && setWeek(w));
+    refresh();
+    const unsub = subscribeStreak(refresh);
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, []);
+  return week;
+}
+
 export function useStreak(): StreakInfo {
   const [info, setInfo] = useState<StreakInfo>(
     cache

@@ -1,4 +1,6 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { Fraunces_400Regular, Fraunces_400Regular_Italic, Fraunces_500Medium, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,7 +10,7 @@ import 'react-native-reanimated';
 
 import { AuthFlow } from '@/components/auth/auth-flow';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { c } from '@/lib/theme';
 import { getAuthDecided, subscribeAuthChange } from '@/lib/auth';
 import { useProfile } from '@/lib/profile';
 import { RecitationProvider } from '@/lib/recitation-context';
@@ -22,19 +24,32 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded, error] = useFonts({
     AmiriQuran: require('@/assets/fonts/AmiriQuran-Regular.ttf'),
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_500Medium,
+    Fraunces_600SemiBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
   if (!loaded && !error) return null;
 
+  // Dark-only premium: force a dark navigation theme with our canvas, regardless of device setting.
+  const navTheme = {
+    ...DarkTheme,
+    colors: { ...DarkTheme.colors, background: c.bg, card: c.navBar, border: c.hairline },
+  };
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navTheme}>
       <RecitationProvider>
         <RootGate />
       </RecitationProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </ThemeProvider>
   );
 }

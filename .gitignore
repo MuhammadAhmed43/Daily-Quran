@@ -49,3 +49,7 @@ yarn-error.*
 coverage/
 
 .vercel
+
+# UI redesign reference screenshots (local design aids; large + third-party, not source)
+Bible-chat/
+Ui-Design/
