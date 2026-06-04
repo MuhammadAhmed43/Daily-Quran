@@ -25,7 +25,9 @@ import { refreshDailyVerse } from '@/lib/daily-verse';
 import { haptic } from '@/lib/haptics';
 import { FARD, LABELS } from '@/lib/prayer';
 import { usePrayerLog } from '@/lib/prayer-log';
+import { usePrayerGate } from '@/lib/prayer-times';
 import { useRecitation } from '@/lib/recitation-context';
+import { reflectionFor, useReflectedToday, useTodayReflection } from '@/lib/reflections';
 import { recordActivity, useStreak, useWeekStreak, type WeekDay } from '@/lib/streak';
 import { c, font, glow, grad, radius, space, type as ty } from '@/lib/theme';
 import { getVerse, resolveToday, type Verse } from '@/lib/today';
@@ -38,21 +40,17 @@ import { useTranslation, verseText } from '@/lib/translations';
 const DURATION = 600; // expand/collapse pace (ms); open and close are the SAME timing reversed (a true mirror)
 const EASING = Easing.out(Easing.cubic);
 
-const REFLECTION_PROMPTS = [
-  'Where do you seek peace when the world feels overwhelming?',
-  'What is one blessing you almost overlooked today?',
-  'When did you last feel your heart truly at rest?',
-  'What would it look like to trust Him with the thing you carry?',
-  'Who could you show a little more mercy to today?',
-];
-
 type CardKey = 'verse' | 'reflection' | 'prayer';
 
 // Fixed category identity (spec §1.3) — cards stay color-coded regardless of PALETTE (like Bible Chat).
+// Color-theory set tuned for the achromatic ONYX base (these tints are the ONLY chroma on screen).
+// SPLIT-COMPLEMENTARY: a cool contemplative pair (verse=petrol teal + reflection=indigo) answered by one
+// warm devotional accent (prayer=burnt amber, kin to the champagne metal). One desaturated museum band;
+// all clear WCAG-AAA for ivory text + the champagne accent.
 const CARD: Record<CardKey, { tint: string; bloom: string; line: string }> = {
-  verse: { tint: 'rgba(44,95,87,0.55)', bloom: 'rgba(58,150,138,0.38)', line: '#9FE0D4' },
-  reflection: { tint: 'rgba(91,75,138,0.60)', bloom: 'rgba(150,120,220,0.38)', line: '#C8B6F0' },
-  prayer: { tint: 'rgba(122,79,67,0.55)', bloom: 'rgba(205,125,95,0.36)', line: '#EEC0A6' },
+  verse: { tint: 'rgba(38,86,92,0.55)', bloom: 'rgba(64,132,138,0.38)', line: '#8FB7BC' }, // deep petrol teal
+  reflection: { tint: 'rgba(58,64,112,0.58)', bloom: 'rgba(96,104,168,0.38)', line: '#9AA0C8' }, // deep indigo
+  prayer: { tint: 'rgba(120,74,46,0.55)', bloom: 'rgba(168,110,72,0.40)', line: '#C79B7E' }, // burnt amber
 };
 
 // One 8-point seal (rub-el-hizb) polygon, computed once — the faint illumination motif behind each card.
@@ -84,7 +82,7 @@ export default function TodayScreen() {
   const prayer = usePrayerLog();
 
   const [open, setOpen] = useState<CardKey | null>('verse'); // verse expanded by default
-  const [reflected, setReflected] = useState(false);
+  const reflected = useReflectedToday(); // true once a reflection is saved for today
   const [verseEngaged, setVerseEngaged] = useState(false);
 
   useEffect(() => {
@@ -109,24 +107,16 @@ export default function TodayScreen() {
         <Progress pct={progress} />
 
         {verse ? (
-          <JourneyCard variant="verse" icon="book-outline" eyebrow="Your Verse" minutes={1} open={open === 'verse'} onToggle={() => toggle('verse')}>
+          <JourneyCard variant="verse" icon="book-outline" eyebrow="Your Verse" status={verseEngaged ? 'Read' : undefined} statusDone={verseEngaged} open={open === 'verse'} onToggle={() => toggle('verse')}>
             <VerseBody verse={verse} onEngage={() => setVerseEngaged(true)} />
           </JourneyCard>
         ) : null}
 
-        <JourneyCard variant="reflection" icon="sparkles-outline" eyebrow="Reflection" minutes={3} open={open === 'reflection'} onToggle={() => toggle('reflection')}>
-          <ReflectionBody
-            seed={info.gregorian.getDate()}
-            reflected={reflected}
-            onReflect={() => {
-              if (reflected) return;
-              recordActivity('checkin');
-              setReflected(true);
-            }}
-          />
+        <JourneyCard variant="reflection" icon="sparkles-outline" eyebrow="Reflection" status={reflected ? 'Reflected' : undefined} statusDone={reflected} open={open === 'reflection'} onToggle={() => toggle('reflection')}>
+          <ReflectionBody seed={info.gregorian.getDate()} />
         </JourneyCard>
 
-        <JourneyCard variant="prayer" icon="moon-outline" eyebrow="My Prayer" minutes={2} open={open === 'prayer'} onToggle={() => toggle('prayer')}>
+        <JourneyCard variant="prayer" icon="moon-outline" eyebrow="My Prayer" status={`${prayer.todayCount}/${FARD.length}`} statusDone={prayer.todayCount === FARD.length} open={open === 'prayer'} onToggle={() => toggle('prayer')}>
           <PrayerBody prayer={prayer} />
         </JourneyCard>
       </ScrollView>
@@ -197,8 +187,13 @@ function WeekRow({ week }: { week: WeekDay[] }) {
   );
 }
 
-// ---- "Progress today" ----
+// ---- "Progress today" (the fill glides up smoothly as completion increases) ----
 function Progress({ pct }: { pct: number }) {
+  const w = useSharedValue(pct);
+  useEffect(() => {
+    w.value = withTiming(pct, { duration: DURATION, easing: EASING });
+  }, [pct, w]);
+  const fillStyle = useAnimatedStyle(() => ({ width: `${Math.max(2, w.value)}%` }));
   return (
     <View style={styles.progressWrap}>
       <View style={styles.progressTop}>
@@ -210,7 +205,7 @@ function Progress({ pct }: { pct: number }) {
         </Txt>
       </View>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${Math.max(2, pct)}%` }]} />
+        <Animated.View style={[styles.progressFill, fillStyle]} />
       </View>
     </View>
   );
@@ -251,7 +246,8 @@ function JourneyCard({
   variant,
   icon,
   eyebrow,
-  minutes,
+  status,
+  statusDone,
   open,
   onToggle,
   children,
@@ -259,7 +255,8 @@ function JourneyCard({
   variant: CardKey;
   icon: keyof typeof Ionicons.glyphMap;
   eyebrow: string;
-  minutes: number;
+  status?: string; // a meaningful per-card status (e.g. "Read", "Reflected", "3/5"); hidden if absent
+  statusDone?: boolean; // true => show a gold check + accent color
   open: boolean;
   onToggle: () => void;
   children: ReactNode;
@@ -303,10 +300,14 @@ function JourneyCard({
           <Txt variant="eyebrow" color={c.textPrimary}>
             {eyebrow}
           </Txt>
-          <View style={styles.dot} />
-          <Txt variant="caption" color={c.textSecondary} style={styles.cardMin}>
-            {minutes} MIN
-          </Txt>
+          {status ? (
+            <View style={styles.statusGroup}>
+              {statusDone ? <Ionicons name="checkmark-circle" size={13} color={c.accent} /> : <View style={styles.dot} />}
+              <Txt variant="caption" color={statusDone ? c.accent : c.textSecondary} style={styles.cardStatus}>
+                {status}
+              </Txt>
+            </View>
+          ) : null}
           <View style={{ flex: 1 }} />
           <Chevron open={open} />
         </PressableScale>
@@ -381,33 +382,56 @@ function VerseBody({ verse, onEngage }: { verse: Verse; onEngage: () => void }) 
   );
 }
 
-// ---- Reflection body ----
-function ReflectionBody({ seed, reflected, onReflect }: { seed: number; reflected: boolean; onReflect: () => void }) {
-  const prompt = REFLECTION_PROMPTS[seed % REFLECTION_PROMPTS.length];
+// ---- Reflection body (opens the slide-up reflection sheet; shows a preview once saved) ----
+function ReflectionBody({ seed }: { seed: number }) {
+  const router = useRouter();
+  const saved = useTodayReflection();
+  const { prompt } = reflectionFor(seed);
+  const has = saved.trim().length > 0;
   return (
     <>
       <Txt variant="cardTitle" style={styles.reflectPrompt}>
         {prompt}
       </Txt>
+      {has ? (
+        <Txt variant="body" numberOfLines={2} style={styles.reflectPreview}>
+          {saved}
+        </Txt>
+      ) : null}
       <View style={styles.actionRow}>
-        <ActionPill icon={reflected ? 'checkmark-circle' : 'create-outline'} label={reflected ? 'Reflected' : 'Reflect'} onPress={onReflect} />
+        <ActionPill
+          icon={has ? 'checkmark-circle' : 'create-outline'}
+          label={has ? 'Edit reflection' : 'Reflect'}
+          onPress={() => router.push('/reflect')}
+        />
       </View>
     </>
   );
 }
 
-// ---- My Prayer body (the 5-fard tracker) ----
+// ---- My Prayer body (the 5-fard tracker; a prayer can't be marked before its time has come) ----
 function PrayerBody({ prayer }: { prayer: ReturnType<typeof usePrayerLog> }) {
   const { today, todayCount, toggle } = prayer;
+  const gate = usePrayerGate();
   return (
     <>
       <View style={styles.prayerRow}>
         {FARD.map((p) => {
           const isDone = today[p];
+          const locked = !isDone && !gate.occurred[p]; // time not yet come; a done prayer stays togglable
           return (
-            <PressableScale key={p} onPress={() => toggle(p)} style={styles.prayerItem}>
+            <PressableScale
+              key={p}
+              onPress={() => {
+                if (!locked) toggle(p);
+              }}
+              style={[styles.prayerItem, locked && styles.prayerLocked]}>
               <View style={[styles.prayerDot, isDone ? { backgroundColor: c.primary, borderColor: 'transparent' } : { borderColor: c.hairline }]}>
-                {isDone ? <Ionicons name="checkmark" size={14} color={c.bg} /> : null}
+                {isDone ? (
+                  <Ionicons name="checkmark" size={14} color={c.bg} />
+                ) : locked ? (
+                  <Ionicons name="time-outline" size={14} color={c.textMuted} />
+                ) : null}
               </View>
               <Txt variant="caption" color={isDone ? c.textPrimary : c.textMuted}>
                 {LABELS[p]}
@@ -497,7 +521,8 @@ const styles = StyleSheet.create({
   motif: { position: 'absolute', top: -44, right: -38 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, minHeight: 58 },
   dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: c.textMuted },
-  cardMin: { fontFamily: font.sansSemi, letterSpacing: 0.5 },
+  statusGroup: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  cardStatus: { fontFamily: font.sansSemi, letterSpacing: 0.3 },
   cardBody: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 2, gap: 12 },
 
   verseAr: { marginTop: 2 },
@@ -521,9 +546,11 @@ const styles = StyleSheet.create({
   miniBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.22)' },
 
   reflectPrompt: { lineHeight: 24 },
+  reflectPreview: { marginTop: 2 },
 
   prayerRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
   prayerItem: { alignItems: 'center', gap: 8, flex: 1 },
+  prayerLocked: { opacity: 0.4 },
   prayerDot: { width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   prayerCount: { marginTop: 4 },
 });

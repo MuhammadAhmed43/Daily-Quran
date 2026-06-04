@@ -30,8 +30,8 @@ export type PaletteName =
   | 'midnight' | 'petrol' | 'oxblood' | 'dune' | 'obsidian' | 'emerald' | 'amber'
   | 'sapphire' | 'amethyst' | 'porphyry' | 'cedar' | 'copperleaf' | 'espresso' | 'cinema' | 'onyx'
   | 'bronze' | 'zaytun';
-// FLIP THIS to compare any palette on-device (18 total — see the list above).
-// `mushaf` is the default: the exact palette sampled from your Ui-Design/color-pallete.png reference.
+// LOCKED: `onyx` is the chosen palette (achromatic near-black + warm ivory + champagne) — the decided
+// identity. Flip to any of the 18 (see the list above) only to compare; ship onyx.
 export const PALETTE: PaletteName = 'onyx';
 
 export type Palette = {
