@@ -34,6 +34,9 @@ scripts/data/
 # QA battery output (regenerate with: node scripts/test-chat.mjs)
 scripts/test-results.json
 
+# throwaway smoke-test photos for scripts/test-see.mjs (download via that flow; not source)
+scripts/test-images/
+
 # Story-art originals (large; regenerate with scripts/gen-story-art.mjs, then
 # scripts/bundle-story-art.mjs writes the lean committed copies into mobile/assets)
 content/stories/yusuf-art/
