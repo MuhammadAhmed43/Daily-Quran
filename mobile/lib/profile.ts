@@ -65,6 +65,13 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+/** Re-read the cache from storage + notify - cloud sync calls this after writing a merged value. */
+export async function reloadProfile(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribeProfile(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

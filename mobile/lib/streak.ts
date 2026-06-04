@@ -74,6 +74,13 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+/** Re-read the ledger from storage + notify - cloud sync calls this after writing a merged value. */
+export async function reloadStreak(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribeStreak(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

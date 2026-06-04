@@ -75,6 +75,13 @@ export async function getForYou(focuses: string[]): Promise<Hub[]> {
   return rankForYou(focuses, await load(), Date.now());
 }
 
+/** Re-read affinity from storage + notify - cloud sync calls this after writing a merged value. */
+export async function reloadAffinity(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribeAffinity(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

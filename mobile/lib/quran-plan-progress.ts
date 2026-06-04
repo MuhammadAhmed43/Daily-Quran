@@ -58,6 +58,13 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+/** Re-read the plan from storage + notify - cloud sync calls this after writing a merged value. */
+export async function reloadQuranPlan(): Promise<void> {
+  cache = undefined;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribeQuranPlan(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

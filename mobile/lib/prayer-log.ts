@@ -41,6 +41,13 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+/** Re-read the prayer log from storage + notify - cloud sync calls this after writing a merged value. */
+export async function reloadPrayerLog(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribePrayerLog(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

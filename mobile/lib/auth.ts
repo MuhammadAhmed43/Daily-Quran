@@ -10,6 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 
 import { ensureAnonSession, supabase } from './supabase';
+import { syncNow } from './sync';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -142,6 +143,7 @@ export async function signInGoogle(): Promise<AuthResult> {
 }
 
 export async function signOut(): Promise<void> {
+  await syncNow(); // push any unsynced local changes before we lose the session
   await markDecided(false);
   if (supabase) await supabase.auth.signOut();
 }

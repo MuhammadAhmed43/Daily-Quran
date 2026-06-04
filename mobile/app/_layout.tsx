@@ -12,6 +12,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getAuthDecided, subscribeAuthChange } from '@/lib/auth';
 import { useProfile } from '@/lib/profile';
 import { RecitationProvider } from '@/lib/recitation-context';
+import { startSync } from '@/lib/sync';
 import { hydrateTranslation } from '@/lib/translations';
 
 export const unstable_settings = {
@@ -54,6 +55,11 @@ function RootGate() {
     getAuthDecided().then(setAuthDecided);
     // Re-evaluate on sign in / out so signing out drops back to the landing screen.
     return subscribeAuthChange(() => getAuthDecided().then(setAuthDecided));
+  }, []);
+
+  // Kick off cloud sync: a no-op for guests, runs on sign-in + app foreground/background.
+  useEffect(() => {
+    startSync();
   }, []);
 
   useEffect(() => {

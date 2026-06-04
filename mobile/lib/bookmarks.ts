@@ -25,6 +25,13 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+/** Re-read bookmarks from storage + notify - cloud sync calls this after writing a merged value. */
+export async function reloadBookmarks(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribeBookmarks(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

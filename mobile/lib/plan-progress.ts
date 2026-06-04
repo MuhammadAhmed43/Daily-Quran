@@ -72,6 +72,13 @@ function persist() {
   listeners.forEach((l) => l());
 }
 
+/** Re-read journey progress from storage + notify - cloud sync calls this after writing a merge. */
+export async function reloadPlans(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
+}
+
 export function subscribePlans(fn: () => void): () => void {
   listeners.add(fn);
   return () => {

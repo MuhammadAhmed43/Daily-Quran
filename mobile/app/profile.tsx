@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { VerseReminder } from '@/components/home/verse-reminder';
@@ -11,6 +11,7 @@ import { TranslationSheet } from '@/components/translation-sheet';
 import { signOut, useAuth } from '@/lib/auth';
 import { haptic } from '@/lib/haptics';
 import { updateProfile } from '@/lib/profile';
+import { syncNow } from '@/lib/sync';
 import { translationMeta, useTranslation } from '@/lib/translations';
 
 const ACCENT = '#0a7ea4';
@@ -20,7 +21,18 @@ export default function ProfileScreen() {
   const { user } = useAuth();
   const { id: trId, setId: setTr } = useTranslation();
   const [trOpen, setTrOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [synced, setSynced] = useState(false);
   const guest = !user || user.isAnonymous;
+
+  const onSyncNow = async () => {
+    if (syncing) return;
+    haptic.light();
+    setSyncing(true);
+    const ok = await syncNow();
+    setSyncing(false);
+    setSynced(ok);
+  };
 
   const onRedoSetup = () => {
     Alert.alert('Redo setup?', 'You will answer the welcome questions again. Your reading progress and bookmarks are kept.', [
@@ -103,6 +115,25 @@ export default function ProfileScreen() {
               </View>
               <Ionicons name="chevron-forward" size={18} color="rgba(127,127,127,0.5)" />
             </Pressable>
+            {!guest ? (
+              <>
+                <View style={styles.rowDivider} />
+                <Pressable style={styles.row} onPress={onSyncNow} disabled={syncing}>
+                  <Ionicons name="cloud-upload-outline" size={20} color={ACCENT} />
+                  <View style={styles.rowText}>
+                    <ThemedText style={styles.rowTitle}>Sync now</ThemedText>
+                    <ThemedText style={styles.rowSub}>
+                      {syncing ? 'Syncing…' : synced ? 'Synced — your data is backed up' : 'Back up across your devices'}
+                    </ThemedText>
+                  </View>
+                  {syncing ? (
+                    <ActivityIndicator size="small" color={ACCENT} />
+                  ) : (
+                    <Ionicons name="chevron-forward" size={18} color="rgba(127,127,127,0.5)" />
+                  )}
+                </Pressable>
+              </>
+            ) : null}
           </View>
 
           <VerseReminder />
