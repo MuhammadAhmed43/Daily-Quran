@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Easing,
   Keyboard,
@@ -28,15 +29,17 @@ import { haptic } from '@/lib/haptics';
 import { useForYou } from '@/lib/hub-affinity';
 import { HUBS, type Hub } from '@/lib/hubs';
 import { parseMarkdownBlocks } from '@/lib/markdown';
+import { choosePhoto, takePhoto, type PickResult } from '@/lib/photo';
 import { useProfile } from '@/lib/profile';
 import { useRecitation } from '@/lib/recitation-context';
+import { streamSee } from '@/lib/see';
 import { recordActivity } from '@/lib/streak';
 import { useTranslation, verseText } from '@/lib/translations';
 import { takeVoiceExchanges } from '@/lib/voice-bridge';
 import { fmtDuration, getChapter, ytThumb } from '@/lib/watch';
 
 type Message =
-  | { id: string; role: 'user'; text: string }
+  | { id: string; role: 'user'; text: string; image?: string }
   | { id: string; role: 'assistant'; status: 'loading' }
   | {
       id: string;
@@ -76,6 +79,8 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [photo, setPhoto] = useState<{ uri: string; dataUrl: string } | null>(null);
+  const [picking, setPicking] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   // While the answer streams, keep the latest text in view — but only if the user is already near
   // the bottom, so scrolling up to re-read never yanks them back down.
@@ -220,6 +225,97 @@ export default function ChatScreen() {
     [sending, messages],
   );
 
+  // Send a photo (+ optional question) to the image endpoint. Mirrors send(), but the user message
+  // carries the local image uri and the call goes to streamSee.
+  const sendImage = useCallback(
+    async (p: { uri: string; dataUrl: string }, text: string) => {
+      if (sending) return;
+      const history = messages
+        .map((m) =>
+          m.role === 'user'
+            ? { role: 'user' as const, content: m.text }
+            : m.status === 'done'
+              ? { role: 'assistant' as const, content: m.data.answer }
+              : null,
+        )
+        .filter((x): x is { role: 'user' | 'assistant'; content: string } => !!x && !!x.content)
+        .slice(-6);
+      const q = text.trim();
+      setInput('');
+      setPhoto(null);
+      const userId = nextId();
+      const loadingId = nextId();
+      setMessages((m) => [
+        ...m,
+        { id: userId, role: 'user', text: q, image: p.uri },
+        { id: loadingId, role: 'assistant', status: 'loading' },
+      ]);
+      stick.current = true;
+      setSending(true);
+      try {
+        const data = await streamSee(p.dataUrl, q, history, (full) => {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === loadingId
+                ? { id: loadingId, role: 'assistant', status: 'streaming', text: full, final: false }
+                : msg,
+            ),
+          );
+        });
+        recordActivity('asked');
+        setMessages((m) =>
+          m.map((msg) =>
+            msg.id === loadingId
+              ? { id: loadingId, role: 'assistant', status: 'streaming', text: data.answer, final: true, pending: data }
+              : msg,
+          ),
+        );
+      } catch (e) {
+        setMessages((m) =>
+          m.map((msg) =>
+            msg.id === loadingId
+              ? { id: loadingId, role: 'assistant', status: 'error', error: String((e as Error)?.message ?? e) }
+              : msg,
+          ),
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [sending, messages],
+  );
+
+  // Pick/shoot -> compress -> stage the photo in the composer.
+  const runPick = useCallback(async (fn: () => Promise<PickResult>) => {
+    setPicking(true);
+    try {
+      const r = await fn();
+      if (r === 'denied') {
+        Alert.alert('Photo access needed', 'Allow photo or camera access to share an image here.');
+      } else if (r !== 'canceled') {
+        haptic.light();
+        setPhoto(r);
+      }
+    } finally {
+      setPicking(false);
+    }
+  }, []);
+
+  const onAddPhoto = useCallback(() => {
+    if (sending || picking) return;
+    haptic.light();
+    Keyboard.dismiss();
+    Alert.alert(
+      'Add a photo',
+      'Reflect on a scene, or check a claim against the Qur’an. Your photo is sent to AI to read it and is not saved.',
+      [
+        { text: 'Take photo', onPress: () => void runPick(takePhoto) },
+        { text: 'Choose from library', onPress: () => void runPick(choosePhoto) },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  }, [sending, picking, runPick]);
+
   // A hub's "Talk it through" seeds a starter question — send it when this tab gains focus.
   useFocusEffect(
     useCallback(() => {
@@ -344,28 +440,49 @@ export default function ChatScreen() {
             ) : null}
           </View>
 
-          <View style={[styles.inputBar, liftForMini && styles.inputBarRaised]}>
-            <Pressable
-              style={styles.voiceBtn}
-              onPress={() => router.push('/voice')}
-              accessibilityLabel="Voice conversation">
-              <Ionicons name="mic" size={22} color="#0a7ea4" />
-            </Pressable>
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder="Ask a question…"
-              placeholderTextColor="rgba(127,127,127,0.7)"
-              style={styles.input}
-              multiline
-              editable={!sending}
-            />
-            <Pressable
-              style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
-              onPress={() => send(input)}
-              disabled={!input.trim() || sending}>
-              <Ionicons name="arrow-up" size={20} color="#fff" />
-            </Pressable>
+          <View>
+            {photo ? (
+              <View style={styles.photoPreview}>
+                <Image source={{ uri: photo.uri }} style={styles.photoThumb} contentFit="cover" />
+                <View style={styles.photoMeta}>
+                  <ThemedText style={styles.photoMetaText}>Photo ready</ThemedText>
+                  <ThemedText style={styles.photoMetaSub}>Sent to AI to read it · not saved</ThemedText>
+                </View>
+                <Pressable onPress={() => setPhoto(null)} hitSlop={10} style={styles.photoRemove} accessibilityLabel="Remove photo">
+                  <Ionicons name="close-circle" size={24} color="rgba(127,127,127,0.8)" />
+                </Pressable>
+              </View>
+            ) : null}
+            <View style={[styles.inputBar, liftForMini && styles.inputBarRaised]}>
+              <Pressable
+                style={styles.voiceBtn}
+                onPress={() => router.push('/voice')}
+                accessibilityLabel="Voice conversation">
+                <Ionicons name="mic" size={22} color="#0a7ea4" />
+              </Pressable>
+              <Pressable
+                style={styles.voiceBtn}
+                onPress={onAddPhoto}
+                disabled={sending || picking}
+                accessibilityLabel="Add a photo">
+                <Ionicons name={picking ? 'hourglass-outline' : 'camera'} size={22} color="#0a7ea4" />
+              </Pressable>
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder={photo ? 'Add a question (optional)…' : 'Ask a question…'}
+                placeholderTextColor="rgba(127,127,127,0.7)"
+                style={styles.input}
+                multiline
+                editable={!sending}
+              />
+              <Pressable
+                style={[styles.sendBtn, (sending || (!input.trim() && !photo)) && styles.sendBtnDisabled]}
+                onPress={() => (photo ? void sendImage(photo, input) : void send(input))}
+                disabled={sending || (!input.trim() && !photo)}>
+                <Ionicons name="arrow-up" size={20} color="#fff" />
+              </Pressable>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -422,9 +539,12 @@ function MessageView({
   if (msg.role === 'user') {
     return (
       <View style={styles.userRow}>
-        <View style={styles.userBubble}>
-          <ThemedText style={styles.userText}>{msg.text}</ThemedText>
-        </View>
+        {msg.image ? <Image source={{ uri: msg.image }} style={styles.userImage} contentFit="cover" /> : null}
+        {msg.text ? (
+          <View style={styles.userBubble}>
+            <ThemedText style={styles.userText}>{msg.text}</ThemedText>
+          </View>
+        ) : null}
       </View>
     );
   }
@@ -888,4 +1008,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(10,126,164,0.12)',
   },
+  userImage: {
+    width: 220,
+    height: 165,
+    borderRadius: 16,
+    marginBottom: 6,
+    backgroundColor: 'rgba(127,127,127,0.12)',
+  },
+  photoPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: 14,
+    backgroundColor: 'rgba(10,126,164,0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(10,126,164,0.25)',
+  },
+  photoThumb: { width: 46, height: 46, borderRadius: 8, backgroundColor: 'rgba(127,127,127,0.15)' },
+  photoMeta: { flex: 1, gap: 1 },
+  photoMetaText: { fontSize: 13.5, fontWeight: '700' },
+  photoMetaSub: { fontSize: 11.5, opacity: 0.6 },
+  photoRemove: { padding: 4 },
 });
