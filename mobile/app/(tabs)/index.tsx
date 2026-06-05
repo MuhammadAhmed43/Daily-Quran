@@ -17,11 +17,13 @@ import { Screen } from '@/components/ui/screen';
 import { useVoiceSearch } from '@/hooks/use-voice-search';
 import { useBookmarks } from '@/lib/bookmarks';
 import { SURAHS, getSurah, rankSurahs, resolveReference, searchVerses, type Surah } from '@/lib/quran';
+import { useRecitation } from '@/lib/recitation-context';
 import { getLastRead, type LastRead } from '@/lib/storage';
 import { c, font, grad, radius, space } from '@/lib/theme';
 
 export default function QuranScreen() {
   const router = useRouter();
+  const ctx = useRecitation();
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [last, setLast] = useState<LastRead | null>(null);
@@ -56,12 +58,26 @@ export default function QuranScreen() {
       params: ayah ? { number: String(surah), ayah: String(ayah) } : { number: String(surah) },
     });
 
-  // Start a hands-free, continuous recitation of the whole Qur'an from Al-Fatiha.
-  const listenWholeQuran = () =>
-    router.push({
-      pathname: '/surah/[number]',
-      params: { number: '1', autoplay: '1', continuous: '1' },
-    });
+  // Listen continuously. If something is ALREADY reciting (the app-level player keeps going across
+  // navigation), continue from THERE — never restart at 1:1. Otherwise resume from where you left off;
+  // only a brand-new listener starts at Al-Fatiha.
+  const listenWholeQuran = () => {
+    const p = ctx.playing;
+    if (p) {
+      ctx.setContinuous(true);
+      open(p.surah, p.ayah);
+    } else if (last) {
+      router.push({ pathname: '/surah/[number]', params: { number: String(last.surah), ayah: String(last.ayah), autoplay: '1', continuous: '1' } });
+    } else {
+      router.push({ pathname: '/surah/[number]', params: { number: '1', autoplay: '1', continuous: '1' } });
+    }
+  };
+  const listenTitle = ctx.playing || last ? 'Continue listening' : 'Listen to the whole Qur’an';
+  const listenSub = ctx.playing
+    ? `Now reciting · ${getSurah(ctx.playing.surah)?.englishName ?? `Surah ${ctx.playing.surah}`} ${ctx.playing.ayah}`
+    : last
+      ? `Pick up from ${getSurah(last.surah)?.englishName ?? `Surah ${last.surah}`} ${last.ayah}`
+      : 'Continuous recitation from Al-Fatiha';
 
   // Voice search: speak a surah name / number / alias → fill the box and, if it
   // resolves to an exact reference, jump straight there.
@@ -286,8 +302,8 @@ export default function QuranScreen() {
                   <Ionicons name="headset" size={16} color={c.bg} />
                 </LinearGradient>
                 <View style={styles.bigCardMid}>
-                  <Txt variant="cardTitle">Listen to the whole Qur&apos;an</Txt>
-                  <Txt variant="caption">Continuous recitation from Al-Fatiha</Txt>
+                  <Txt variant="cardTitle">{listenTitle}</Txt>
+                  <Txt variant="caption">{listenSub}</Txt>
                 </View>
                 <Ionicons name="infinite" size={20} color={c.accent} />
               </PressableScale>

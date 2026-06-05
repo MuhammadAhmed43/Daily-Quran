@@ -173,7 +173,9 @@ export default function SurahReader() {
       requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - JUMP_OFFSET), animated: false }));
       return;
     }
-    if (!didScroll.current && targetAyah && ayahNum === targetAyah) {
+    // Open at the route's target ayah — UNLESS this surah is being recited, in which case the follow
+    // effect below lands us on the actually-playing ayah (so returning always points to what's narrated).
+    if (!didScroll.current && targetAyah && ayahNum === targetAyah && !playingHere) {
       didScroll.current = true;
       requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: false }));
     }
@@ -426,12 +428,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginHorizontal: -8,
     borderRadius: radius.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent', // becomes a champagne accent bar on the reciting ayah (no layout shift)
     gap: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.hairlineSoft,
   },
   ayahHighlight: { backgroundColor: 'rgba(201,189,166,0.10)' },
-  ayahPlaying: { backgroundColor: 'rgba(201,189,166,0.15)' },
+  ayahPlaying: { backgroundColor: 'rgba(201,189,166,0.13)', borderLeftColor: c.accent },
   ayahPressed: { backgroundColor: 'rgba(201,189,166,0.12)' },
   arabic: {
     fontFamily: font.arabic,
