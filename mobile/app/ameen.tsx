@@ -1,6 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Stack, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+// Community — the Ameen wall (onyx). A shared space to post a short intention / du'a and add your ameen to
+// others'. This screen is BOTH the Community tab and the /ameen route (re-exported). Re-skin only — the age
+// gate, feed (sort + pagination), optimistic posting, Ameen toggle, payoff banner, verse-attach + suggest,
+// crisis handling, and moderation flow are all unchanged.
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,16 +22,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { SealMedallion } from '@/components/atlas-tile';
+import { IconButton, Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Screen } from '@/components/ui/screen';
 import { VerseSpeaker } from '@/components/verse-speaker';
 import {
   communityReady,
   currentUserId,
+  cursorOf,
   deleteMyIntention,
   fetchFeed,
+  type FeedCursor,
   getAgeOk,
   getDisplayName,
   looksLikeCrisis,
@@ -46,8 +53,8 @@ import {
   verseForRef,
 } from '@/lib/community';
 import { haptic } from '@/lib/haptics';
+import { c, font, radius, space } from '@/lib/theme';
 
-const ACCENT = '#0a7ea4';
 const MAX = 140;
 
 const TEMPLATES = [
@@ -57,6 +64,12 @@ const TEMPLATES = [
   'Please pray that I find guidance and direction.',
   'Please pray for healing for someone who is unwell.',
   'Please pray for steadfastness in my prayers.',
+];
+
+const SORTS: { key: FeedSort; label: string }[] = [
+  { key: 'recent', label: 'Recent' },
+  { key: 'trending', label: 'Trending' },
+  { key: 'top', label: 'Most prayed' },
 ];
 
 function timeAgo(iso: string): string {
@@ -71,6 +84,29 @@ type AgeState = 'checking' | 'gate' | 'ok' | 'blocked';
 type Draft = { body: string; name: string; attached: string | null; errorKind: 'crisis' | 'other'; message: string };
 type PostInput = { body: string; authorName: string; verseRefs: string[] };
 
+// Keep the locally-mutated feed in the SAME order the server uses, so a new post (or a replaced optimistic
+// one) lands in its correct place for the active sort — not pinned to the top when sorting by Most prayed
+// (where a brand-new, 0-prayer intention belongs below the ones people have actually prayed for).
+function sortFeed(items: FeedItem[], sort: FeedSort): FeedItem[] {
+  return [...items].sort((a, b) =>
+    sort === 'top' && b.ameen_count !== a.ameen_count
+      ? b.ameen_count - a.ameen_count
+      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+}
+
+function Header() {
+  const router = useRouter();
+  return (
+    <View style={styles.header}>
+      {router.canGoBack() ? (
+        <IconButton name="chevron-back" onPress={() => router.back()} diameter={38} size={22} color={c.textPrimary} />
+      ) : null}
+      <Txt variant="h1">Community</Txt>
+    </View>
+  );
+}
+
 export default function AmeenWall() {
   const [age, setAge] = useState<AgeState>('checking');
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -81,7 +117,7 @@ export default function AmeenWall() {
   const [summary, setSummary] = useState<{ posts: number; ameens: number }>({ posts: 0, ameens: 0 });
   const [sort, setSort] = useState<FeedSort>('recent');
   const sortRef = useRef<FeedSort>('recent');
-  const offsetRef = useRef(0);
+  const cursorRef = useRef<FeedCursor | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -92,15 +128,11 @@ export default function AmeenWall() {
   }, []);
 
   const load = useCallback(async () => {
-    const [items, myId, sum] = await Promise.all([
-      fetchFeed(sortRef.current, 0, PAGE_SIZE),
-      currentUserId(),
-      myIntentionsSummary(),
-    ]);
+    const [items, myId, sum] = await Promise.all([fetchFeed(sortRef.current, null, PAGE_SIZE), currentUserId(), myIntentionsSummary()]);
     setFeed(items);
     setUid(myId);
     setSummary(sum);
-    offsetRef.current = items.length;
+    cursorRef.current = items.length ? cursorOf(items[items.length - 1]) : null;
     setHasMore(items.length === PAGE_SIZE);
     setLoading(false);
   }, []);
@@ -108,8 +140,8 @@ export default function AmeenWall() {
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || loading) return;
     setLoadingMore(true);
-    const page = await fetchFeed(sortRef.current, offsetRef.current, PAGE_SIZE);
-    offsetRef.current += page.length;
+    const page = await fetchFeed(sortRef.current, cursorRef.current, PAGE_SIZE);
+    if (page.length) cursorRef.current = cursorOf(page[page.length - 1]);
     setFeed((f) => {
       const seen = new Set(f.map((x) => x.id));
       return [...f, ...page.filter((p) => !seen.has(p.id))];
@@ -122,15 +154,15 @@ export default function AmeenWall() {
     if (s === sortRef.current) return;
     haptic.light();
     sortRef.current = s;
-    offsetRef.current = 0;
+    cursorRef.current = null;
     setSort(s);
     setLoading(true);
     setFeed([]);
     void load();
   };
 
-  // Optimistic post: show the intention immediately (pending), then confirm or roll back. Crisis text
-  // never reaches here (it stays on the modal's blocking flow), so nothing heavy flashes into the feed.
+  // Optimistic post: show the intention immediately (pending), then confirm or roll back. Crisis text never
+  // reaches here (it stays on the modal's blocking flow), so nothing heavy flashes into the feed.
   const optimisticPost = (input: PostInput) => {
     const tempId = `temp-${Date.now()}`;
     const optimistic: FeedItem = {
@@ -145,7 +177,7 @@ export default function AmeenWall() {
       ameenedByMe: false,
       pending: true,
     };
-    setFeed((f) => [optimistic, ...f]);
+    setFeed((f) => sortFeed([optimistic, ...f], sortRef.current));
     haptic.light();
     void (async () => {
       const r = await postIntention(input);
@@ -153,10 +185,13 @@ export default function AmeenWall() {
         haptic.success();
         setFeed((f) => {
           if (f.some((x) => x.id === tempId)) {
-            return f.map((x) => (x.id === tempId ? { ...r.intention, ameenedByMe: false } : x));
+            return sortFeed(
+              f.map((x) => (x.id === tempId ? { ...r.intention, ameenedByMe: false } : x)),
+              sortRef.current,
+            );
           }
           if (f.some((x) => x.id === r.intention.id)) return f; // a refresh already pulled it in
-          return [{ ...r.intention, ameenedByMe: false }, ...f];
+          return sortFeed([{ ...r.intention, ameenedByMe: false }, ...f], sortRef.current);
         });
       } else {
         setFeed((f) => f.filter((x) => x.id !== tempId));
@@ -173,8 +208,7 @@ export default function AmeenWall() {
     })();
   };
 
-  // Refresh whenever the wall regains focus, so the count climbs the moment you return (someone may
-  // have prayed while you were away). Silent - the feed already has data, so no loading spinner flashes.
+  // Refresh whenever the wall regains focus, so the count climbs the moment you return. Silent.
   useFocusEffect(
     useCallback(() => {
       if (age === 'ok') void load();
@@ -191,14 +225,10 @@ export default function AmeenWall() {
     const on = !item.ameenedByMe;
     if (on) haptic.success();
     else haptic.light();
-    setFeed((f) =>
-      f.map((x) => (x.id === item.id ? { ...x, ameenedByMe: on, ameen_count: Math.max(0, x.ameen_count + (on ? 1 : -1)) } : x)),
-    );
+    setFeed((f) => f.map((x) => (x.id === item.id ? { ...x, ameenedByMe: on, ameen_count: Math.max(0, x.ameen_count + (on ? 1 : -1)) } : x)));
     const okk = await toggleAmeen(item.id, on);
     if (!okk) {
-      setFeed((f) =>
-        f.map((x) => (x.id === item.id ? { ...x, ameenedByMe: !on, ameen_count: Math.max(0, x.ameen_count + (on ? -1 : 1)) } : x)),
-      );
+      setFeed((f) => f.map((x) => (x.id === item.id ? { ...x, ameenedByMe: !on, ameen_count: Math.max(0, x.ameen_count + (on ? -1 : 1)) } : x)));
     }
   };
 
@@ -225,10 +255,7 @@ export default function AmeenWall() {
         onPress: async () => {
           if (await deleteMyIntention(item.id)) {
             setFeed((f) => f.filter((x) => x.id !== item.id));
-            setSummary((s) => ({
-              posts: Math.max(0, s.posts - 1),
-              ameens: Math.max(0, s.ameens - item.ameen_count),
-            }));
+            setSummary((s) => ({ posts: Math.max(0, s.posts - 1), ameens: Math.max(0, s.ameens - item.ameen_count) }));
           }
         },
       },
@@ -237,9 +264,12 @@ export default function AmeenWall() {
 
   if (age === 'checking') {
     return (
-      <Centered>
-        <ActivityIndicator color={ACCENT} />
-      </Centered>
+      <Screen stars>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.center}>
+          <ActivityIndicator color={c.accent} />
+        </View>
+      </Screen>
     );
   }
   if (age === 'gate') {
@@ -256,134 +286,131 @@ export default function AmeenWall() {
   if (age === 'blocked') return <Blocked />;
   if (!communityReady) {
     return (
-      <Centered>
-        <Stack.Screen options={{ title: 'Ameen wall', headerBackTitle: 'Home' }} />
-        <ThemedText style={styles.muted}>The community isn’t set up yet.</ThemedText>
-      </Centered>
+      <Screen stars>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Header />
+        <View style={styles.center}>
+          <Txt variant="body" color={c.textMuted}>
+            The community isn&apos;t set up yet.
+          </Txt>
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Ameen wall', headerBackTitle: 'Home' }} />
-      <SafeAreaView edges={['bottom']} style={styles.container}>
-        <FlatList
-          data={feed}
-          keyExtractor={(it) => it.id}
-          contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
-          onEndReached={() => void loadMore()}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator color={ACCENT} style={{ marginVertical: 18 }} />
-            ) : hasMore && feed.length > 0 ? (
-              <Pressable style={styles.loadMore} onPress={() => void loadMore()}>
-                <ThemedText style={styles.loadMoreText}>Load more</ThemedText>
-              </Pressable>
-            ) : null
-          }
-          ListHeaderComponent={
-            <View style={styles.head}>
-              {summary.ameens > 0 ? <PayoffBanner posts={summary.posts} ameens={summary.ameens} /> : null}
-              <ThemedText style={styles.intro}>
-                Share an intention or du’a, and add your ameen to others’. A space for prayer — please
-                keep it kind.
-              </ThemedText>
-              <Pressable
-                style={styles.postBtn}
-                onPress={() => {
-                  haptic.light();
-                  setDraft(null);
-                  setComposeKey((k) => k + 1);
-                  setComposeOpen(true);
-                }}>
-                <Ionicons name="add" size={18} color="#fff" />
-                <ThemedText style={styles.postBtnText}>Post an intention</ThemedText>
-              </Pressable>
-              {feed.length > 0 ? (
-                <View style={styles.sortRow}>
-                  <Pressable
-                    style={[styles.sortChip, sort === 'recent' && styles.sortChipOn]}
-                    onPress={() => changeSort('recent')}>
-                    <ThemedText style={[styles.sortChipText, sort === 'recent' && styles.sortChipTextOn]}>
-                      Recent
-                    </ThemedText>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.sortChip, sort === 'top' && styles.sortChipOn]}
-                    onPress={() => changeSort('top')}>
-                    <ThemedText style={[styles.sortChipText, sort === 'top' && styles.sortChipTextOn]}>
-                      Most prayed
-                    </ThemedText>
-                  </Pressable>
-                </View>
-              ) : null}
-            </View>
-          }
-          ListEmptyComponent={
-            loading ? (
-              <ActivityIndicator color={ACCENT} style={{ marginTop: 40 }} />
-            ) : (
-              <ThemedText style={styles.empty}>Be the first to share an intention.</ThemedText>
-            )
-          }
-          renderItem={({ item }) => {
-            if (item.pending) {
-              return (
-                <View style={[styles.card, styles.cardPending]}>
-                  <View style={styles.cardHead}>
-                    <ThemedText style={styles.author} numberOfLines={1}>
-                      {item.author_name || 'Anonymous'}
-                    </ThemedText>
-                    <ThemedText style={styles.time}>now</ThemedText>
-                  </View>
-                  <ThemedText style={styles.body}>{item.body}</ThemedText>
-                  {item.verse_refs && item.verse_refs[0] ? <AttachedVerse refStr={item.verse_refs[0]} /> : null}
-                  <View style={styles.pendingRow}>
-                    <ActivityIndicator size="small" color={ACCENT} />
-                    <ThemedText style={styles.pendingText}>Posting…</ThemedText>
-                  </View>
-                </View>
-              );
-            }
-            const mine = item.user_id === uid;
+    <Screen stars>
+      <Stack.Screen options={{ headerShown: false }} />
+      <Header />
+      <FlatList
+        data={feed}
+        keyExtractor={(it) => it.id}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
+        onEndReached={() => void loadMore()}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator color={c.accent} style={styles.footerSpin} />
+          ) : hasMore && feed.length > 0 ? (
+            <PressableScale style={styles.loadMore} onPress={() => void loadMore()}>
+              <Txt variant="caption" color={c.accent} style={styles.loadMoreText}>
+                Load more
+              </Txt>
+            </PressableScale>
+          ) : null
+        }
+        ListHeaderComponent={
+          <View style={styles.head}>
+            {summary.ameens > 0 ? <PayoffBanner posts={summary.posts} ameens={summary.ameens} /> : null}
+            <Txt variant="body" color={c.textSecondary} style={styles.intro}>
+              Share an intention or du&apos;a, and add your ameen to others&apos;. A space for prayer — please keep it kind.
+            </Txt>
+            <PressableScale
+              style={styles.postBtn}
+              onPress={() => {
+                haptic.light();
+                setDraft(null);
+                setComposeKey((k) => k + 1);
+                setComposeOpen(true);
+              }}>
+              <Ionicons name="add" size={18} color={c.bg} />
+              <Txt style={styles.postBtnText}>Post an intention</Txt>
+            </PressableScale>
+            {feed.length > 0 || sort !== 'recent' ? (
+              <View style={styles.sortRow}>
+                {SORTS.map((o) => (
+                  <PressableScale key={o.key} style={[styles.sortChip, sort === o.key && styles.sortChipOn]} onPress={() => changeSort(o.key)}>
+                    <Txt variant="caption" style={[styles.sortChipText, sort === o.key && styles.sortChipTextOn]}>
+                      {o.label}
+                    </Txt>
+                  </PressableScale>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator color={c.accent} style={styles.emptySpin} />
+          ) : (
+            <Txt variant="body" color={c.textMuted} style={styles.empty}>
+              {sort === 'trending' ? 'Nothing prayed for in the last 7 days yet — try Recent.' : 'Be the first to share an intention.'}
+            </Txt>
+          )
+        }
+        renderItem={({ item }) => {
+          if (item.pending) {
             return (
-              <View style={styles.card}>
+              <View style={[styles.card, styles.cardPending]}>
                 <View style={styles.cardHead}>
-                  <ThemedText style={styles.author} numberOfLines={1}>
+                  <Txt numberOfLines={1} style={styles.author}>
                     {item.author_name || 'Anonymous'}
-                  </ThemedText>
-                  <ThemedText style={styles.time}>{timeAgo(item.created_at)}</ThemedText>
+                  </Txt>
+                  <Txt style={styles.time}>now</Txt>
                 </View>
-                <ThemedText style={styles.body}>{item.body}</ThemedText>
+                <Txt style={styles.body}>{item.body}</Txt>
                 {item.verse_refs && item.verse_refs[0] ? <AttachedVerse refStr={item.verse_refs[0]} /> : null}
-                <View style={styles.cardActions}>
-                  {mine ? (
-                    <View style={styles.minePayoff}>
-                      <ThemedText
-                        style={[styles.minePayoffText, item.ameen_count === 0 && styles.minePayoffMuted]}>
-                        {item.ameen_count === 0
-                          ? '🤲 No ameens yet'
-                          : `🤲 ${item.ameen_count} ${item.ameen_count === 1 ? 'person' : 'people'} prayed for this`}
-                      </ThemedText>
-                    </View>
-                  ) : (
-                    <AmeenButton on={item.ameenedByMe} count={item.ameen_count} onPress={() => onAmeen(item)} />
-                  )}
-                  <Pressable hitSlop={10} style={styles.overflow} onPress={() => (mine ? onDelete(item) : onReport(item))}>
-                    <Ionicons
-                      name={mine ? 'trash-outline' : 'flag-outline'}
-                      size={16}
-                      color="rgba(127,127,127,0.7)"
-                    />
-                  </Pressable>
+                <View style={styles.pendingRow}>
+                  <ActivityIndicator size="small" color={c.accent} />
+                  <Txt style={styles.pendingText}>Posting…</Txt>
                 </View>
               </View>
             );
-          }}
-        />
-      </SafeAreaView>
+          }
+          const mine = item.user_id === uid;
+          return (
+            <View style={styles.card}>
+              <View style={styles.cardHead}>
+                <Txt numberOfLines={1} style={styles.author}>
+                  {item.author_name || 'Anonymous'}
+                </Txt>
+                <Txt style={styles.time}>{timeAgo(item.created_at)}</Txt>
+              </View>
+              <Txt style={styles.body}>{item.body}</Txt>
+              {item.verse_refs && item.verse_refs[0] ? <AttachedVerse refStr={item.verse_refs[0]} /> : null}
+              <View style={styles.cardActions}>
+                {mine ? (
+                  <View style={styles.minePayoff}>
+                    <MaterialCommunityIcons name="hands-pray" size={14} color={item.ameen_count === 0 ? c.textMuted : c.accent} />
+                    <Txt style={[styles.minePayoffText, item.ameen_count === 0 && styles.minePayoffMuted]}>
+                      {item.ameen_count === 0
+                        ? 'No ameens yet'
+                        : `${item.ameen_count} ${item.ameen_count === 1 ? 'person' : 'people'} prayed for this`}
+                    </Txt>
+                  </View>
+                ) : (
+                  <AmeenButton on={item.ameenedByMe} count={item.ameen_count} onPress={() => onAmeen(item)} />
+                )}
+                <Pressable hitSlop={10} style={styles.overflow} onPress={() => (mine ? onDelete(item) : onReport(item))}>
+                  <Ionicons name={mine ? 'trash-outline' : 'flag-outline'} size={16} color={c.textMuted} />
+                </Pressable>
+              </View>
+            </View>
+          );
+        }}
+      />
 
       <ComposeModal
         key={composeKey}
@@ -392,16 +419,15 @@ export default function AmeenWall() {
         onClose={() => setComposeOpen(false)}
         onOptimistic={optimisticPost}
         onPosted={(it) => {
-          setFeed((f) => [{ ...it, ameenedByMe: false }, ...f]);
+          setFeed((f) => sortFeed([{ ...it, ameenedByMe: false }, ...f], sortRef.current));
           setComposeOpen(false);
         }}
       />
-    </ThemedView>
+    </Screen>
   );
 }
 
-// The Ameen toggle for OTHER people's posts. Springs a little bounce when you join the prayer (turn it
-// on) - leaving is quiet. The bounce is the tactile "your ameen landed" moment.
+// The Ameen toggle for OTHER people's posts. Springs a little bounce when you join the prayer.
 function AmeenButton({ on, count, onPress }: { on: boolean; count: number; onPress: () => void }) {
   const scale = useRef(new Animated.Value(1)).current;
   const handle = () => {
@@ -418,78 +444,73 @@ function AmeenButton({ on, count, onPress }: { on: boolean; count: number; onPre
   return (
     <Pressable onPress={handle}>
       <Animated.View style={[styles.ameen, on && styles.ameenOn, { transform: [{ scale }] }]}>
-        <ThemedText style={[styles.ameenText, on && styles.ameenTextOn]}>
-          🤲 Ameen{count > 0 ? ` · ${count}` : ''}
-        </ThemedText>
+        <MaterialCommunityIcons name="hands-pray" size={15} color={on ? c.bg : c.accent} />
+        <Txt style={[styles.ameenText, on && styles.ameenTextOn]}>Ameen{count > 0 ? ` · ${count}` : ''}</Txt>
       </Animated.View>
     </Pressable>
   );
 }
 
-// The "people prayed for you" payoff banner - gently fades and rises in the first time it appears.
+// The "people prayed for you" payoff banner — gently fades and rises in the first time it appears.
 function PayoffBanner({ posts, ameens }: { posts: number; ameens: number }) {
   const a = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(a, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [a]);
   return (
-    <Animated.View
-      style={[
-        styles.payoffBanner,
-        { opacity: a, transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] },
-      ]}>
-      <ThemedText style={styles.payoffEmoji}>🤲</ThemedText>
+    <Animated.View style={[styles.payoffBanner, { opacity: a, transform: [{ translateY: a.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>
+      <MaterialCommunityIcons name="hands-pray" size={26} color={c.accent} />
       <View style={styles.payoffTextWrap}>
-        <ThemedText style={styles.payoffHead}>
+        <Txt style={styles.payoffHead}>
           {ameens} {ameens === 1 ? 'prayer' : 'prayers'} for your {posts === 1 ? 'intention' : 'intentions'}
-        </ThemedText>
-        <ThemedText style={styles.payoffSub}>Others are praying with you.</ThemedText>
+        </Txt>
+        <Txt variant="caption" color={c.textSecondary}>
+          Others are praying with you.
+        </Txt>
       </View>
     </Animated.View>
   );
 }
 
-function Centered({ children }: { children: ReactNode }) {
-  return (
-    <ThemedView style={[styles.container, styles.center]}>
-      <SafeAreaView edges={['bottom']} style={[styles.container, styles.center]}>
-        {children}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
 function AgeGate({ onAnswer }: { onAnswer: (ok: boolean) => void }) {
   return (
-    <ThemedView style={[styles.container, styles.center]}>
-      <Stack.Screen options={{ title: 'Ameen wall', headerBackTitle: 'Home' }} />
-      <ThemedText style={styles.gateEmoji}>🤲</ThemedText>
-      <ThemedText style={styles.gateTitle}>A space for prayer</ThemedText>
-      <ThemedText style={styles.gateText}>
-        The Ameen wall is a shared space where people post intentions and pray for one another. To use
-        it, you need to be 13 or older.
-      </ThemedText>
-      <Pressable style={styles.gatePrimary} onPress={() => onAnswer(true)}>
-        <ThemedText style={styles.gatePrimaryText}>I’m 13 or older</ThemedText>
-      </Pressable>
-      <Pressable style={styles.gateGhost} onPress={() => onAnswer(false)}>
-        <ThemedText style={styles.gateGhostText}>I’m under 13</ThemedText>
-      </Pressable>
-    </ThemedView>
+    <Screen stars>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.gateWrap}>
+        <SealMedallion name="hands-pray" frame={74} ring={52} glyph={32} glowStrength={0.28} />
+        <Txt variant="h1" style={styles.centerText}>
+          A space for prayer
+        </Txt>
+        <Txt variant="body" color={c.textSecondary} style={styles.gateText}>
+          The community is a shared space where people post intentions and pray for one another. To use it, you need to be 13 or older.
+        </Txt>
+        <PressableScale style={styles.cta} onPress={() => onAnswer(true)}>
+          <Txt style={styles.ctaText}>I&apos;m 13 or older</Txt>
+        </PressableScale>
+        <PressableScale style={styles.ghost} onPress={() => onAnswer(false)}>
+          <Txt variant="body" color={c.accent} style={styles.ghostText}>
+            I&apos;m under 13
+          </Txt>
+        </PressableScale>
+      </View>
+    </Screen>
   );
 }
 
 function Blocked() {
   return (
-    <ThemedView style={[styles.container, styles.center]}>
-      <Stack.Screen options={{ title: 'Ameen wall', headerBackTitle: 'Home' }} />
-      <ThemedText style={styles.gateEmoji}>🌱</ThemedText>
-      <ThemedText style={styles.gateTitle}>For ages 13 and up</ThemedText>
-      <ThemedText style={styles.gateText}>
-        The community is for ages 13 and older. The rest of Daily Qur’an is all yours — keep reading,
-        listening, and reflecting.
-      </ThemedText>
-    </ThemedView>
+    <Screen stars>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.gateWrap}>
+        <SealMedallion name="sprout-outline" frame={70} ring={50} glyph={30} glowStrength={0.24} />
+        <Txt variant="h1" style={styles.centerText}>
+          For ages 13 and up
+        </Txt>
+        <Txt variant="body" color={c.textSecondary} style={styles.gateText}>
+          The community is for ages 13 and older. The rest of Daily Qur&apos;an is all yours — keep reading, listening, and reflecting.
+        </Txt>
+      </View>
+    </Screen>
   );
 }
 
@@ -498,12 +519,12 @@ function AttachedVerse({ refStr }: { refStr: string }) {
   if (!v) return null;
   return (
     <View style={styles.attached}>
-      <ThemedText style={styles.attachedAr}>{v.ar}</ThemedText>
-      <ThemedText style={styles.attachedEn}>{v.en}</ThemedText>
+      <Txt style={styles.attachedAr}>{v.ar}</Txt>
+      <Txt style={styles.attachedEn}>{v.en}</Txt>
       <View style={styles.attachedFoot}>
-        <ThemedText style={styles.attachedRef}>
+        <Txt style={styles.attachedRef}>
           {v.name} · {v.ref}
-        </ThemedText>
+        </Txt>
         <VerseSpeaker surah={v.surah} ayah={v.ayah} size={18} />
       </View>
     </View>
@@ -532,8 +553,6 @@ function ComposeModal({
   const [suggestion, setSuggestion] = useState<{ label: string; verses: SuggestedVerse[] } | null>(null);
   const [attached, setAttached] = useState<string | null>(initial?.attached ?? null);
 
-  // Seed the saved display name only on a fresh compose; a failed-post retry keeps the name you typed.
-  // (The modal is remounted via a key on every open, so this initializes correctly each time.)
   useEffect(() => {
     if (!initial) getDisplayName().then((n) => setName((cur) => cur || n));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -558,8 +577,6 @@ function ComposeModal({
     const cleanName = name.trim();
     if (cleanName) await setDisplayName(cleanName);
     const input: PostInput = { body: text, authorName: cleanName || 'Anonymous', verseRefs: attached ? [attached] : [] };
-    // Crisis-suspected text stays on the gentle BLOCKING flow (shown here with care) - never optimistic,
-    // so a heavy message never flashes into the public feed. The server check remains authoritative.
     if (looksLikeCrisis(text)) {
       setPosting(true);
       const r = await postIntention(input);
@@ -575,7 +592,6 @@ function ComposeModal({
       }
       return;
     }
-    // Everything else posts optimistically: the parent shows it immediately, we close right away.
     onOptimistic(input);
     setBody('');
     onClose();
@@ -585,287 +601,204 @@ function ComposeModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.scrim}>
         <Pressable style={styles.scrimFill} onPress={onClose} />
-        <ThemedView style={styles.sheet}>
+        <View style={styles.sheet}>
           <View style={styles.sheetHead}>
-            <ThemedText style={styles.sheetTitle}>Share an intention</ThemedText>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Ionicons name="close" size={22} color={ACCENT} />
-            </Pressable>
+            <Txt variant="cardTitle">Share an intention</Txt>
+            <IconButton name="close" onPress={onClose} diameter={34} size={20} color={c.accent} />
           </View>
 
-          <ScrollView
-            style={styles.sheetBody}
-            contentContainerStyle={styles.sheetScroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.sheetBody} contentContainerStyle={styles.sheetScroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <View style={styles.chips}>
-            {TEMPLATES.map((t) => (
-              <Pressable
-                key={t}
-                style={styles.chip}
-                onPress={() => {
-                  haptic.light();
-                  setBody(t);
-                }}>
-                <ThemedText style={styles.chipText} numberOfLines={1}>
-                  {t.replace(/^Please pray /, '').replace(/\.$/, '')}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </View>
+              {TEMPLATES.map((t) => (
+                <PressableScale
+                  key={t}
+                  style={styles.chip}
+                  onPress={() => {
+                    haptic.light();
+                    setBody(t);
+                  }}>
+                  <Txt variant="caption" numberOfLines={1} style={styles.chipText}>
+                    {t.replace(/^Please pray /, '').replace(/\.$/, '')}
+                  </Txt>
+                </PressableScale>
+              ))}
+            </View>
 
-          <TextInput
-            value={body}
-            onChangeText={(t) => setBody(t.slice(0, MAX))}
-            placeholder="Write a short intention or du’a…"
-            placeholderTextColor="rgba(127,127,127,0.7)"
-            style={styles.input}
-            multiline
-            maxLength={MAX}
-            editable={!posting}
-          />
-          <ThemedText style={styles.counter}>
-            {body.length}/{MAX}
-          </ThemedText>
+            <TextInput
+              value={body}
+              onChangeText={(t) => setBody(t.slice(0, MAX))}
+              placeholder="Write a short intention or du'a…"
+              placeholderTextColor={c.textMuted}
+              style={styles.input}
+              multiline
+              maxLength={MAX}
+              editable={!posting}
+            />
+            <Txt style={styles.counter}>
+              {body.length}/{MAX}
+            </Txt>
 
-          <TextInput
-            value={name}
-            onChangeText={(t) => setName(t.slice(0, 24))}
-            placeholder="Your name (optional — defaults to Anonymous)"
-            placeholderTextColor="rgba(127,127,127,0.7)"
-            style={styles.nameInput}
-            editable={!posting}
-          />
+            <TextInput
+              value={name}
+              onChangeText={(t) => setName(t.slice(0, 24))}
+              placeholder="Your name (optional — defaults to Anonymous)"
+              placeholderTextColor={c.textMuted}
+              style={styles.nameInput}
+              editable={!posting}
+            />
 
-          <Pressable
-            style={[styles.findVerse, (!body.trim() || suggesting) && styles.findVerseOff]}
-            onPress={findVerse}
-            disabled={!body.trim() || suggesting}>
-            <Ionicons name="sparkles-outline" size={15} color={ACCENT} />
-            <ThemedText style={styles.findVerseText}>
-              {suggesting ? 'Finding a verse…' : suggestion ? 'Find another verse' : 'Add a comforting verse'}
-            </ThemedText>
-          </Pressable>
+            <PressableScale style={[styles.findVerse, (!body.trim() || suggesting) && styles.findVerseOff]} onPress={findVerse} disabled={!body.trim() || suggesting}>
+              <Ionicons name="sparkles-outline" size={15} color={c.accent} />
+              <Txt style={styles.findVerseText}>{suggesting ? 'Finding a verse…' : suggestion ? 'Find another verse' : 'Add a comforting verse'}</Txt>
+            </PressableScale>
 
-          {suggestion && suggestion.verses.length ? (
-            <View style={styles.suggestWrap}>
-              <ThemedText style={styles.suggestLabel}>{suggestion.label}</ThemedText>
-              {suggestion.verses.map((v) => {
-                const on = attached === v.ref;
-                return (
-                  <View key={v.ref} style={[styles.suggestCard, on && styles.suggestCardOn]}>
-                    <View style={styles.suggestHead}>
-                      <ThemedText style={styles.suggestRef}>
-                        {v.name} · {v.ref}
-                      </ThemedText>
-                      <View style={styles.suggestActions}>
-                        <VerseSpeaker surah={v.surah} ayah={v.ayah} size={18} />
-                        <Pressable
-                          hitSlop={8}
-                          onPress={() => {
-                            haptic.light();
-                            setAttached(on ? null : v.ref);
-                          }}>
-                          <Ionicons
-                            name={on ? 'checkmark-circle' : 'add-circle-outline'}
-                            size={24}
-                            color={ACCENT}
-                          />
-                        </Pressable>
+            {suggestion && suggestion.verses.length ? (
+              <View style={styles.suggestWrap}>
+                <Txt style={styles.suggestLabel}>{suggestion.label}</Txt>
+                {suggestion.verses.map((v) => {
+                  const on = attached === v.ref;
+                  return (
+                    <View key={v.ref} style={[styles.suggestCard, on && styles.suggestCardOn]}>
+                      <View style={styles.suggestHead}>
+                        <Txt style={styles.suggestRef}>
+                          {v.name} · {v.ref}
+                        </Txt>
+                        <View style={styles.suggestActions}>
+                          <VerseSpeaker surah={v.surah} ayah={v.ayah} size={18} />
+                          <Pressable
+                            hitSlop={8}
+                            onPress={() => {
+                              haptic.light();
+                              setAttached(on ? null : v.ref);
+                            }}>
+                            <Ionicons name={on ? 'checkmark-circle' : 'add-circle-outline'} size={24} color={c.accent} />
+                          </Pressable>
+                        </View>
                       </View>
+                      <Txt style={styles.suggestAr}>{v.ar}</Txt>
+                      <Txt style={styles.suggestEn}>{v.en}</Txt>
                     </View>
-                    <ThemedText style={styles.suggestAr}>{v.ar}</ThemedText>
-                    <ThemedText style={styles.suggestEn}>{v.en}</ThemedText>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
+                  );
+                })}
+              </View>
+            ) : null}
 
-          {crisis ? (
-            <View style={styles.crisisCard}>
-              <ThemedText style={styles.crisisTitle}>Please reach out — you matter</ThemedText>
-              <ThemedText style={styles.crisisText}>{crisis}</ThemedText>
-            </View>
-          ) : error ? (
-            <ThemedText style={styles.errorText}>{error}</ThemedText>
-          ) : null}
+            {crisis ? (
+              <View style={styles.crisisCard}>
+                <Txt style={styles.crisisTitle}>Please reach out — you matter</Txt>
+                <Txt style={styles.crisisText}>{crisis}</Txt>
+              </View>
+            ) : error ? (
+              <Txt style={styles.errorText}>{error}</Txt>
+            ) : null}
 
-          <Pressable
-            style={[styles.share, (!body.trim() || posting) && styles.shareOff]}
-            onPress={submit}
-            disabled={!body.trim() || posting}>
-            <ThemedText style={styles.shareText}>{posting ? 'Sharing…' : 'Share intention'}</ThemedText>
-          </Pressable>
-          <ThemedText style={styles.modNote}>
-            Posts are checked before they appear. Be kind — this is a space for prayer, not chat.
-          </ThemedText>
+            <PressableScale style={[styles.share, (!body.trim() || posting) && styles.shareOff]} onPress={submit} disabled={!body.trim() || posting}>
+              <Txt style={styles.shareText}>{posting ? 'Sharing…' : 'Share intention'}</Txt>
+            </PressableScale>
+            <Txt style={styles.modNote}>Posts are checked before they appear. Be kind — this is a space for prayer, not chat.</Txt>
           </ScrollView>
-        </ThemedView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { alignItems: 'center', justifyContent: 'center', gap: 12, padding: 28 },
-  muted: { opacity: 0.65, fontSize: 16, textAlign: 'center' },
-  list: { padding: 16, paddingBottom: 40, gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.gutter, paddingBottom: space.sm },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: space.section },
+  centerText: { textAlign: 'center' },
+
+  list: { paddingHorizontal: space.gutter, paddingBottom: space.section, gap: 12 },
   head: { gap: 12, paddingBottom: 4 },
-  intro: { fontSize: 14, lineHeight: 20, opacity: 0.7 },
-  postBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: ACCENT,
-    paddingVertical: 13,
-    borderRadius: 14,
-  },
-  postBtnText: { color: '#fff', fontSize: 15.5, fontWeight: '700' },
-  empty: { textAlign: 'center', opacity: 0.55, marginTop: 40, fontSize: 15 },
-  card: {
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(127,127,127,0.22)',
-    backgroundColor: 'rgba(127,127,127,0.04)',
-    gap: 10,
-  },
+  intro: { lineHeight: 21 },
+  postBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: c.primary, paddingVertical: 14, borderRadius: radius.full },
+  postBtnText: { fontFamily: font.sansBold, fontSize: 15, color: c.bg },
+  empty: { textAlign: 'center', marginTop: 40 },
+  emptySpin: { marginTop: 40 },
+  footerSpin: { marginVertical: 18 },
+
+  card: { padding: space.card, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, backgroundColor: c.surface1, gap: 10 },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  author: { fontSize: 13.5, fontWeight: '700', color: ACCENT, flex: 1 },
-  time: { fontSize: 12, opacity: 0.5 },
-  body: { fontSize: 15.5, lineHeight: 22 },
+  author: { flex: 1, fontFamily: font.sansBold, fontSize: 13.5, color: c.accent },
+  time: { fontFamily: font.sans, fontSize: 12, color: c.textMuted },
+  body: { fontFamily: font.serifReg, fontSize: 16, lineHeight: 23, color: c.scriptureInk },
   cardActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  ameen: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: 'rgba(10,126,164,0.1)',
-  },
-  ameenOn: { backgroundColor: ACCENT },
-  ameenText: { fontSize: 14, fontWeight: '700', color: ACCENT },
-  ameenTextOn: { color: '#fff' },
+  ameen: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 14, borderRadius: radius.full, backgroundColor: 'rgba(201,189,166,0.12)' },
+  ameenOn: { backgroundColor: c.primary },
+  ameenText: { fontFamily: font.sansBold, fontSize: 14, color: c.accent },
+  ameenTextOn: { color: c.bg },
   overflow: { padding: 6 },
-  minePayoff: { flexShrink: 1, paddingVertical: 8, paddingRight: 8 },
-  minePayoffText: { fontSize: 13.5, fontWeight: '700', color: ACCENT },
-  minePayoffMuted: { color: 'rgba(127,127,127,0.85)', fontWeight: '600' },
+  minePayoff: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, paddingVertical: 8, paddingRight: 8 },
+  minePayoffText: { flexShrink: 1, fontFamily: font.sansSemi, fontSize: 13.5, color: c.accent },
+  minePayoffMuted: { color: c.textMuted },
 
   payoffBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: 'rgba(10,126,164,0.1)',
+    padding: space.card,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(201,189,166,0.1)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(10,126,164,0.3)',
+    borderColor: 'rgba(201,189,166,0.3)',
   },
-  payoffEmoji: { fontSize: 26 },
   payoffTextWrap: { flex: 1, gap: 2 },
-  payoffHead: { fontSize: 15.5, fontWeight: '800', color: ACCENT },
-  payoffSub: { fontSize: 13, opacity: 0.7 },
+  payoffHead: { fontFamily: font.sansBold, fontSize: 15.5, color: c.accent },
 
   cardPending: { opacity: 0.6 },
   pendingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pendingText: { fontSize: 13, fontWeight: '600', opacity: 0.6 },
+  pendingText: { fontFamily: font.sansSemi, fontSize: 13, color: c.textMuted },
   sortRow: { flexDirection: 'row', gap: 8, paddingTop: 2 },
-  sortChip: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(127,127,127,0.1)' },
-  sortChipOn: { backgroundColor: 'rgba(10,126,164,0.15)' },
-  sortChipText: { fontSize: 13, fontWeight: '700', color: 'rgba(127,127,127,0.8)' },
-  sortChipTextOn: { color: ACCENT },
+  sortChip: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: radius.full, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, backgroundColor: c.surface1 },
+  sortChipOn: { backgroundColor: c.primary, borderColor: c.primary },
+  sortChipText: { fontFamily: font.sansSemi, color: c.textSecondary },
+  sortChipTextOn: { color: c.bg },
   loadMore: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 24, marginTop: 4 },
-  loadMoreText: { color: ACCENT, fontWeight: '700', fontSize: 14 },
+  loadMoreText: { fontFamily: font.sansSemi },
 
-  gateEmoji: { fontSize: 44 },
-  gateTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
-  gateText: { fontSize: 15, lineHeight: 23, opacity: 0.8, textAlign: 'center' },
-  gatePrimary: { backgroundColor: ACCENT, paddingVertical: 14, paddingHorizontal: 30, borderRadius: 14, marginTop: 8 },
-  gatePrimaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  gateGhost: { paddingVertical: 10 },
-  gateGhostText: { color: ACCENT, fontSize: 14.5, fontWeight: '600' },
+  gateWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: space.section },
+  gateText: { textAlign: 'center', lineHeight: 23 },
+  cta: { backgroundColor: c.primary, paddingVertical: 14, paddingHorizontal: 30, borderRadius: radius.full, marginTop: 6 },
+  ctaText: { fontFamily: font.sansBold, fontSize: 15.5, color: c.bg },
+  ghost: { paddingVertical: 8 },
+  ghostText: { fontFamily: font.sansSemi },
 
-  scrim: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  scrim: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
   scrimFill: { flex: 1 },
-  sheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 16, paddingHorizontal: 18, maxHeight: '85%' },
+  sheet: { backgroundColor: c.surface1, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingTop: 16, paddingHorizontal: 18, maxHeight: '85%', borderTopWidth: StyleSheet.hairlineWidth, borderColor: c.hairline },
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   sheetBody: { flexShrink: 1 },
   sheetScroll: { gap: 10, paddingBottom: 20 },
-  suggestActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  sheetTitle: { fontSize: 18, fontWeight: '800' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(10,126,164,0.12)' },
-  chipText: { fontSize: 12.5, fontWeight: '600', color: ACCENT },
-  input: {
-    minHeight: 72,
-    backgroundColor: 'rgba(127,127,127,0.1)',
-    borderRadius: 14,
-    padding: 14,
-    fontSize: 16,
-    color: 'rgba(127,127,127,1)',
-    textAlignVertical: 'top',
-  },
-  counter: { alignSelf: 'flex-end', fontSize: 11.5, opacity: 0.5 },
-  nameInput: {
-    backgroundColor: 'rgba(127,127,127,0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 14.5,
-    color: 'rgba(127,127,127,1)',
-  },
-  crisisCard: {
-    backgroundColor: 'rgba(214,84,84,0.1)',
-    borderColor: 'rgba(214,84,84,0.35)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 14,
-    padding: 14,
-    gap: 6,
-  },
-  crisisTitle: { fontSize: 14.5, fontWeight: '800', color: '#c1554f' },
-  crisisText: { fontSize: 13.5, lineHeight: 20, opacity: 0.85 },
-  errorText: { fontSize: 13.5, color: '#c1554f', lineHeight: 19 },
-  share: { backgroundColor: ACCENT, paddingVertical: 14, borderRadius: 14, alignItems: 'center', marginTop: 2 },
-  shareOff: { opacity: 0.4 },
-  shareText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  modNote: { fontSize: 11.5, opacity: 0.5, lineHeight: 16, textAlign: 'center' },
-  findVerse: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(10,126,164,0.1)',
-  },
+  chip: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: radius.full, backgroundColor: 'rgba(201,189,166,0.12)' },
+  chipText: { fontFamily: font.sansSemi, color: c.accent },
+  input: { minHeight: 72, backgroundColor: c.surface2, borderRadius: radius.md, padding: 14, fontFamily: font.sans, fontSize: 16, color: c.textPrimary, textAlignVertical: 'top' },
+  counter: { alignSelf: 'flex-end', fontFamily: font.sans, fontSize: 11.5, color: c.textMuted },
+  nameInput: { backgroundColor: c.surface2, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 11, fontFamily: font.sans, fontSize: 14.5, color: c.textPrimary },
+  findVerse: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 10, borderRadius: radius.md, backgroundColor: 'rgba(201,189,166,0.1)' },
   findVerseOff: { opacity: 0.45 },
-  findVerseText: { fontSize: 13.5, fontWeight: '700', color: ACCENT },
+  findVerseText: { fontFamily: font.sansSemi, fontSize: 13.5, color: c.accent },
   suggestWrap: { gap: 8 },
-  suggestLabel: { fontSize: 12.5, fontWeight: '800', color: ACCENT, opacity: 0.85 },
-  suggestCard: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(127,127,127,0.25)',
-    gap: 8,
-  },
-  suggestCardOn: { borderColor: ACCENT, backgroundColor: 'rgba(10,126,164,0.07)' },
+  suggestLabel: { fontFamily: font.sansBold, fontSize: 12.5, color: c.accent },
+  suggestCard: { padding: 12, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, backgroundColor: c.surface2, gap: 8 },
+  suggestCardOn: { borderColor: c.accent, backgroundColor: 'rgba(201,189,166,0.08)' },
   suggestHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  suggestRef: { fontSize: 12, fontWeight: '700', color: ACCENT },
-  suggestAr: { fontFamily: 'AmiriQuran', fontSize: 20, lineHeight: 42, textAlign: 'right', writingDirection: 'rtl' },
-  suggestEn: { fontSize: 13.5, lineHeight: 20, opacity: 0.85 },
-  attached: {
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(10,126,164,0.06)',
-    borderLeftWidth: 2,
-    borderLeftColor: ACCENT,
-  },
-  attachedAr: { fontFamily: 'AmiriQuran', fontSize: 20, lineHeight: 42, textAlign: 'right', writingDirection: 'rtl' },
-  attachedEn: { fontSize: 14, lineHeight: 21, opacity: 0.85 },
+  suggestActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  suggestRef: { fontFamily: font.sansBold, fontSize: 12, color: c.accent },
+  suggestAr: { fontFamily: 'AmiriQuran', fontSize: 20, lineHeight: 42, textAlign: 'right', writingDirection: 'rtl', color: c.scriptureInk },
+  suggestEn: { fontFamily: font.serifReg, fontSize: 13.5, lineHeight: 20, color: c.textSecondary },
+  crisisCard: { backgroundColor: 'rgba(214,84,84,0.12)', borderColor: 'rgba(214,84,84,0.35)', borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, padding: 14, gap: 6 },
+  crisisTitle: { fontFamily: font.sansBold, fontSize: 14.5, color: '#E0867E' },
+  crisisText: { fontFamily: font.sans, fontSize: 13.5, lineHeight: 20, color: c.textSecondary },
+  errorText: { fontFamily: font.sans, fontSize: 13.5, color: '#E0867E', lineHeight: 19 },
+  share: { backgroundColor: c.primary, paddingVertical: 14, borderRadius: radius.full, alignItems: 'center', marginTop: 2 },
+  shareOff: { opacity: 0.4 },
+  shareText: { fontFamily: font.sansBold, fontSize: 15.5, color: c.bg },
+  modNote: { fontFamily: font.sans, fontSize: 11.5, color: c.textMuted, lineHeight: 16, textAlign: 'center' },
+
+  attached: { gap: 6, paddingVertical: 10, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: 'rgba(201,189,166,0.06)', borderLeftWidth: 2, borderLeftColor: c.accent },
+  attachedAr: { fontFamily: 'AmiriQuran', fontSize: 20, lineHeight: 42, textAlign: 'right', writingDirection: 'rtl', color: c.scriptureInk },
+  attachedEn: { fontFamily: font.serifReg, fontSize: 14, lineHeight: 21, color: c.textSecondary },
   attachedFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  attachedRef: { fontSize: 11.5, fontWeight: '700', color: ACCENT, opacity: 0.8 },
+  attachedRef: { fontFamily: font.sansBold, fontSize: 11.5, color: c.accent },
 });

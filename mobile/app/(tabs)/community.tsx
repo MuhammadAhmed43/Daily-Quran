@@ -1,16 +1,4 @@
-// Community tab placeholder (Ameen wall + live du'as + Islamic events). Built in a later phase.
-import { View } from 'react-native';
-
-import { Txt } from '@/components/ui/primitives';
-import { Screen } from '@/components/ui/screen';
-
-export default function CommunityScreen() {
-  return (
-    <Screen stars>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        <Txt variant="h1">Community</Txt>
-        <Txt variant="subtitle">Coming soon</Txt>
-      </View>
-    </Screen>
-  );
-}
+// Community tab = the Ameen wall (onyx). The implementation lives in app/ameen.tsx (also the /ameen route
+// reached from Today); we re-export it so the tab and the route share one screen. At the tab root there is
+// no back button (router.canGoBack() is false); from /ameen it shows one.
+export { default } from '@/app/ameen';

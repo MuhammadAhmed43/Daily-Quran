@@ -22,8 +22,16 @@ export type Intention = {
   created_at: string;
 };
 export type FeedItem = Intention & { ameenedByMe: boolean; pending?: boolean };
-export type FeedSort = 'recent' | 'top';
+export type FeedSort = 'recent' | 'top' | 'trending';
+export type FeedCursor = { ameen_count: number; created_at: string };
 export const PAGE_SIZE = 20;
+const TRENDING_DAYS = 7; // "Trending" = intentions from the last week, ranked by most prayed
+
+// The keyset cursor for the LAST item of a page — pass it to fetchFeed to load the next page.
+export const cursorOf = (it: Pick<Intention, 'ameen_count' | 'created_at'>): FeedCursor => ({
+  ameen_count: it.ameen_count,
+  created_at: it.created_at,
+});
 
 export type SuggestedVerse = { ref: string; surah: number; ayah: number; name: string; ar: string; en: string };
 
@@ -62,20 +70,37 @@ export async function currentUserId(): Promise<string | null> {
   return s?.user.id ?? null;
 }
 
-// Fetch a page of the feed. sort = 'recent' (newest first) or 'top' (most-prayed first). Pagination via
-// offset; returns up to `limit` items, so a full page tells the caller there may be more to load.
-export async function fetchFeed(sort: FeedSort = 'recent', offset = 0, limit = PAGE_SIZE): Promise<FeedItem[]> {
+// Fetch a page of the feed via KEYSET (cursor) pagination, so a shifting ameen_count never skips or dupes
+// rows across pages the way offset (.range) did. Pass the LAST item's cursor (cursorOf) for the next page;
+// null for the first page. Sorts:
+//   recent   - newest first
+//   top      - most prayed first (all time)
+//   trending - most prayed among intentions from the last TRENDING_DAYS days
+// (A keyset on a mutable key still isn't perfectly immune to an item moving across the cursor between
+//  fetches, but it removes the systematic offset skew; the caller also de-dupes by id.)
+export async function fetchFeed(sort: FeedSort = 'recent', cursor: FeedCursor | null = null, limit = PAGE_SIZE): Promise<FeedItem[]> {
   if (!supabase) return [];
   await ensureAnonSession();
   let q = supabase
     .from('intentions')
     .select('id,user_id,author_name,body,category,verse_refs,ameen_count,created_at')
     .eq('hidden', false);
-  q =
-    sort === 'top'
-      ? q.order('ameen_count', { ascending: false }).order('created_at', { ascending: false })
-      : q.order('created_at', { ascending: false });
-  const { data: rows } = await q.range(offset, offset + limit - 1);
+
+  if (sort === 'trending') {
+    const since = new Date(Date.now() - TRENDING_DAYS * 86400000).toISOString();
+    q = q.gte('created_at', since);
+  }
+
+  if (sort === 'top' || sort === 'trending') {
+    q = q.order('ameen_count', { ascending: false }).order('created_at', { ascending: false });
+    // rows strictly after (ameen_count, created_at) in (desc, desc) order
+    if (cursor) q = q.or(`ameen_count.lt.${cursor.ameen_count},and(ameen_count.eq.${cursor.ameen_count},created_at.lt.${cursor.created_at})`);
+  } else {
+    q = q.order('created_at', { ascending: false });
+    if (cursor) q = q.lt('created_at', cursor.created_at);
+  }
+
+  const { data: rows } = await q.limit(limit);
   const items = (rows ?? []) as Intention[];
   if (!items.length) return [];
   const { data: mine } = await supabase
