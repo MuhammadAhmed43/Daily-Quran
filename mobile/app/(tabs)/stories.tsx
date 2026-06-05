@@ -1,93 +1,99 @@
-import { Link } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// Stories library (onyx). The Qur'an's narratives as illustrated, narrated storyboards — a cover-art card
+// per story that opens the immersive player. Re-skin + compose only; story data (lib/stories) is unchanged.
+// Prophets are never depicted (aniconic art).
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { getStories } from '@/lib/stories';
+import { Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Screen } from '@/components/ui/screen';
+import { haptic } from '@/lib/haptics';
+import { getStories, panelImage } from '@/lib/stories';
+import { c, font, radius, space } from '@/lib/theme';
 
 export default function StoriesScreen() {
+  const router = useRouter();
   const stories = getStories();
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <View style={styles.header}>
-            <ThemedText type="title" style={styles.h1}>
-              Stories
-            </ThemedText>
-            <ThemedText style={styles.sub}>
-              The Qur’an’s narratives, illustrated — fully aniconic, with every verse shown from
-              the verified text.
-            </ThemedText>
-          </View>
+    <Screen stars>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Txt variant="h1">Stories</Txt>
+          <Txt variant="subtitle">The Qur&apos;an&apos;s narratives, illustrated — fully aniconic, every verse shown from the verified text.</Txt>
+        </View>
 
-          {stories.map((s) => (
-            <Link
-              key={s.id}
-              href={{ pathname: '/stories/[id]', params: { id: s.id } }}
-              asChild>
-              <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-                <ThemedText style={styles.cardArabic}>{s.arabicName}</ThemedText>
-                <ThemedText style={styles.cardTitle}>{s.title}</ThemedText>
-                <ThemedText style={styles.cardSubtitle}>{s.subtitle}</ThemedText>
-                <ThemedText style={styles.cardBlurb}>{s.blurb}</ThemedText>
-                <View style={styles.cardFooter}>
-                  <ThemedText style={styles.cardMeta}>{s.panels.length} scenes</ThemedText>
-                  <ThemedText style={styles.cardCta}>Begin →</ThemedText>
+        {stories.map((s, i) => {
+          const cover = panelImage(s.id, 1);
+          return (
+            <Animated.View key={s.id} entering={FadeInDown.delay(i * 50).duration(320)}>
+              <PressableScale
+                style={styles.card}
+                onPress={() => {
+                  haptic.light();
+                  router.push({ pathname: '/stories/[id]', params: { id: s.id } });
+                }}>
+                <View style={styles.cover}>
+                  {cover ? <Image source={cover} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : null}
+                  <LinearGradient colors={['transparent', 'rgba(5,5,5,0.55)', 'rgba(5,5,5,0.9)']} locations={[0.25, 0.7, 1]} style={StyleSheet.absoluteFill} />
+                  <Txt style={styles.coverArabic}>{s.arabicName}</Txt>
+                  <View style={styles.coverText}>
+                    <Txt variant="h2" numberOfLines={1} style={styles.coverTitle}>
+                      {s.title}
+                    </Txt>
+                    <Txt variant="caption" color={c.accent} numberOfLines={1}>
+                      {s.subtitle}
+                    </Txt>
+                  </View>
                 </View>
-              </Pressable>
-            </Link>
-          ))}
+                <View style={styles.cardBody}>
+                  <Txt variant="body" color={c.textSecondary} numberOfLines={3} style={styles.blurb}>
+                    {s.blurb}
+                  </Txt>
+                  <View style={styles.footer}>
+                    <Txt variant="eyebrow" color={c.textMuted}>
+                      {s.panels.length} SCENES
+                    </Txt>
+                    <View style={styles.begin}>
+                      <Txt variant="caption" color={c.accent} style={styles.beginText}>
+                        Begin
+                      </Txt>
+                      <Ionicons name="arrow-forward" size={15} color={c.accent} />
+                    </View>
+                  </View>
+                </View>
+              </PressableScale>
+            </Animated.View>
+          );
+        })}
 
-          <ThemedText style={styles.note}>
-            Reverence by design: prophets are never depicted. Scenes are told through objects,
-            light, and calligraphy — a study aid, not a ruling.
-          </ThemedText>
-        </ScrollView>
-      </SafeAreaView>
-    </ThemedView>
+        <Txt variant="caption" color={c.textMuted} style={styles.note}>
+          Reverence by design: prophets are never depicted. Scenes are told through objects, light, and calligraphy — a study aid, not a ruling.
+        </Txt>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 16, paddingBottom: 40, gap: 16 },
-  header: { gap: 6, paddingTop: 8 },
-  h1: { fontSize: 30 },
-  sub: { fontSize: 14, lineHeight: 20, opacity: 0.6 },
-  card: {
-    backgroundColor: '#161334',
-    borderRadius: 20,
-    padding: 22,
-    gap: 6,
-    overflow: 'hidden',
-  },
-  cardPressed: { opacity: 0.9 },
-  cardArabic: {
-    fontFamily: 'AmiriQuran',
-    fontSize: 32,
-    lineHeight: 64,
-    color: '#f4e2b8',
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
-  cardTitle: { fontSize: 26, fontWeight: '800', color: '#fff' },
-  cardSubtitle: { fontSize: 15, fontWeight: '600', color: '#c8b4f0' },
-  cardBlurb: { fontSize: 14, lineHeight: 21, color: 'rgba(255,255,255,0.72)', marginTop: 6 },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 14,
-  },
-  cardMeta: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    color: 'rgba(255,255,255,0.55)',
-  },
-  cardCta: { fontSize: 15, fontWeight: '700', color: '#f4e2b8' },
-  note: { fontSize: 11, lineHeight: 16, opacity: 0.45, textAlign: 'center', paddingHorizontal: 8 },
+  scroll: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.section, gap: 16 },
+  header: { gap: 4, paddingBottom: 2 },
+
+  card: { borderRadius: radius.lg, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, backgroundColor: c.surface1 },
+  cover: { aspectRatio: 16 / 10, backgroundColor: c.surface2, justifyContent: 'flex-end' },
+  coverArabic: { position: 'absolute', top: 12, right: 14, fontFamily: 'AmiriQuran', fontSize: 28, lineHeight: 52, color: c.scriptureInk, writingDirection: 'rtl' },
+  coverText: { padding: space.card, paddingBottom: 14, gap: 3 },
+  coverTitle: { color: c.scriptureInk },
+
+  cardBody: { padding: space.card, gap: 12 },
+  blurb: { lineHeight: 22 },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  begin: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  beginText: { fontFamily: font.sansBold },
+
+  note: { textAlign: 'center', lineHeight: 16, paddingHorizontal: 8, marginTop: 2 },
 });
