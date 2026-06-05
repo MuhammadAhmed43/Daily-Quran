@@ -6,7 +6,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,6 +48,15 @@ export default function ExploreScreen() {
   const [autoPlay, setAutoPlay] = useState(true);
   const heroRef = useRef<ScrollView>(null);
 
+  // Time-aware top section (Bible Chat frame 38): a greeting that shifts with the hour, and the hero pager
+  // leads with what fits the moment — study to begin the day, a video / narrated story to wind down.
+  const tod = useMemo<'morning' | 'afternoon' | 'evening' | 'night'>(() => {
+    const h = new Date().getHours();
+    return h < 5 ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : h < 21 ? 'evening' : 'night';
+  }, []);
+  const greeting = tod === 'morning' ? 'Good morning' : tod === 'afternoon' ? 'Good afternoon' : tod === 'evening' ? 'Good evening' : 'A peaceful night';
+  const leadEyebrow = tod === 'morning' ? 'JOURNEY' : tod === 'evening' ? 'WATCH' : 'STORY';
+
   // The four category tiles. Stories has one finished story today, so it opens straight into it; the others
   // open their library/dashboard. (A Stories browse screen arrives with more stories.)
   const tiles: { category: AtlasCategory; title: string; sublabel: string; go: Go }[] = [
@@ -68,6 +77,8 @@ export default function ExploreScreen() {
   if (heroPlan) heroes.push({ key: `h-plan:${heroPlan.id}`, eyebrow: 'JOURNEY', title: heroPlan.title, sub: heroPlan.blurb, mci: 'map-marker-path', glow: 'rgba(214,180,120,0.26)', go: () => router.push({ pathname: '/plan/[id]', params: { id: heroPlan.id } }) });
   const heroWatch = getChapter('seerah-09') ?? getChapters('seerah')[3];
   if (heroWatch) heroes.push({ key: `h-watch:${heroWatch.id}`, eyebrow: 'WATCH', title: heroWatch.title, sub: heroWatch.era, mci: 'play', glow: 'rgba(228,220,198,0.24)', go: () => router.push({ pathname: '/watch/[id]', params: { id: heroWatch.id } }) });
+  // Lead the pager with the time-appropriate hero (stable order for the rest).
+  heroes.sort((a, b) => (b.eyebrow === leadEyebrow ? 1 : 0) - (a.eyebrow === leadEyebrow ? 1 : 0));
   const heroCount = heroes.length;
 
   // Auto-advance the hero gently, until the user takes over.
@@ -156,7 +167,12 @@ export default function ExploreScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {heroes.length > 0 ? (
           <View style={styles.heroSection}>
-            <Txt variant="h2">Most popular</Txt>
+            <View style={styles.heroHead}>
+              <Txt variant="h2">{greeting}</Txt>
+              <Txt variant="caption" color={c.textMuted}>
+                Most popular right now
+              </Txt>
+            </View>
             <ScrollView
               ref={heroRef}
               horizontal
@@ -341,6 +357,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.section, gap: space.section },
 
   heroSection: { gap: 10 },
+  heroHead: { gap: 2 },
   heroRow: { gap: 12 },
   hero: {
     aspectRatio: 1.6,

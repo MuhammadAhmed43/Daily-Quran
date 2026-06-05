@@ -13,17 +13,19 @@ type Props = PressableProps & {
   haptics?: boolean;
 };
 
-export function PressableScale({ scaleTo = motion.pressScale, haptics = true, onPress, disabled, style, children, ...rest }: Props) {
+export function PressableScale({ scaleTo = motion.pressScale, haptics = true, onPress, onPressIn, onPressOut, disabled, style, children, ...rest }: Props) {
   const s = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (
     <AnimatedPressable
       disabled={disabled}
-      onPressIn={() => {
+      onPressIn={(e) => {
         s.value = withSpring(scaleTo, motion.springPress);
+        onPressIn?.(e);
       }}
-      onPressOut={() => {
+      onPressOut={(e) => {
         s.value = withSpring(1, motion.springPress);
+        onPressOut?.(e);
       }}
       onPress={(e) => {
         if (haptics) haptic.light();

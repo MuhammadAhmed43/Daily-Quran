@@ -140,8 +140,20 @@ export function AtlasTile({
   }, [breath, category]);
   const glowStyle = useAnimatedStyle(() => ({ opacity: 0.82 + 0.18 * breath.value }));
 
+  // Press-bloom — a champagne wash that swells from the emblem corner on touch, then eases back out.
+  const press = useSharedValue(0);
+  const bloomStyle = useAnimatedStyle(() => ({ opacity: press.value * 0.6 }));
+
   return (
-    <PressableScale style={styles.tile} onPress={onPress}>
+    <PressableScale
+      style={styles.tile}
+      onPress={onPress}
+      onPressIn={() => {
+        press.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) });
+      }}
+      onPressOut={() => {
+        press.value = withTiming(0, { duration: 420, easing: Easing.out(Easing.quad) });
+      }}>
       <View style={StyleSheet.absoluteFill} pointerEvents="none" onLayout={onLayout}>
         {/* warm near-black base, value-stepped per tile */}
         <LinearGradient colors={spec.base} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -154,6 +166,11 @@ export function AtlasTile({
         {/* bottom scrim so the label always reads */}
         <LinearGradient colors={c.cardScrim} locations={[0.4, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       </View>
+
+      {/* press-bloom: a soft champagne lift from the emblem corner on touch */}
+      <Animated.View style={[StyleSheet.absoluteFill, bloomStyle]} pointerEvents="none">
+        <LinearGradient colors={['rgba(227,217,196,0.5)', 'transparent']} start={{ x: 0.24, y: 0.22 }} end={{ x: 0.95, y: 1 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
 
       {/* the emblem in an 8-point seal medallion (rub el hizb) — the hero */}
       <View style={styles.emblem}>
