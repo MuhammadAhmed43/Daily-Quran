@@ -1,27 +1,19 @@
+// Auth landing (onyx) — the first screen for a new user: sign up / log in / Google / continue as guest.
+// Onyx reskin only; all auth logic (email/google/guest + the Google redirect helper) is preserved.
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { SealMedallion } from '@/components/atlas-tile';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Txt } from '@/components/ui/primitives';
+import { Screen } from '@/components/ui/screen';
 import { continueAsGuest, signInEmail, signInGoogle, signUpEmail } from '@/lib/auth';
 import { haptic } from '@/lib/haptics';
 import { updateProfile } from '@/lib/profile';
-
-const ACCENT = '#0a7ea4';
+import { c, font, radius } from '@/lib/theme';
 
 type Mode = 'login' | 'signup';
 
@@ -55,10 +47,7 @@ export function AuthFlow({ onDone }: { onDone: () => void }) {
   const copyRedirect = async () => {
     const uri = Linking.createURL('auth-callback');
     await Clipboard.setStringAsync(uri);
-    Alert.alert(
-      'Redirect URL copied',
-      `${uri}\n\nAdd this exact URL in Supabase -> Authentication -> URL Configuration -> Redirect URLs, then try Google again.`,
-    );
+    Alert.alert('Redirect URL copied', `${uri}\n\nAdd this exact URL in Supabase -> Authentication -> URL Configuration -> Redirect URLs, then try Google again.`);
   };
 
   const submitEmail = () =>
@@ -70,180 +59,168 @@ export function AuthFlow({ onDone }: { onDone: () => void }) {
     });
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <View style={styles.brand}>
-              <ThemedText style={styles.crescent}>🌙</ThemedText>
-              <ThemedText style={styles.title}>Daily Qur&apos;an</ThemedText>
-              <ThemedText style={styles.tagline}>Read, reflect, and pray — a little every day.</ThemedText>
-            </View>
+    <Screen edges={['top', 'bottom']} stars>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.fill}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.brand}>
+            <SealMedallion name="star-crescent" frame={78} ring={56} glyph={32} glowStrength={0.34} />
+            <Txt variant="display" style={styles.title}>
+              Daily Qur’an
+            </Txt>
+            <Txt variant="body" color={c.textMuted} style={styles.tagline}>
+              Read, reflect, and pray — a little every day.
+            </Txt>
+          </View>
 
-            <View style={styles.segment}>
-              {(['signup', 'login'] as Mode[]).map((m) => (
-                <Pressable
-                  key={m}
-                  style={[styles.segBtn, mode === m && styles.segBtnOn]}
-                  onPress={() => {
-                    haptic.light();
-                    setMode(m);
-                    setError(null);
-                  }}>
-                  <ThemedText style={[styles.segText, mode === m && styles.segTextOn]}>
-                    {m === 'signup' ? 'Sign up' : 'Log in'}
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </View>
+          <View style={styles.segment}>
+            {(['signup', 'login'] as Mode[]).map((m) => (
+              <PressableScale
+                key={m}
+                style={[styles.segBtn, mode === m && styles.segBtnOn]}
+                onPress={() => {
+                  haptic.light();
+                  setMode(m);
+                  setError(null);
+                }}>
+                <Txt style={[styles.segText, mode === m && styles.segTextOn]}>{m === 'signup' ? 'Sign up' : 'Log in'}</Txt>
+              </PressableScale>
+            ))}
+          </View>
 
-            {mode === 'signup' ? (
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Your name"
-                placeholderTextColor="rgba(127,127,127,0.7)"
-                style={styles.input}
-                autoCapitalize="words"
-                editable={!busy}
-              />
-            ) : null}
+          {mode === 'signup' ? (
             <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email"
-              placeholderTextColor="rgba(127,127,127,0.7)"
+              value={name}
+              onChangeText={setName}
+              placeholder="Your name"
+              placeholderTextColor={c.textMuted}
               style={styles.input}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
+              autoCapitalize="words"
               editable={!busy}
             />
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password (6+ characters)"
-              placeholderTextColor="rgba(127,127,127,0.7)"
-              style={styles.input}
-              secureTextEntry
-              editable={!busy}
-            />
+          ) : null}
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            placeholderTextColor={c.textMuted}
+            style={styles.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            editable={!busy}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password (6+ characters)"
+            placeholderTextColor={c.textMuted}
+            style={styles.input}
+            secureTextEntry
+            editable={!busy}
+          />
 
-            {error ? <ThemedText style={styles.error}>{error}</ThemedText> : null}
-            {showRedirectHelp ? (
-              <Pressable style={styles.redirectHelp} onPress={copyRedirect}>
-                <Ionicons name="copy-outline" size={14} color={ACCENT} />
-                <ThemedText style={styles.redirectHelpText}>
-                  Setting up Google? Tap to copy this app&apos;s redirect URL
-                </ThemedText>
-              </Pressable>
-            ) : null}
+          {error ? (
+            <Txt variant="caption" color={c.danger} style={styles.error}>
+              {error}
+            </Txt>
+          ) : null}
+          {showRedirectHelp ? (
+            <PressableScale style={styles.redirectHelp} onPress={copyRedirect}>
+              <Ionicons name="copy-outline" size={14} color={c.accent} />
+              <Txt style={styles.redirectHelpText}>Setting up Google? Tap to copy this app’s redirect URL</Txt>
+            </PressableScale>
+          ) : null}
 
-            <Pressable
-              style={[styles.primary, (!canSubmit || !!busy) && styles.primaryOff]}
-              onPress={submitEmail}
-              disabled={!canSubmit || !!busy}>
-              {busy === 'email' ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <ThemedText style={styles.primaryText}>{mode === 'signup' ? 'Create account' : 'Log in'}</ThemedText>
-              )}
-            </Pressable>
+          <PressableScale style={[styles.primary, (!canSubmit || !!busy) && styles.primaryOff]} onPress={submitEmail} disabled={!canSubmit || !!busy}>
+            {busy === 'email' ? (
+              <ActivityIndicator color={c.bg} />
+            ) : (
+              <Txt style={styles.primaryText}>{mode === 'signup' ? 'Create account' : 'Log in'}</Txt>
+            )}
+          </PressableScale>
 
-            <View style={styles.divider}>
-              <View style={styles.line} />
-              <ThemedText style={styles.or}>or</ThemedText>
-              <View style={styles.line} />
-            </View>
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <Txt variant="caption" color={c.textMuted}>
+              or
+            </Txt>
+            <View style={styles.line} />
+          </View>
 
-            <Pressable
-              style={[styles.social, !!busy && styles.socialOff]}
-              onPress={() => run('google', signInGoogle)}
-              disabled={!!busy}>
-              {busy === 'google' ? (
-                <ActivityIndicator color={ACCENT} />
-              ) : (
-                <>
-                  <Ionicons name="logo-google" size={18} color="#DB4437" />
-                  <ThemedText style={styles.socialText}>Continue with Google</ThemedText>
-                </>
-              )}
-            </Pressable>
+          <PressableScale style={[styles.social, !!busy && styles.socialOff]} onPress={() => run('google', signInGoogle)} disabled={!!busy}>
+            {busy === 'google' ? (
+              <ActivityIndicator color={c.accent} />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={18} color="#E0A89B" />
+                <Txt style={styles.socialText}>Continue with Google</Txt>
+              </>
+            )}
+          </PressableScale>
 
-            <View style={[styles.social, styles.socialDisabled]}>
-              <Ionicons name="logo-apple" size={19} color="rgba(127,127,127,0.6)" />
-              <ThemedText style={styles.socialTextOff}>Apple — coming soon</ThemedText>
-            </View>
+          <View style={[styles.social, styles.socialDisabled]}>
+            <Ionicons name="logo-apple" size={19} color={c.textMuted} />
+            <Txt style={styles.socialTextOff}>Apple — coming soon</Txt>
+          </View>
 
-            <Pressable style={styles.guest} onPress={() => run('guest', continueAsGuest)} disabled={!!busy}>
-              {busy === 'guest' ? (
-                <ActivityIndicator color={ACCENT} />
-              ) : (
-                <ThemedText style={styles.guestText}>Continue as guest</ThemedText>
-              )}
-            </Pressable>
+          <PressableScale style={styles.guest} onPress={() => run('guest', continueAsGuest)} disabled={!!busy}>
+            {busy === 'guest' ? <ActivityIndicator color={c.accent} /> : <Txt style={styles.guestText}>Continue as guest</Txt>}
+          </PressableScale>
 
-            <ThemedText style={styles.fine}>
-              Your account powers the Ameen wall and (soon) syncs your streak and bookmarks across devices.
-              As a guest, everything stays on this device.
-            </ThemedText>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </ThemedView>
+          <Txt variant="caption" color={c.textMuted} style={styles.fine}>
+            Your account powers the Ameen wall and syncs your streak and bookmarks across devices. As a guest, everything stays on this device.
+          </Txt>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 24, paddingTop: 36, gap: 14, flexGrow: 1, justifyContent: 'center' },
-  brand: { alignItems: 'center', gap: 6, marginBottom: 10 },
-  crescent: { fontSize: 48 },
-  title: { fontSize: 28, fontWeight: '800' },
-  tagline: { fontSize: 14.5, opacity: 0.65, textAlign: 'center' },
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(127,127,127,0.12)',
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-  },
-  segBtn: { flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center' },
-  segBtnOn: { backgroundColor: ACCENT },
-  segText: { fontSize: 15, fontWeight: '700', color: 'rgba(127,127,127,0.9)' },
-  segTextOn: { color: '#fff' },
+  fill: { flex: 1 },
+  scroll: { paddingHorizontal: 24, paddingVertical: 28, gap: 14, flexGrow: 1, justifyContent: 'center' },
+  brand: { alignItems: 'center', gap: 10, marginBottom: 12 },
+  title: { textAlign: 'center' },
+  tagline: { textAlign: 'center' },
+  segment: { flexDirection: 'row', backgroundColor: c.surface2, borderRadius: radius.md, padding: 4, gap: 4 },
+  segBtn: { flex: 1, paddingVertical: 10, borderRadius: radius.sm, alignItems: 'center' },
+  segBtnOn: { backgroundColor: c.accent },
+  segText: { fontFamily: font.sansSemi, fontSize: 15, color: c.textSecondary },
+  segTextOn: { color: c.bg },
   input: {
-    backgroundColor: 'rgba(127,127,127,0.1)',
-    borderRadius: 12,
+    backgroundColor: c.surface1,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: 'rgba(127,127,127,1)',
+    fontFamily: font.sans,
+    color: c.textPrimary,
   },
-  error: { color: '#c1554f', fontSize: 13.5, lineHeight: 19, paddingHorizontal: 4 },
+  error: { lineHeight: 19, paddingHorizontal: 4 },
   redirectHelp: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 4 },
-  redirectHelpText: { fontSize: 12.5, color: ACCENT, fontWeight: '600' },
-  primary: { backgroundColor: ACCENT, paddingVertical: 15, borderRadius: 12, alignItems: 'center', marginTop: 2 },
+  redirectHelpText: { fontFamily: font.sansMed, fontSize: 12.5, color: c.accent },
+  primary: { backgroundColor: c.primary, paddingVertical: 15, borderRadius: radius.full, alignItems: 'center', marginTop: 2 },
   primaryOff: { opacity: 0.4 },
-  primaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  primaryText: { color: c.bg, fontFamily: font.sansSemi, fontSize: 16 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
-  line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(127,127,127,0.4)' },
-  or: { fontSize: 13, opacity: 0.5 },
+  line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: c.hairline },
   social: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: radius.full,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(127,127,127,0.35)',
+    borderColor: c.hairline,
   },
   socialOff: { opacity: 0.5 },
   socialDisabled: { opacity: 0.5, borderStyle: 'dashed' },
-  socialText: { fontSize: 15, fontWeight: '600' },
-  socialTextOff: { fontSize: 15, fontWeight: '600', opacity: 0.7 },
+  socialText: { fontFamily: font.sansSemi, fontSize: 15, color: c.textPrimary },
+  socialTextOff: { fontFamily: font.sansSemi, fontSize: 15, color: c.textMuted },
   guest: { alignItems: 'center', paddingVertical: 14, marginTop: 2 },
-  guestText: { color: ACCENT, fontSize: 15.5, fontWeight: '700' },
-  fine: { fontSize: 11.5, opacity: 0.5, lineHeight: 17, textAlign: 'center', paddingHorizontal: 8, marginTop: 2 },
+  guestText: { fontFamily: font.sansSemi, fontSize: 15.5, color: c.accent },
+  fine: { lineHeight: 17, textAlign: 'center', paddingHorizontal: 8, marginTop: 2 },
 });

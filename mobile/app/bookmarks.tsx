@@ -1,15 +1,20 @@
+// YOUR VERSES (onyx) — the saved-ayat list, reached from the profile drawer and the Qur'an tab. Onyx
+// reskin only: champagne ref + serif snippet cards, a SealMedallion empty state, staggered entrance.
+// All logic preserved (useBookmarks / toggleBookmark / verseText / open-in-reader).
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { SealMedallion } from '@/components/atlas-tile';
+import { IconButton, Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Screen } from '@/components/ui/screen';
 import { toggleBookmark, useBookmarks } from '@/lib/bookmarks';
 import { haptic } from '@/lib/haptics';
 import { getAyah, getSurah } from '@/lib/quran';
+import { c, radius, space } from '@/lib/theme';
 import { useTranslation, verseText } from '@/lib/translations';
-
-const ACCENT = '#0a7ea4';
 
 export default function BookmarksScreen() {
   const router = useRouter();
@@ -22,67 +27,79 @@ export default function BookmarksScreen() {
   };
 
   return (
-    <ThemedView style={styles.fill}>
-      <Stack.Screen options={{ title: 'Bookmarks', headerBackTitle: "Qur'an" }} />
+    <Screen stars>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.header}>
+        <IconButton name="chevron-back" onPress={() => router.back()} diameter={38} size={22} bg={c.surface2} color={c.textPrimary} />
+        <Txt variant="cardTitle">Your Verses</Txt>
+        <View style={styles.spacer} />
+      </View>
+
       {bookmarks.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="bookmark-outline" size={40} color="rgba(127,127,127,0.5)" />
-          <ThemedText style={styles.emptyText}>No bookmarks yet</ThemedText>
-          <ThemedText style={styles.emptyHint}>
-            Long-press an ayah while reading, then tap Bookmark.
-          </ThemedText>
+          <SealMedallion name="bookmark-outline" frame={66} ring={48} glyph={26} />
+          <Txt variant="h2" style={styles.emptyTitle}>
+            No saved verses yet
+          </Txt>
+          <Txt variant="body" color={c.textMuted} style={styles.emptyHint}>
+            Long-press an ayah while reading, then tap Bookmark to keep it here.
+          </Txt>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
-          {bookmarks.map((b) => {
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          {bookmarks.map((b, i) => {
             const s = getSurah(b.surah);
             const a = getAyah(b.surah, b.ayah);
             return (
-              <Pressable key={`${b.surah}:${b.ayah}`} style={styles.row} onPress={() => open(b.surah, b.ayah)}>
-                <View style={styles.rowMid}>
-                  <ThemedText style={styles.ref}>
-                    {s?.englishName ?? `Surah ${b.surah}`} · {b.surah}:{b.ayah}
-                  </ThemedText>
-                  {a ? (
-                    <ThemedText style={styles.snippet} numberOfLines={2}>
-                      {verseText(b.surah, b.ayah)}
-                    </ThemedText>
-                  ) : null}
-                </View>
-                <Pressable
-                  onPress={() => {
-                    haptic.light();
-                    void toggleBookmark(b.surah, b.ayah);
-                  }}
-                  hitSlop={12}
-                  style={styles.remove}>
-                  <Ionicons name="bookmark" size={20} color={ACCENT} />
-                </Pressable>
-              </Pressable>
+              <Animated.View key={`${b.surah}:${b.ayah}`} entering={FadeInDown.delay(i * 45).duration(300)}>
+                <PressableScale style={styles.row} onPress={() => open(b.surah, b.ayah)}>
+                  <View style={styles.rowMid}>
+                    <Txt variant="eyebrow" color={c.accent}>
+                      {s?.englishName ?? `Surah ${b.surah}`} · {b.surah}:{b.ayah}
+                    </Txt>
+                    {a ? (
+                      <Txt variant="verseEn" numberOfLines={2} style={styles.snippet}>
+                        {verseText(b.surah, b.ayah)}
+                      </Txt>
+                    ) : null}
+                  </View>
+                  <PressableScale
+                    onPress={() => {
+                      haptic.light();
+                      void toggleBookmark(b.surah, b.ayah);
+                    }}
+                    hitSlop={12}
+                    style={styles.remove}>
+                    <Ionicons name="bookmark" size={19} color={c.accent} />
+                  </PressableScale>
+                </PressableScale>
+              </Animated.View>
             );
           })}
         </ScrollView>
       )}
-    </ThemedView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  list: { padding: 16, paddingBottom: 32 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.gutter, paddingBottom: space.sm },
+  spacer: { width: 38 },
+  list: { paddingHorizontal: space.gutter, paddingBottom: space.section, gap: 12 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(127,127,127,0.2)',
+    padding: space.card,
+    borderRadius: radius.md,
+    backgroundColor: c.surface1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
-  rowMid: { flex: 1, gap: 4 },
-  ref: { fontSize: 13, fontWeight: '700', color: ACCENT },
-  snippet: { fontSize: 15, lineHeight: 21, opacity: 0.85 },
+  rowMid: { flex: 1, gap: 7 },
+  snippet: { fontSize: 16, lineHeight: 23 },
   remove: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
-  emptyText: { fontSize: 17, fontWeight: '600' },
-  emptyHint: { fontSize: 14, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: space.section },
+  emptyTitle: { marginTop: 4 },
+  emptyHint: { textAlign: 'center', lineHeight: 22 },
 });

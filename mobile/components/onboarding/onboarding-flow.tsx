@@ -1,16 +1,18 @@
-// First-run onboarding — short & skippable. Writes the on-device Profile that curates the rest of
-// the app. Sensitive answers (journey, focuses) never leave the device. Rendered by the root gate
-// until profile.onboarded is true; finishing/skipping flips that and the app appears.
-import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// First-run onboarding (onyx) — short & skippable. Writes the on-device Profile that curates the rest of
+// the app. Sensitive answers (journey, focuses) never leave the device. Rendered by the root gate until
+// profile.onboarded is true. Onyx reskin only — all step/save logic is preserved.
+import { Ionicons } from '@expo/vector-icons';
+import { type ReactNode, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { SealMedallion } from '@/components/atlas-tile';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Txt } from '@/components/ui/primitives';
+import { Screen } from '@/components/ui/screen';
 import { haptic } from '@/lib/haptics';
 import { completeOnboarding, type Journey } from '@/lib/profile';
-
-const ACCENT = '#0a7ea4';
+import { c, font, radius, space } from '@/lib/theme';
 
 const STEPS = ['welcome', 'journey', 'goals', 'time', 'focuses', 'done'] as const;
 type StepKey = (typeof STEPS)[number];
@@ -62,13 +64,7 @@ export function OnboardingFlow() {
   const finish = (skipped = false) => {
     haptic.medium();
     if (skipped) void completeOnboarding({});
-    else
-      void completeOnboarding({
-        journey: journey ?? 'unspecified',
-        goals,
-        dailyMinutes: minutes ?? 5,
-        focuses,
-      });
+    else void completeOnboarding({ journey: journey ?? 'unspecified', goals, dailyMinutes: minutes ?? 5, focuses });
   };
 
   const next = () => {
@@ -82,67 +78,53 @@ export function OnboardingFlow() {
   };
 
   const canContinue =
-    step === 'journey'
-      ? journey !== null
-      : step === 'goals'
-        ? goals.length > 0
-        : step === 'time'
-          ? minutes !== null
-          : true;
+    step === 'journey' ? journey !== null : step === 'goals' ? goals.length > 0 : step === 'time' ? minutes !== null : true;
 
   const cta =
-    step === 'welcome'
-      ? 'Get started'
-      : step === 'done'
-        ? 'Enter'
-        : step === 'focuses'
-          ? focuses.length
-            ? 'Continue'
-            : 'Skip this'
-          : 'Continue';
+    step === 'welcome' ? 'Get started' : step === 'done' ? 'Enter' : step === 'focuses' ? (focuses.length ? 'Continue' : 'Skip this') : 'Continue';
 
   const showProgress = step !== 'welcome' && step !== 'done';
   const qIndex = i - 1; // 0..3 for journey / goals / time / focuses
 
   return (
-    <ThemedView style={styles.fill}>
-      <SafeAreaView style={styles.fill}>
-        <View style={styles.top}>
-          {i > 0 && step !== 'done' ? (
-            <Pressable onPress={back} hitSlop={10} style={styles.topBtn}>
-              <ThemedText style={styles.topBtnText}>‹ Back</ThemedText>
-            </Pressable>
-          ) : (
-            <View style={styles.topBtn} />
-          )}
-          {showProgress ? (
-            <View style={styles.dots}>
-              {[0, 1, 2, 3].map((d) => (
-                <View key={d} style={[styles.dot, d === qIndex && styles.dotOn]} />
-              ))}
-            </View>
-          ) : (
-            <View />
-          )}
-          {step !== 'done' ? (
-            <Pressable onPress={() => finish(true)} hitSlop={10} style={styles.topBtnRight}>
-              <ThemedText style={styles.topBtnText}>Skip</ThemedText>
-            </Pressable>
-          ) : (
-            <View style={styles.topBtn} />
-          )}
-        </View>
+    <Screen edges={['top', 'bottom']} stars>
+      <View style={styles.top}>
+        {i > 0 && step !== 'done' ? (
+          <PressableScale onPress={back} hitSlop={10} style={styles.topBtn}>
+            <Txt style={styles.topBtnText}>‹ Back</Txt>
+          </PressableScale>
+        ) : (
+          <View style={styles.topBtn} />
+        )}
+        {showProgress ? (
+          <View style={styles.dots}>
+            {[0, 1, 2, 3].map((d) => (
+              <View key={d} style={[styles.dot, d === qIndex && styles.dotOn]} />
+            ))}
+          </View>
+        ) : (
+          <View />
+        )}
+        {step !== 'done' ? (
+          <PressableScale onPress={() => finish(true)} hitSlop={10} style={styles.topBtnRight}>
+            <Txt style={styles.topBtnText}>Skip</Txt>
+          </PressableScale>
+        ) : (
+          <View style={styles.topBtn} />
+        )}
+      </View>
 
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <Animated.View key={step} entering={FadeIn.duration(280)}>
           {step === 'welcome' ? (
             <View style={styles.hero}>
-              <ThemedText style={styles.crescent}>☾</ThemedText>
-              <ThemedText type="title" style={styles.h1}>
+              <SealMedallion name="star-crescent" frame={84} ring={60} glyph={34} glowStrength={0.34} />
+              <Txt variant="display" style={styles.center}>
                 Assalamu alaykum
-              </ThemedText>
-              <ThemedText style={[styles.sub, styles.center]}>
+              </Txt>
+              <Txt variant="body" color={c.textSecondary} style={[styles.sub, styles.center]}>
                 Let’s shape this around you. A few quick taps — and you can skip any of it.
-              </ThemedText>
+              </Txt>
             </View>
           ) : null}
 
@@ -165,12 +147,7 @@ export function OnboardingFlow() {
           {step === 'goals' ? (
             <Step title="What would you love from this?" subtitle="Pick any that fit — more than one is fine.">
               {GOAL_OPTS.map((o) => (
-                <Chip
-                  key={o.id}
-                  label={o.label}
-                  selected={goals.includes(o.id)}
-                  onPress={() => toggle(goals, setGoals, o.id)}
-                />
+                <Chip key={o.id} label={o.label} selected={goals.includes(o.id)} onPress={() => toggle(goals, setGoals, o.id)} />
               ))}
             </Step>
           ) : null}
@@ -197,104 +174,74 @@ export function OnboardingFlow() {
               title="Anything you’re carrying right now?"
               subtitle="Optional, and it stays on your device. It just helps us show what may comfort.">
               {FOCUS_OPTS.map((o) => (
-                <Chip
-                  key={o.id}
-                  label={o.label}
-                  selected={focuses.includes(o.id)}
-                  onPress={() => toggle(focuses, setFocuses, o.id)}
-                />
+                <Chip key={o.id} label={o.label} selected={focuses.includes(o.id)} onPress={() => toggle(focuses, setFocuses, o.id)} />
               ))}
             </Step>
           ) : null}
 
           {step === 'done' ? (
             <View style={styles.hero}>
-              <ThemedText style={styles.crescent}>✦</ThemedText>
-              <ThemedText type="title" style={styles.h1}>
+              <SealMedallion name="star-four-points" frame={84} ring={60} glyph={32} glowStrength={0.34} />
+              <Txt variant="display" style={styles.center}>
                 You’re all set
-              </ThemedText>
-              <ThemedText style={[styles.sub, styles.center]}>
+              </Txt>
+              <Txt variant="body" color={c.textSecondary} style={[styles.sub, styles.center]}>
                 Your space is ready. You can change any of this later in Settings.
-              </ThemedText>
+              </Txt>
             </View>
           ) : null}
-        </ScrollView>
+        </Animated.View>
+      </ScrollView>
 
-        <View style={styles.footer}>
-          <Pressable
-            onPress={next}
-            disabled={!canContinue}
-            style={[styles.cta, !canContinue && styles.ctaOff]}>
-            <ThemedText style={styles.ctaText}>{cta}</ThemedText>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    </ThemedView>
+      <View style={styles.footer}>
+        <PressableScale onPress={next} disabled={!canContinue} style={[styles.cta, !canContinue && styles.ctaOff]}>
+          <Txt style={styles.ctaText}>{cta}</Txt>
+        </PressableScale>
+      </View>
+    </Screen>
   );
 }
 
-function Step({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-}) {
+function Step({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
     <View style={styles.step}>
-      <ThemedText type="title" style={styles.h2}>
-        {title}
-      </ThemedText>
-      {subtitle ? <ThemedText style={styles.sub}>{subtitle}</ThemedText> : null}
+      <Txt variant="h1">{title}</Txt>
+      {subtitle ? (
+        <Txt variant="body" color={c.textSecondary} style={styles.sub}>
+          {subtitle}
+        </Txt>
+      ) : null}
       <View style={styles.opts}>{children}</View>
     </View>
   );
 }
 
-function Chip({
-  label,
-  hint,
-  selected,
-  onPress,
-}: {
-  label: string;
-  hint?: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
+function Chip({ label, hint, selected, onPress }: { label: string; hint?: string; selected: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipOn]}>
-      <ThemedText style={[styles.chipLabel, selected && styles.chipLabelOn]}>{label}</ThemedText>
-      {hint ? <ThemedText style={styles.chipHint}>{hint}</ThemedText> : null}
-      {selected ? <ThemedText style={styles.check}>✓</ThemedText> : null}
-    </Pressable>
+    <PressableScale onPress={onPress} style={[styles.chip, selected && styles.chipOn]}>
+      <Txt style={[styles.chipLabel, selected && styles.chipLabelOn]}>{label}</Txt>
+      {hint ? (
+        <Txt variant="caption" color={c.textMuted}>
+          {hint}
+        </Txt>
+      ) : null}
+      {selected ? <Ionicons name="checkmark-circle" size={18} color={c.accent} /> : null}
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  top: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 44,
-  },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.gutter, height: 44 },
   topBtn: { minWidth: 60, paddingVertical: 8 },
   topBtnRight: { minWidth: 60, paddingVertical: 8, alignItems: 'flex-end' },
-  topBtnText: { color: ACCENT, fontSize: 15, fontWeight: '600' },
+  topBtnText: { fontFamily: font.sansSemi, fontSize: 15, color: c.accent },
   dots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(127,127,127,0.3)' },
-  dotOn: { backgroundColor: ACCENT, width: 18 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)' },
+  dotOn: { backgroundColor: c.accent, width: 18 },
   body: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  hero: { alignItems: 'center', gap: 14, paddingVertical: 40 },
-  crescent: { fontSize: 64, color: ACCENT, lineHeight: 72 },
-  h1: { textAlign: 'center', fontSize: 30, lineHeight: 38 },
-  h2: { fontSize: 24, lineHeight: 31 },
-  sub: { fontSize: 15, lineHeight: 22, opacity: 0.7 },
+  hero: { alignItems: 'center', gap: 16, paddingVertical: 36 },
   center: { textAlign: 'center' },
+  sub: { lineHeight: 22 },
   step: { gap: 8 },
   opts: { gap: 10, marginTop: 18 },
   chip: {
@@ -302,18 +249,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 18,
-    borderRadius: 14,
+    borderRadius: radius.sm,
     borderWidth: 1.5,
-    borderColor: 'rgba(127,127,127,0.25)',
+    borderColor: c.hairline,
+    backgroundColor: c.surface1,
     gap: 10,
   },
-  chipOn: { borderColor: ACCENT, backgroundColor: 'rgba(10,126,164,0.10)' },
-  chipLabel: { fontSize: 16, fontWeight: '600', flex: 1 },
-  chipLabelOn: { color: ACCENT },
-  chipHint: { fontSize: 13, opacity: 0.6 },
-  check: { color: ACCENT, fontWeight: '800', fontSize: 16, marginLeft: 8 },
+  chipOn: { borderColor: c.accent, backgroundColor: 'rgba(201,189,166,0.10)' },
+  chipLabel: { fontFamily: font.serif, fontSize: 16.5, color: c.textPrimary, flex: 1 },
+  chipLabelOn: { color: c.accentBright },
+  chipHint: { fontSize: 13 },
   footer: { padding: 20, paddingTop: 8 },
-  cta: { backgroundColor: ACCENT, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  cta: { backgroundColor: c.primary, paddingVertical: 16, borderRadius: radius.full, alignItems: 'center' },
   ctaOff: { opacity: 0.4 },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  ctaText: { color: c.bg, fontFamily: font.sansSemi, fontSize: 16 },
 });
