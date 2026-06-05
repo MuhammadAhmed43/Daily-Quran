@@ -39,7 +39,7 @@ const GLOWS: Glow[] = [
 const glowFor = (i: number): Glow => GLOWS[((i % GLOWS.length) + GLOWS.length) % GLOWS.length];
 
 // A tiny seeded PRNG (mulberry32) — no Math.random() ever runs at render time or in a worklet.
-function mulberry32(seed: number) {
+export function mulberry32(seed: number) {
   return () => {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
@@ -50,7 +50,7 @@ function mulberry32(seed: number) {
 }
 
 // Stable FNV-1a hash so each topic id seeds a consistent, unique star layout.
-function hashStr(s: string): number {
+export function hashStr(s: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -59,7 +59,7 @@ function hashStr(s: string): number {
   return h >>> 0;
 }
 
-type Star = {
+export type Star = {
   x: number; // 0..1 fraction of the card
   y: number;
   size: number;
@@ -95,7 +95,7 @@ function makeStars(seed: number): Star[] {
   return out;
 }
 
-function StarDot({ s, w, h }: { s: Star; w: number; h: number }) {
+export function StarDot({ s, w, h }: { s: Star; w: number; h: number }) {
   const t = useSharedValue(0); // 0..1 twinkle driver (UI thread)
   useEffect(() => {
     if (!s.twinkles) return;
