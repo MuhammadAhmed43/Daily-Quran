@@ -148,7 +148,7 @@ export default function ReflectScreen() {
         </ScrollView>
 
         <View style={styles.actions}>
-          <PressableScale onPress={() => router.push('/(tabs)/chat')} style={styles.secondaryBtn}>
+          <PressableScale onPress={() => router.push('/ask')} style={styles.secondaryBtn}>
             <Ionicons name="sparkles" size={16} color={c.accent} />
             <Txt variant="caption" color={c.accent} style={styles.btnLabel}>
               Ask about this verse

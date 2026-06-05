@@ -60,7 +60,7 @@ export function ExplainSheet({ target, onClose }: { target: ExplainTarget | null
 
   const askAboutVerse = () => {
     onClose();
-    router.push('/(tabs)/chat');
+    router.push('/ask');
   };
 
   return (

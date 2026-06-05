@@ -46,8 +46,8 @@ export default function HubScreen() {
 
   const talk = () => {
     haptic.light();
-    setChatSeed(hub.starter);
-    router.push('/chat');
+    setChatSeed(hub.starter, hub.id);
+    router.push('/ask');
   };
 
   return (

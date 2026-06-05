@@ -376,7 +376,7 @@ function VerseBody({ verse, onEngage }: { verse: Verse; onEngage: () => void }) 
         <MiniIcon name={saved ? 'bookmark' : 'bookmark-outline'} active={saved} onPress={() => toggleBookmark(verse.surah, verse.ayah)} />
         <MiniIcon name="share-outline" onPress={onShare} />
         <View style={{ flex: 1 }} />
-        <MiniIcon name="sparkles" active onPress={() => router.push('/(tabs)/chat')} />
+        <MiniIcon name="sparkles" active onPress={() => router.push('/ask')} />
       </View>
     </>
   );

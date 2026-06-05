@@ -16,7 +16,7 @@ type SpeakState = 'idle' | 'loading' | 'playing';
 /** Reads English text aloud via /api/speak (Andrew neural), with on-device speech as a fallback.
  *  Renders as a "Listen" pill, consistent with the app's audio controls. Pauses the qari first so audio
  *  never overlaps, and tears down on unmount. */
-export function SpeakButton({ text }: { text: string }) {
+export function SpeakButton({ text, compact }: { text: string; compact?: boolean }) {
   const recitation = useRecitation();
   const [state, setState] = useState<SpeakState>('idle');
   const playerRef = useRef<AudioPlayer | null>(null);
@@ -81,6 +81,23 @@ export function SpeakButton({ text }: { text: string }) {
 
   const label = state === 'playing' ? 'Stop' : state === 'loading' ? 'Loading' : 'Listen';
 
+  // Compact icon variant — for tight toolbars (e.g. under a chat answer).
+  if (compact) {
+    return (
+      <PressableScale
+        onPress={() => (state === 'idle' ? void play() : stop())}
+        style={styles.iconBtn}
+        accessibilityRole="button"
+        accessibilityLabel={state === 'idle' ? 'Read aloud' : 'Stop'}>
+        {state === 'loading' ? (
+          <ActivityIndicator size="small" color={c.accent} />
+        ) : (
+          <Ionicons name={state === 'playing' ? 'stop' : 'headset-outline'} size={18} color={c.accent} />
+        )}
+      </PressableScale>
+    );
+  }
+
   return (
     <PressableScale
       onPress={() => (state === 'idle' ? void play() : stop())}
@@ -113,4 +130,14 @@ const styles = StyleSheet.create({
     borderColor: c.hairline,
   },
   label: { fontFamily: font.sansSemi, fontSize: 13 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.surface2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
+  },
 });

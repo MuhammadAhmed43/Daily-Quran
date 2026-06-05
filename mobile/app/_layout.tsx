@@ -92,6 +92,8 @@ function RootGate() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="reflect" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="ask" options={{ headerShown: false }} />
+      <Stack.Screen name="chat-history" options={{ headerShown: false }} />
     </Stack>
   );
 }
