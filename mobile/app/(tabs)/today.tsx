@@ -150,7 +150,7 @@ function TopBar({ hijri, streak }: { hijri: string; streak: number }) {
           {streak}
         </Txt>
       </View>
-      <PressableScale onPress={() => router.push('/profile')} style={styles.calBtn}>
+      <PressableScale onPress={() => router.push('/calendar')} style={styles.calBtn}>
         <Ionicons name="calendar-outline" size={18} color={c.textSecondary} />
       </PressableScale>
     </View>
