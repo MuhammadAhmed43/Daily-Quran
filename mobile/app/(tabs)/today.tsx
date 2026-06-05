@@ -271,12 +271,6 @@ function JourneyCard({
   useEffect(() => {
     openSV.value = open ? 1 : 0;
   }, [open, openSV]);
-  useEffect(() => {
-    const id = setTimeout(() => {
-      animate.value = true; // enable animated transitions once the first layout has settled
-    }, 80);
-    return () => clearTimeout(id);
-  }, [animate]);
   const bodyHeight = useDerivedValue(() => {
     const target = measured.value * openSV.value;
     return animate.value ? withTiming(target, { duration: DURATION, easing: EASING }) : target; // jump on first paint
@@ -322,7 +316,12 @@ function JourneyCard({
             renderToHardwareTextureAndroid
             onLayout={(e) => {
               const h = e.nativeEvent.layout.height;
-              if (h > 0 && Math.abs(h - measured.value) > 0.5) measured.value = h; // gated: set once => no jitter
+              if (h <= 0) return;
+              const first = measured.value === 0;
+              if (Math.abs(h - measured.value) > 0.5) measured.value = h; // gated: set once => no jitter
+              // Enable animated open/close only AFTER the first measurement has applied (instantly), so a
+              // default-open card shows fully on first paint instead of animating itself open on load.
+              if (first) setTimeout(() => (animate.value = true), 60);
             }}>
             <View style={styles.cardBody}>{children}</View>
           </View>
@@ -413,6 +412,7 @@ function ReflectionBody({ seed }: { seed: number }) {
 function PrayerBody({ prayer }: { prayer: ReturnType<typeof usePrayerLog> }) {
   const { today, todayCount, toggle } = prayer;
   const gate = usePrayerGate();
+  const router = useRouter();
   return (
     <>
       <View style={styles.prayerRow}>
@@ -443,6 +443,20 @@ function PrayerBody({ prayer }: { prayer: ReturnType<typeof usePrayerLog> }) {
       <Txt variant="caption" color={c.textSecondary} style={styles.prayerCount}>
         {todayCount} of {FARD.length} prayers
       </Txt>
+      <View style={styles.prayerLinks}>
+        <PressableScale style={styles.prayerPill} onPress={() => router.push('/prayer')}>
+          <Ionicons name="time-outline" size={15} color={c.accent} />
+          <Txt variant="caption" color={c.accent} style={styles.prayerPillText}>
+            Prayer times
+          </Txt>
+        </PressableScale>
+        <PressableScale style={styles.prayerPill} onPress={() => router.push('/qibla')}>
+          <Ionicons name="compass-outline" size={15} color={c.accent} />
+          <Txt variant="caption" color={c.accent} style={styles.prayerPillText}>
+            Qibla
+          </Txt>
+        </PressableScale>
+      </View>
     </>
   );
 }
@@ -553,4 +567,18 @@ const styles = StyleSheet.create({
   prayerLocked: { opacity: 0.4 },
   prayerDot: { width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   prayerCount: { marginTop: 4 },
+  prayerLinks: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  prayerPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(201,189,166,0.3)',
+    backgroundColor: 'rgba(201,189,166,0.06)',
+  },
+  prayerPillText: { fontFamily: font.sansSemi },
 });

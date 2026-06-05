@@ -43,9 +43,9 @@ export default function TabLayout() {
         <Tabs.Screen name="today" options={{ title: 'Today', tabBarIcon: tabIcon('sunny', 'sunny-outline') }} />
         <Tabs.Screen name="index" options={{ title: "Qur'an", tabBarIcon: tabIcon('book', 'book-outline') }} />
         <Tabs.Screen name="explore" options={{ title: 'Explore', tabBarIcon: tabIcon('compass', 'compass-outline') }} />
-        {/* kept as routes, hidden from the bar */}
+        {/* Stories is kept as a route, hidden from the bar (folded into Explore). Prayer is now a pushed
+            stack screen at app/prayer.tsx, reached from Today's My Prayer card + the Reminders settings. */}
         <Tabs.Screen name="stories" options={{ href: null }} />
-        <Tabs.Screen name="prayer" options={{ href: null }} />
       </Tabs>
       <MiniPlayer />
     </View>
