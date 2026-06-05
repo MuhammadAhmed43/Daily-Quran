@@ -108,7 +108,7 @@ export default function WatchPlayer() {
               {chapter.track === 'seerah' ? 'Seerah' : 'History'} · {pos} / {list.length}
             </Txt>
           </View>
-          <View style={styles.iconBtn} />
+          <View style={styles.iconSpacer} />
         </View>
       </SafeAreaView>
 
@@ -201,6 +201,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', gap: 12 },
   topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface2 },
+  iconSpacer: { width: 40 }, // a transparent spacer to balance the back button (NOT a visible disc)
   crumb: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: c.surface2 },
   crumbText: { fontFamily: font.sansSemi, color: c.textSecondary },
   progressTrack: { height: 2, backgroundColor: c.surface3 },

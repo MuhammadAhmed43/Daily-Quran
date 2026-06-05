@@ -6,9 +6,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AtlasTile, type AtlasCategory, SealMedallion } from '@/components/atlas-tile';
@@ -45,8 +45,6 @@ export default function ExploreScreen() {
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [heroIdx, setHeroIdx] = useState(0);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const heroRef = useRef<ScrollView>(null);
 
   // Time-aware top section (Bible Chat frame 38): a greeting that shifts with the hour, and the hero pager
   // leads with what fits the moment — study to begin the day, a video / narrated story to wind down.
@@ -81,16 +79,12 @@ export default function ExploreScreen() {
   heroes.sort((a, b) => (b.eyebrow === leadEyebrow ? 1 : 0) - (a.eyebrow === leadEyebrow ? 1 : 0));
   const heroCount = heroes.length;
 
-  // Auto-advance the hero gently, until the user takes over.
+  // Auto-advance the hero gently — the slides CROSS-FADE (see FadeHero), they do not slide horizontally.
   useEffect(() => {
-    if (!autoPlay || heroCount <= 1) return;
-    const t = setTimeout(() => {
-      const next = (heroIdx + 1) % heroCount;
-      heroRef.current?.scrollTo({ x: next * (HERO_W + 12), animated: true });
-      setHeroIdx(next);
-    }, 6000);
+    if (heroCount <= 1) return;
+    const t = setTimeout(() => setHeroIdx((i) => (i + 1) % heroCount), 6000);
     return () => clearTimeout(t);
-  }, [autoPlay, heroIdx, heroCount, HERO_W]);
+  }, [heroIdx, heroCount]);
 
   // "Continue where you left off" — real, resumable progress only.
   const cont: ContinueItem[] = [];
@@ -173,23 +167,17 @@ export default function ExploreScreen() {
                 Most popular right now
               </Txt>
             </View>
-            <ScrollView
-              ref={heroRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={HERO_W + 12}
-              decelerationRate="fast"
-              onScrollBeginDrag={() => setAutoPlay(false)}
-              onMomentumScrollEnd={(e) => setHeroIdx(Math.round(e.nativeEvent.contentOffset.x / (HERO_W + 12)))}
-              contentContainerStyle={styles.heroRow}>
-              {heroes.map((h) => (
-                <HeroCard key={h.key} item={h} width={HERO_W} />
+            <View style={[styles.heroStack, { height: HERO_W / 1.6 }]}>
+              {heroes.map((h, i) => (
+                <FadeHero key={h.key} item={h} active={i === heroIdx} width={HERO_W} />
               ))}
-            </ScrollView>
+            </View>
             {heroes.length > 1 ? (
               <View style={styles.dots}>
                 {heroes.map((h, i) => (
-                  <View key={h.key} style={[styles.dot, i === heroIdx && styles.dotActive]} />
+                  <PressableScale key={h.key} hitSlop={10} onPress={() => setHeroIdx(i)}>
+                    <View style={[styles.dot, i === heroIdx && styles.dotActive]} />
+                  </PressableScale>
                 ))}
               </View>
             ) : null}
@@ -285,6 +273,20 @@ export default function ExploreScreen() {
   );
 }
 
+// A hero slide that CROSS-FADES in/out (no horizontal sliding) as the "Most popular" pager advances.
+function FadeHero({ item, active, width }: { item: HeroItem; active: boolean; width: number }) {
+  const op = useSharedValue(active ? 1 : 0);
+  useEffect(() => {
+    op.value = withTiming(active ? 1 : 0, { duration: 450, easing: Easing.inOut(Easing.quad) });
+  }, [active, op]);
+  const style = useAnimatedStyle(() => ({ opacity: op.value }));
+  return (
+    <Animated.View style={[styles.heroLayer, style]} pointerEvents={active ? 'auto' : 'none'}>
+      <HeroCard item={item} width={width} />
+    </Animated.View>
+  );
+}
+
 function HeroCard({ item, width }: { item: HeroItem; width: number }) {
   return (
     <PressableScale style={[styles.hero, { width }]} onPress={item.go}>
@@ -358,7 +360,8 @@ const styles = StyleSheet.create({
 
   heroSection: { gap: 10 },
   heroHead: { gap: 2 },
-  heroRow: { gap: 12 },
+  heroStack: { width: '100%' },
+  heroLayer: { position: 'absolute', top: 0, left: 0 },
   hero: {
     aspectRatio: 1.6,
     borderRadius: radius.lg,

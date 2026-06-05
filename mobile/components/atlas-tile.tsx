@@ -189,7 +189,9 @@ export function AtlasTile({
           {sublabel}
         </Txt>
       </View>
-      <Ionicons name="arrow-forward" size={15} color={c.accent} style={styles.chevron} />
+      <View style={styles.chevron} pointerEvents="none">
+        <Ionicons name="arrow-forward" size={15} color={c.accent} />
+      </View>
     </PressableScale>
   );
 }

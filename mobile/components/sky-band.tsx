@@ -5,7 +5,7 @@
 // New-Arch safe (opacity + transform only). Drop it as an absolutely-positioned overlay over a dark scrim;
 // it never intercepts touches.
 import { useEffect, useMemo } from 'react';
-import { StyleProp, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { InteractionManager, StyleProp, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -65,18 +65,23 @@ function Star({ s, w, h }: { s: Spec; w: number; h: number }) {
   const t = useSharedValue(0); // twinkle driver
   const d = useSharedValue(0); // drift driver (0..1, auto-reversing)
   useEffect(() => {
-    t.value = withDelay(
-      s.phase,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
+    // Start the loops only AFTER the screen transition settles, so mounting a band of stars on a tab's
+    // first visit never janks the navigation — the stars appear at rest, then begin to twinkle + drift.
+    const task = InteractionManager.runAfterInteractions(() => {
+      t.value = withDelay(
+        s.phase,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
+            withTiming(0, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
+          ),
+          -1,
+          false,
         ),
-        -1,
-        false,
-      ),
-    );
-    d.value = withDelay(s.driftPhase, withRepeat(withTiming(1, { duration: s.driftDur, easing: Easing.inOut(Easing.sin) }), -1, true));
+      );
+      d.value = withDelay(s.driftPhase, withRepeat(withTiming(1, { duration: s.driftDur, easing: Easing.inOut(Easing.sin) }), -1, true));
+    });
+    return () => task.cancel();
   }, [s, t, d]);
 
   const aStyle = useAnimatedStyle(() => {

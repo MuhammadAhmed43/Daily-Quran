@@ -5,8 +5,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { CosmicCardBg } from '@/components/cosmic-field';
 import { GlassSurface } from '@/components/ui/glass-surface';
@@ -37,7 +38,11 @@ function HubCard({ hub, hueIndex, featured, onPress }: { hub: Hub; hueIndex: num
       <Txt variant="caption" numberOfLines={2} style={styles.hubBlurb}>
         {hub.blurb}
       </Txt>
-      <Ionicons name="arrow-forward" size={16} color={c.accent} style={styles.hubArrow} />
+      {/* Rotate a wrapping View (not the icon glyph) so the 45deg always renders — a transform applied
+          directly to an icon font can be dropped, leaving the arrow flat. */}
+      <View style={styles.hubArrow} pointerEvents="none">
+        <Ionicons name="arrow-forward" size={16} color={c.accent} />
+      </View>
     </PressableScale>
   );
 }
@@ -46,8 +51,11 @@ export default function AskBrowseScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   const [welcome, setWelcome] = useState(() => freshWelcome());
+  const [display, setDisplay] = useState(welcome); // the welcome currently shown; cross-fades when it changes
   const [sheetHub, setSheetHub] = useState<Hub | null>(null);
   useTranslation();
+  const textFade = useSharedValue(1);
+  const textFadeStyle = useAnimatedStyle(() => ({ opacity: textFade.value }));
 
   // A fresh welcome verse each time you arrive (changes every conversation start).
   useFocusEffect(
@@ -56,7 +64,19 @@ export default function AskBrowseScreen() {
     }, []),
   );
 
-  const welcomeVerse = useMemo<Verse | null>(() => getVerse(welcome.surah, welcome.ayah), [welcome]);
+  // Cross-fade ONLY the text content when a new welcome arrives — the card + gradient stay put. Fade the
+  // text out, swap the displayed verse at the trough, fade it back in (exiting is dead on the New Arch).
+  useEffect(() => {
+    if (welcome === display) return;
+    textFade.value = withTiming(0, { duration: 190, easing: Easing.out(Easing.quad) }, (fin) => {
+      if (fin) runOnJS(setDisplay)(welcome);
+    });
+  }, [welcome, display, textFade]);
+  useEffect(() => {
+    textFade.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.quad) });
+  }, [display, textFade]);
+
+  const welcomeVerse = useMemo<Verse | null>(() => getVerse(display.surah, display.ayah), [display]);
   const forYou = useForYou(profile.focuses);
   const forYouIds = new Set(forYou.map((h) => h.id));
   const rest = HUBS.filter((h) => !forYouIds.has(h.id));
@@ -101,18 +121,20 @@ export default function AskBrowseScreen() {
         {welcomeVerse ? (
           <PressableScale style={styles.welcomeCard} onPress={() => openVerse(welcomeVerse.surah, welcomeVerse.ayah)}>
             <LinearGradient colors={['rgba(201,189,166,0.14)', 'rgba(201,189,166,0.02)']} start={grad.diagStart} end={grad.diagEnd} style={StyleSheet.absoluteFill} />
-            <Txt variant="h2" style={styles.greeting}>
-              {welcome.greeting}
-            </Txt>
-            <View style={styles.rule} />
-            <Txt style={[ty.verseAr, styles.welcomeAr]}>{welcomeVerse.ar}</Txt>
-            <Txt style={styles.welcomeTrans}>{verseText(welcomeVerse.surah, welcomeVerse.ayah)}</Txt>
-            <View style={styles.welcomeFoot}>
-              <Txt variant="caption" color={c.accent} style={styles.welcomeRef}>
-                {welcomeVerse.surahEnglish} · {welcomeVerse.surah}:{welcomeVerse.ayah}
+            <Animated.View style={textFadeStyle}>
+              <Txt variant="h2" style={styles.greeting}>
+                {display.greeting}
               </Txt>
-              <VerseSpeaker surah={welcomeVerse.surah} ayah={welcomeVerse.ayah} size={18} />
-            </View>
+              <View style={styles.rule} />
+              <Txt style={[ty.verseAr, styles.welcomeAr]}>{welcomeVerse.ar}</Txt>
+              <Txt style={styles.welcomeTrans}>{verseText(welcomeVerse.surah, welcomeVerse.ayah)}</Txt>
+              <View style={styles.welcomeFoot}>
+                <Txt variant="caption" color={c.accent} style={styles.welcomeRef}>
+                  {welcomeVerse.surahEnglish} · {welcomeVerse.surah}:{welcomeVerse.ayah}
+                </Txt>
+                <VerseSpeaker surah={welcomeVerse.surah} ayah={welcomeVerse.ayah} size={18} />
+              </View>
+            </Animated.View>
           </PressableScale>
         ) : null}
 
