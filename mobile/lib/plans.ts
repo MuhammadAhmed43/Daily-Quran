@@ -12,7 +12,16 @@
 // watch-progress). Verse choices & framings are hand-vetted — accuracy and pastoral fit matter.
 import type { Ref } from './today';
 
-export type PlanId = 'new-to-quran' | 'juz-amma' | 'understanding-salah' | 'through-hardship';
+export type PlanId =
+  | 'new-to-quran'
+  | 'juz-amma'
+  | 'understanding-salah'
+  | 'through-hardship'
+  | 'gratitude'
+  | 'mercy-forgiveness'
+  | 'the-hereafter'
+  | 'names-of-allah'
+  | 'calling-on-allah';
 
 export type PlanStep = {
   order: number; // 1-based position within the track
@@ -91,7 +100,7 @@ const NEW_TO_QURAN: PlanTrack = {
       title: 'A Book that moves the heart',
       verses: ref(39, 23),
       framing:
-        'The Qur’an describes its own effect: skins tremble, then hearts soften toward the remembrance of God. You don’t have to manufacture that feeling — just keep showing up, and let the words do their quiet work over time.',
+        'The Qur’an describes its own effect: skins tremble, then hearts soften toward the remembrance of Allah. You don’t have to manufacture that feeling — just keep showing up, and let the words do their quiet work over time.',
       reflection: 'When did words last move you deeply?',
     },
     {
@@ -137,7 +146,7 @@ const JUZ_AMMA: PlanTrack = {
       title: 'He frowned',
       verses: ref(80, 1, 2),
       framing:
-        'In a striking moment, God gently corrects His own Prophet ﷺ for turning from a blind man who came sincerely seeking. The lesson is timeless: no earnest, humble heart is ever beneath attention — least of all the ones the world overlooks.',
+        'In a striking moment, Allah gently corrects His own Prophet ﷺ for turning from a blind man who came sincerely seeking. The lesson is timeless: no earnest, humble heart is ever beneath attention — least of all the ones the world overlooks.',
       reflection: 'Who around you is sincerely seeking, and easily overlooked?',
     },
     {
@@ -209,7 +218,7 @@ const JUZ_AMMA: PlanTrack = {
       title: 'A night better than a thousand months',
       verses: ref(97, 1, 3),
       framing:
-        'Sūrah al-Qadr marks the night the Qur’an began to descend — a single night “better than a thousand months.” It’s a glimpse of how God measures worth: not by length, but by what fills the time.',
+        'Sūrah al-Qadr marks the night the Qur’an began to descend — a single night “better than a thousand months.” It’s a glimpse of how Allah measures worth: not by length, but by what fills the time.',
       reflection: 'What would you ask for on a night better than a lifetime?',
     },
     {
@@ -233,8 +242,8 @@ const JUZ_AMMA: PlanTrack = {
       title: 'Pure devotion and refuge',
       verses: [...ref(112, 1), ...ref(113, 1), ...ref(114, 1)],
       framing:
-        'The juz — and the Qur’an — close on pure devotion and shelter: “He is God, the One,” and then two surahs of seeking refuge in Him from every harm, seen and unseen. These are the short surahs most people carry into their prayers first.',
-      reflection: 'Saying “He is God, the One,” what does that steady in you?',
+        'The juz — and the Qur’an — close on pure devotion and shelter: “He is Allah, the One,” and then two surahs of seeking refuge in Him from every harm, seen and unseen. These are the short surahs most people carry into their prayers first.',
+      reflection: 'Saying “He is Allah, the One,” what does that steady in you?',
       note: 'You now know the surahs many use in daily prayer. The Understanding Salah journey explores what we’re really saying when we pray.',
     },
   ],
@@ -255,7 +264,7 @@ const UNDERSTANDING_SALAH: PlanTrack = {
       title: 'Why we pray at all',
       verses: ref(20, 14),
       framing:
-        '“Serve Me, and practice the prayer for My remembrance.” Beneath the motions, salah is a standing appointment with God woven into the day — a way to keep returning to Him before the world pulls us away again.',
+        '“Serve Me, and practice the prayer for My remembrance.” Beneath the motions, salah is a standing appointment with Allah woven into the day — a way to keep returning to Him before the world pulls us away again.',
       reflection: 'What do you most hope to feel when you stand to pray?',
     },
     {
@@ -263,7 +272,7 @@ const UNDERSTANDING_SALAH: PlanTrack = {
       title: 'More than washing the body',
       verses: ref(5, 6),
       framing:
-        'The Qur’an frames the purification before prayer with a beautiful intention: God “does not intend to burden you, but… to purify you, and to complete His blessing upon you.” It is a moment of readiness — arriving clean, in body and attention. (For exactly how to perform wuḍūʾ, a teacher or your local imam can guide you.)',
+        'The Qur’an frames the purification before prayer with a beautiful intention: Allah “does not intend to burden you, but… to purify you, and to complete His blessing upon you.” It is a moment of readiness — arriving clean, in body and attention. (For exactly how to perform wuḍūʾ, a teacher or your local imam can guide you.)',
       reflection: 'What would it feel like to arrive at prayer truly “ready”?',
     },
     {
@@ -279,7 +288,7 @@ const UNDERSTANDING_SALAH: PlanTrack = {
       title: 'A conversation, answered',
       verses: ref(1, 6),
       framing:
-        'In a well-known sacred narration, God says He has “divided the prayer” between Himself and His servant — and that each line of Al-Fātiḥa is met with His response. The prayer is not a monologue into the air; it is a conversation that is heard.',
+        'In a well-known sacred narration, Allah says He has “divided the prayer” between Himself and His servant — and that each line of Al-Fātiḥa is met with His response. The prayer is not a monologue into the air; it is a conversation that is heard.',
       reflection: 'Imagine each line being answered — how does that change your prayer?',
     },
     {
@@ -287,7 +296,7 @@ const UNDERSTANDING_SALAH: PlanTrack = {
       title: 'Standing in devotion',
       verses: ref(2, 238),
       framing:
-        '“Stand before God in devotion.” Prayer begins with presence — choosing, for a few minutes, to be fully here rather than rushing through. The posture of the body is an invitation to the heart.',
+        '“Stand before Allah in devotion.” Prayer begins with presence — choosing, for a few minutes, to be fully here rather than rushing through. The posture of the body is an invitation to the heart.',
       reflection: 'What helps you feel present rather than hurried?',
     },
     {
@@ -311,8 +320,8 @@ const UNDERSTANDING_SALAH: PlanTrack = {
       title: 'The nearness of prostration',
       verses: [...ref(96, 19), ...ref(50, 16)],
       framing:
-        '“Kneel down, and come near.” In sujūd we are physically at our lowest and, the tradition teaches, spiritually closest — to a God who is “nearer to him than his jugular vein.” It is the most intimate moment of the prayer.',
-      reflection: 'What would you whisper to God while closest to Him?',
+        '“Kneel down, and come near.” In sujūd we are physically at our lowest and, the tradition teaches, spiritually closest — to a Allah who is “nearer to him than his jugular vein.” It is the most intimate moment of the prayer.',
+      reflection: 'What would you whisper to Allah while closest to Him?',
     },
     {
       order: 9,
@@ -365,7 +374,7 @@ const THROUGH_HARDSHIP: PlanTrack = {
       title: 'A burden made bearable',
       verses: ref(2, 286),
       framing:
-        '“God does not burden any soul beyond its capacity.” It can be hard to believe on the heaviest days, yet the verse continues into the very prayer for relief that so many have leaned on. Whatever you’re facing, you were not handed more than you can carry.',
+        '“Allah does not burden any soul beyond its capacity.” It can be hard to believe on the heaviest days, yet the verse continues into the very prayer for relief that so many have leaned on. Whatever you’re facing, you were not handed more than you can carry.',
       reflection: 'What strength have you found in yourself that once surprised you?',
     },
     {
@@ -373,8 +382,8 @@ const THROUGH_HARDSHIP: PlanTrack = {
       title: 'Tested, and held',
       verses: ref(2, 153, 155),
       framing:
-        'The Qur’an offers its anchor first — “God is with the steadfast” — and only then names the trial just as plainly — “We will certainly test you” — and that the comfort comes before the warning is no accident. Steadfastness here isn’t gritting your teeth alone; it’s being accompanied through it.',
-      reflection: 'Where could you ask God to “be with” you this week?',
+        'The Qur’an offers its anchor first — “Allah is with the steadfast” — and only then names the trial just as plainly — “We will certainly test you” — and that the comfort comes before the warning is no accident. Steadfastness here isn’t gritting your teeth alone; it’s being accompanied through it.',
+      reflection: 'Where could you ask Allah to “be with” you this week?',
     },
     {
       order: 5,
@@ -389,15 +398,15 @@ const THROUGH_HARDSHIP: PlanTrack = {
       title: 'Never despair of mercy',
       verses: ref(39, 53),
       framing:
-        '“Do not despair of God’s mercy, for God forgives all sins.” No mistake is too large, no grief too deep, to be met by His mercy. However far you feel you’ve drifted, the door is described as wide open.',
+        '“Do not despair of Allah’s mercy, for Allah forgives all sins.” No mistake is too large, no grief too deep, to be met by His mercy. However far you feel you’ve drifted, the door is described as wide open.',
       reflection: 'What would it feel like to truly believe mercy is still open to you?',
     },
     {
       order: 7,
-      title: 'Leaning your weight on God',
+      title: 'Leaning your weight on Allah',
       verses: ref(65, 3),
       framing:
-        '“Whoever relies on God—He will suffice him,” promises the verse, and He provides “from where he never expected.” Tawakkul is the quiet act of handing what you cannot control to the One who holds it all.',
+        '“Whoever relies on Allah—He will suffice him,” promises the verse, and He provides “from where he never expected.” Tawakkul is the quiet act of handing what you cannot control to the One who holds it all.',
       reflection: 'What are you trying to carry alone that you could hand over?',
     },
     {
@@ -405,8 +414,8 @@ const THROUGH_HARDSHIP: PlanTrack = {
       title: 'Take your sorrow to the right place',
       verses: ref(12, 86),
       framing:
-        'When grief overwhelmed the Prophet Yaʿqūb, he said, “I only complain of my grief and sorrow to God.” There is a place to pour out everything you feel — honestly, without performance — and it is the most receptive place there is.',
-      reflection: 'What would you say to God if you held nothing back?',
+        'When grief overwhelmed the Prophet Yaʿqūb, he said, “I only complain of my grief and sorrow to Allah.” There is a place to pour out everything you feel — honestly, without performance — and it is the most receptive place there is.',
+      reflection: 'What would you say to Allah if you held nothing back?',
     },
     {
       order: 9,
@@ -421,8 +430,372 @@ const THROUGH_HARDSHIP: PlanTrack = {
       title: 'The prayer in the dark',
       verses: [...ref(21, 87), ...ref(13, 28)],
       framing:
-        'From the depths of the dark, Yūnus cried out: “There is no god but You! Glory to You! I was one of the wrongdoers!” — and he was answered. And the Qur’an tells us where that peace finally settles: “it is in the remembrance of God that hearts find comfort.” Even the darkest moment has a way out.',
+        'From the depths of the dark, Yūnus cried out: “There is no god but You! Glory to You! I was one of the wrongdoers!” — and he was answered. And the Qur’an tells us where that peace finally settles: “it is in the remembrance of Allah that hearts find comfort.” Even the darkest moment has a way out.',
       reflection: 'What words could become your own “prayer in the dark”?',
+    },
+  ],
+};
+
+// ───────────────────────────── Gratitude (7) — shukr ─────────────────────────────
+const GRATITUDE: PlanTrack = {
+  id: 'gratitude',
+  title: 'Gratitude',
+  emoji: '🌾',
+  blurb: 'Learning to see, name, and return thanks.',
+  intro:
+    'A gentle journey into shukr — learning to see, name, and return thanks for the countless gifts that fill an ordinary day, and how gratitude itself becomes a doorway to more.',
+  accent: '#3f9d7a',
+  steps: [
+    {
+      order: 1,
+      title: 'Remember Me, and I will remember you',
+      verses: ref(2, 152),
+      framing:
+        'The Qur’an offers a simple, staggering exchange: “So remember Me; I will remember you. And be grateful to Me and do not deny Me.” Gratitude here is not a chore but a relationship — the heart turning back toward the One who never forgets you.',
+      reflection: 'What is one gift you’ve stopped noticing because it has always been there?',
+    },
+    {
+      order: 2,
+      title: 'Gratitude multiplies the gift',
+      verses: ref(14, 7),
+      framing:
+        '“If you are grateful, I will surely increase you.” Thankfulness is described not as the end of a blessing but the beginning of more — a posture that opens the hand to receive. The increase is often not in things, but in contentment, in light, in the capacity to notice.',
+      reflection: 'Where could a more grateful eye change how today feels?',
+    },
+    {
+      order: 3,
+      title: 'Blessings beyond counting',
+      verses: ref(16, 18),
+      framing:
+        '“If you should count the favors of Allah, you could not enumerate them.” Every breath, the quiet working of a body you rarely think about, the people who love you — the list runs past the horizon. Gratitude begins by admitting we could never finish the accounting.',
+      reflection: 'Name three favors you have never once thanked Allah for.',
+    },
+    {
+      order: 4,
+      title: 'Gratitude is for your own soul',
+      verses: ref(31, 12),
+      framing:
+        'Luqman the wise is taught: “Be grateful to Allah. And whoever is grateful is grateful for [the good of] himself.” Allah is not enriched by our thanks nor diminished by our forgetting — gratitude is a gift we give ourselves, a way of staying soft and awake.',
+      reflection: 'How does ingratitude slowly harden a person over time?',
+    },
+    {
+      order: 5,
+      title: 'A test wrapped in a blessing',
+      verses: ref(27, 40),
+      framing:
+        'When a great favor arrives, a righteous servant says: “This is from the favor of my Lord to test me — whether I will be grateful or ungrateful.” Every gift is also a question: what will you do with it? Gratitude is how we pass the test of good fortune.',
+      reflection: 'What blessing in your life is quietly asking, “now what will you do with me?”',
+    },
+    {
+      order: 6,
+      title: 'Which of His favors?',
+      verses: ref(55, 13),
+      framing:
+        'Through Surah ar-Raḥmān runs one refrain, repeated until it echoes: “So which of the favors of your Lord would you deny?” It is asked of all creation — and of you — not as accusation but as an invitation to look again, and again, at how held you truly are.',
+      reflection: 'Read that line slowly. What rises in you when you cannot, honestly, name a single favor to deny?',
+    },
+    {
+      order: 7,
+      title: 'Thankful at the table',
+      verses: ref(2, 172),
+      framing:
+        '“O you who believe, eat from the good things We have provided for you and be grateful to Allah.” Gratitude is not only for grand moments; it lives in the ordinary — a meal, a glass of water, a full stomach — turning the smallest daily acts into worship.',
+      reflection: 'What everyday habit could you turn into a small moment of thanks?',
+      note: 'A grateful heart and a remembering tongue go together — the Beautiful Names of Allah journey is a way to keep remembering Him by who He is.',
+    },
+  ],
+};
+
+// ───────────────────────────── Mercy & Forgiveness (8) — raḥma & tawba ─────────────────────────────
+const MERCY_FORGIVENESS: PlanTrack = {
+  id: 'mercy-forgiveness',
+  title: 'Mercy & Forgiveness',
+  emoji: '🌿',
+  blurb: 'The door of repentance never closes.',
+  intro:
+    'For anyone weighed down by guilt, or struggling to forgive — a journey through the vast mercy of Allah, the door of repentance that never closes, and the quiet freedom of letting go.',
+  accent: '#5b86c4',
+  steps: [
+    {
+      order: 1,
+      title: 'Never despair of mercy',
+      verses: ref(39, 53),
+      framing:
+        '“O My servants who have transgressed against themselves, do not despair of the mercy of Allah. Indeed, Allah forgives all sins.” However far you feel you have gone, the verse still calls you “My servant” — the bond is not severed. No sin is bigger than His forgiveness.',
+      reflection: 'What have you been carrying that this verse invites you to set down?',
+    },
+    {
+      order: 2,
+      title: 'A mercy that encompasses everything',
+      verses: ref(7, 156),
+      framing:
+        'Allah describes His own mercy: “My mercy encompasses all things.” It is not a reluctant, measured mercy but one that surrounds creation the way the sky surrounds the earth. You are never outside of it.',
+      reflection: 'Where in your life do you most need to feel surrounded by mercy?',
+    },
+    {
+      order: 3,
+      title: 'He turns to those who turn to Him',
+      verses: ref(42, 25),
+      framing:
+        '“It is He who accepts repentance from His servants, and pardons the misdeeds, and knows what you do.” Repentance is not Allah reluctantly tolerating your return — He names Himself at-Tawwāb, the One who turns toward whoever turns to Him. The turning back is met, every time.',
+      reflection: 'How would it change repentance to believe He turns toward you as you turn to Him?',
+    },
+    {
+      order: 4,
+      title: 'The turning that cleanses',
+      verses: ref(66, 8),
+      framing:
+        '“O you who have believed, repent to Allah with sincere repentance.” Sincere repentance (tawba naṣūḥ) is a turning of the whole self — regret for the past, leaving it in the present, and resolve for the future. It is less a transaction than a homecoming.',
+      reflection: 'What would a sincere, whole-hearted turning look like for you right now?',
+    },
+    {
+      order: 5,
+      title: 'Remembering Him in the stumble',
+      verses: ref(3, 135),
+      framing:
+        'The righteous are described as “those who, when they commit an immorality or wrong themselves, remember Allah and seek forgiveness — and who can forgive sins except Allah?” Righteousness here is not never falling; it is Whom you turn to when you do.',
+      reflection: 'When you slip, where does your mind go first?',
+    },
+    {
+      order: 6,
+      title: 'Forgiving as you hope to be forgiven',
+      verses: ref(24, 22),
+      framing:
+        'After a painful betrayal within the community, the believers are urged: “Let them pardon and overlook. Would you not love that Allah should forgive you?” Our own longing to be forgiven becomes the very reason to forgive others.',
+      reflection: 'Who are you being asked to pardon — and what is holding on costing you?',
+    },
+    {
+      order: 7,
+      title: 'Evil deeds turned to good',
+      verses: ref(25, 70),
+      framing:
+        'For the one who repents and believes and does righteousness, the promise is breathtaking: “for them Allah will replace their evil deeds with good ones.” Not merely erased — transformed. A past you regret can become the very ground of your turning toward Him.',
+      reflection: 'How might your hardest chapter become a source of good?',
+    },
+    {
+      order: 8,
+      title: 'Good deeds wash away the bad',
+      verses: ref(11, 114),
+      framing:
+        '“Indeed, good deeds do away with misdeeds.” Alongside repentance, the Qur’an offers an ongoing mercy: a kind word, a prayer, a quiet charity — small lights that dissolve old shadows. You are never without a way back.',
+      reflection: 'What good, however small, could you offer today as a step back toward Him?',
+      note: 'When the heart is light again, it is ready to call on Him freely — the Calling on Allah journey is a natural next step.',
+    },
+  ],
+};
+
+// ───────────────────────────── The Hereafter (8) — ākhira & perspective ─────────────────────────────
+const THE_HEREAFTER: PlanTrack = {
+  id: 'the-hereafter',
+  title: 'The Hereafter',
+  emoji: '🌅',
+  blurb: 'Putting this world in its true proportion.',
+  intro:
+    'A journey to lift the gaze — putting this restless world in its true proportion against the life that lasts. Not to fear the end, but to live now with clarity, lightness, and purpose.',
+  accent: '#9d7fc4',
+  steps: [
+    {
+      order: 1,
+      title: 'Every soul will taste death',
+      verses: ref(3, 185),
+      framing:
+        '“Every soul will taste death. And you will only be given your full compensation on the Day of Resurrection… And what is the life of this world except the enjoyment of delusion?” The verse is not morbid; it is clarifying — naming what is temporary so we stop mistaking it for everything.',
+      reflection: 'If you truly held that this life is brief, what would you worry about less?',
+    },
+    {
+      order: 2,
+      title: 'The real life is the next',
+      verses: ref(29, 64),
+      framing:
+        '“And this worldly life is not but diversion and amusement. And indeed, the home of the Hereafter — that is the [eternal] life, if only they knew.” This world is a passing game; the lasting home is elsewhere. Knowing it reframes every gain and loss.',
+      reflection: 'What “game” have you been taking as deadly serious lately?',
+    },
+    {
+      order: 3,
+      title: 'Play, adornment, and rivalry',
+      verses: ref(57, 20),
+      framing:
+        'The Qur’an names the pattern of worldly life plainly — play and amusement, adornment, boasting, and competition in wealth and children — like a crop that delights, then withers. It does not forbid the world; it asks us not to be fooled by it.',
+      reflection: 'Which of those — status, appearance, rivalry — pulls hardest on you?',
+    },
+    {
+      order: 4,
+      title: 'Until you visit the graves',
+      verses: ref(102, 1, 2),
+      framing:
+        '“Competition in [worldly] increase diverts you, until you visit the graveyards.” A short, piercing sūrah: we chase more and more, distracted, until the chase ends at the cemetery gate — a gentle wake-up, delivered while there is still time.',
+      reflection: 'What are you accumulating that will not matter at that gate?',
+    },
+    {
+      order: 5,
+      title: 'Made to be tested',
+      verses: ref(67, 2),
+      framing:
+        '“[He] who created death and life to test you as to which of you is best in deed.” Life is not random; it has a shape and a purpose — a testing ground where character is formed. Death is not the enemy of meaning, but part of its frame.',
+      reflection: '“Best in deed,” not most in deed — how does quality over quantity change your day?',
+    },
+    {
+      order: 6,
+      title: 'What endures',
+      verses: ref(18, 46),
+      framing:
+        '“Wealth and children are the adornment of worldly life, but the enduring good deeds are better with your Lord for reward and better for hope.” The things we love are not condemned — they are simply set below the deeds that outlast them.',
+      reflection: 'What is one “enduring good” you could invest in today?',
+    },
+    {
+      order: 7,
+      title: 'Hasten to forgiveness and a garden',
+      verses: ref(3, 133),
+      framing:
+        '“And hasten to forgiveness from your Lord and a garden as wide as the heavens and the earth, prepared for the righteous.” The gaze finally lifts to the goal: not just escaping loss, but racing toward a mercy and a home beyond imagining.',
+      reflection: 'What would it mean to “hasten” — to move toward Allah with some urgency this week?',
+    },
+    {
+      order: 8,
+      title: 'More than they could wish',
+      verses: ref(50, 35),
+      framing:
+        'Of that home, Allah says: “They will have whatever they wish therein, and with Us is more.” Every longing this world could not satisfy finds its answer there — and then more, beyond the asking. The Hereafter is not less than this life; it is the fullness this life only hinted at.',
+      reflection: 'What deep longing do you carry that only something eternal could fill?',
+    },
+  ],
+};
+
+// ───────────────────────────── The Beautiful Names of Allah (7) — al-asmāʾ al-ḥusnā ─────────────────────────────
+const NAMES_OF_ALLAH: PlanTrack = {
+  id: 'names-of-allah',
+  title: 'The Names of Allah',
+  emoji: '✨',
+  blurb: 'To know Him is to love Him.',
+  intro:
+    'To know Allah is to love Him. A gentle walk through some of the most beautiful names by which the Qur’an teaches us to know our Lord — and to call on Him by who He is.',
+  accent: '#c8a24a',
+  steps: [
+    {
+      order: 1,
+      title: 'Call on Him by His beautiful names',
+      verses: ref(7, 180),
+      framing:
+        '“And to Allah belong the best names, so invoke Him by them.” We are not left to guess who Allah is — He introduces Himself, and invites us to call on Him by the very qualities we most need: the Forgiving when we stumble, the Provider when we worry, the Near when we ache.',
+      reflection: 'Which quality of Allah do you most need to lean on right now?',
+    },
+    {
+      order: 2,
+      title: 'The Most Merciful, Lord of all',
+      verses: ref(1, 1, 2, 3),
+      framing:
+        'The Qur’an opens by naming Him: “In the name of Allah, the Entirely Merciful (ar-Raḥmān), the Especially Merciful (ar-Raḥīm)… Lord of all the worlds.” Before anything else is said, mercy is named twice — the first thing He wants us to know about Him.',
+      reflection: 'What changes when the first word you associate with Allah is mercy?',
+    },
+    {
+      order: 3,
+      title: 'The Living, the Sustainer',
+      verses: ref(2, 255),
+      framing:
+        'In Āyat al-Kursī: “Allah — there is no deity except Him, the Ever-Living (al-Ḥayy), the Sustainer of all existence (al-Qayyūm). Neither drowsiness overtakes Him nor sleep.” He does not tire, does not look away, does not need rest from holding the universe — or from holding you.',
+      reflection: 'How does it feel to be sustained by One who never sleeps?',
+    },
+    {
+      order: 4,
+      title: 'Knower of the unseen, the Merciful',
+      verses: ref(59, 22),
+      framing:
+        '“He is Allah, other than whom there is no deity, Knower of the unseen and the witnessed. He is the Entirely Merciful, the Especially Merciful.” He sees what no one else sees — your hidden efforts, your private grief — and meets it all with mercy.',
+      reflection: 'What unseen thing about you would you want met with mercy?',
+    },
+    {
+      order: 5,
+      title: 'The King, the Source of Peace',
+      verses: ref(59, 23),
+      framing:
+        '“He is the Sovereign (al-Malik), the Pure (al-Quddūs), the Source of Peace (as-Salām), the Granter of Security, the Guardian, the Almighty, the Compeller, the Supreme.” A cascade of names — and among them, as-Salām: from Him alone comes the peace the heart keeps chasing elsewhere.',
+      reflection: 'Where are you seeking peace that only its true Source can give?',
+    },
+    {
+      order: 6,
+      title: 'The Creator, the Fashioner',
+      verses: ref(59, 24),
+      framing:
+        '“He is Allah, the Creator (al-Khāliq), the Inventor (al-Bāriʾ), the Fashioner (al-Muṣawwir); to Him belong the best names.” The One who shaped every form shaped you — deliberately. Not mass-produced, but fashioned, named, intended.',
+      reflection: 'What would change if you truly believed you were fashioned on purpose?',
+    },
+    {
+      order: 7,
+      title: 'Say: He is One',
+      verses: ref(112, 1, 2, 3, 4),
+      framing:
+        '“Say, He is Allah, One (al-Aḥad); Allah, the Eternal Refuge (aṣ-Ṣamad); He neither begets nor is born, nor is there any equal to Him.” The heart of belief in four short lines: He is utterly One — the One everything leans on, while He leans on nothing.',
+      reflection: 'What does it steady in you to say, and mean, “He is One”?',
+      note: 'Now that you know some of His names, the Calling on Allah journey shows how to call on Him by them.',
+    },
+  ],
+};
+
+// ───────────────────────────── Calling on Allah (7) — duʿāʾ ─────────────────────────────
+const CALLING_ON_ALLAH: PlanTrack = {
+  id: 'calling-on-allah',
+  title: 'Calling on Allah',
+  emoji: '🤲',
+  blurb: 'The believer’s quiet, always-open line.',
+  intro:
+    'Duʿāʾ is the believer’s quiet superpower — a direct line, always open. A journey through how the Qur’an teaches us to ask, and through the beautiful supplications the prophets themselves prayed.',
+  accent: '#5a9d8f',
+  steps: [
+    {
+      order: 1,
+      title: 'Call on Him, humbly and in private',
+      verses: ref(7, 55),
+      framing:
+        '“Call upon your Lord in humility and privately.” Duʿāʾ has a posture: lowered, sincere, unhurried — not a performance, but the honest reaching of a small servant toward a vast, attentive Lord.',
+      reflection: 'When you pray, are you performing or reaching? What helps you be real?',
+    },
+    {
+      order: 2,
+      title: 'I am near — I respond',
+      verses: ref(2, 186),
+      framing:
+        '“And when My servants ask you concerning Me — indeed I am near. I respond to the call of the caller when he calls upon Me.” There is no distance to shout across; He is near, and the answering is promised. The only question is whether we will call.',
+      reflection: 'What have you been hesitating to ask Him for?',
+    },
+    {
+      order: 3,
+      title: 'The prayer of Ayyūb',
+      verses: ref(21, 83, 84),
+      framing:
+        'Tested with the loss of nearly everything, the Prophet Ayyūb did not demand — he simply named his pain and his Lord’s nature: “Indeed, adversity has touched me, and You are the most merciful of the merciful.” And the response: “So We answered him and removed his affliction.”',
+      reflection: 'Could you bring Allah your pain that plainly, without performance?',
+    },
+    {
+      order: 4,
+      title: 'The prayer of Mūsā',
+      verses: ref(20, 25, 26, 27, 28),
+      framing:
+        'Sent to confront a tyrant, Mūsā asked not for power but for capacity: “My Lord, expand for me my chest, and ease for me my task, and untie the knot from my tongue, that they may understand my speech.” A duʿāʾ for anyone facing something bigger than themselves.',
+      reflection: 'What “task” in your life needs this exact prayer?',
+    },
+    {
+      order: 5,
+      title: 'A prayer for those we love',
+      verses: ref(25, 74),
+      framing:
+        'Among the servants of the Most Merciful are those who pray: “Our Lord, grant us from among our spouses and offspring comfort to our eyes, and make us a leader for the righteous.” A duʿāʾ that turns our love for family into worship.',
+      reflection: 'Who would you name in this prayer tonight?',
+    },
+    {
+      order: 6,
+      title: 'Good in both worlds',
+      verses: ref(2, 201),
+      framing:
+        'The Qur’an gives a perfectly balanced duʿāʾ: “Our Lord, give us in this world that which is good and in the Hereafter that which is good, and protect us from the punishment of the Fire.” It refuses to choose between this life and the next — it asks for the good of both.',
+      reflection: 'What “good in this world” and “good in the next” would you ask for?',
+    },
+    {
+      order: 7,
+      title: 'Forgive, and have mercy',
+      verses: ref(23, 118),
+      framing:
+        'The Qur’an even teaches us how to close: “My Lord, forgive and have mercy, and You are the best of the merciful.” We end where we began — leaning on His mercy, certain that the One we call is the most merciful there is.',
+      reflection: 'Sit with one duʿāʾ you want to keep returning to. What is it?',
     },
   ],
 };
@@ -432,6 +805,11 @@ export const PLANS: PlanTrack[] = [
   JUZ_AMMA,
   UNDERSTANDING_SALAH,
   THROUGH_HARDSHIP,
+  GRATITUDE,
+  MERCY_FORGIVENESS,
+  THE_HEREAFTER,
+  NAMES_OF_ALLAH,
+  CALLING_ON_ALLAH,
 ];
 
 // ───────────────────────────── lookups (mirror watch.ts getChapter / neighbors) ─────────────────────────────

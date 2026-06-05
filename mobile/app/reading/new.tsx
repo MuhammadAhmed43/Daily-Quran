@@ -12,8 +12,8 @@ import {
   avgPerDay,
   corpusLabel,
   estimateMinutes,
-  JUZ_AMMA,
   PACES,
+  READING_PRESETS,
   surahName,
   WHOLE,
   type Corpus,
@@ -22,24 +22,21 @@ import { createPlan, useQuranPlan } from '@/lib/quran-plan-progress';
 import { useProfile } from '@/lib/profile';
 
 const ACCENT = '#0a7ea4';
-type GoalKind = 'whole' | 'juz-amma' | 'custom';
 
 export default function NewQuranPlan() {
   const router = useRouter();
   const { profile } = useProfile();
   const existing = useQuranPlan().plan;
-  const [goal, setGoal] = useState<GoalKind>('whole');
+  const [goal, setGoal] = useState<string>('whole'); // a READING_PRESETS id, or 'custom'
   const [fromS, setFromS] = useState(1);
   const [toS, setToS] = useState(114);
   const [days, setDays] = useState(120); // default: 4 months
   const [picking, setPicking] = useState<'from' | 'to' | null>(null);
 
   const corpus: Corpus =
-    goal === 'whole'
-      ? WHOLE
-      : goal === 'juz-amma'
-        ? JUZ_AMMA
-        : { fromSurah: Math.min(fromS, toS), toSurah: Math.max(fromS, toS) };
+    goal === 'custom'
+      ? { fromSurah: Math.min(fromS, toS), toSurah: Math.max(fromS, toS) }
+      : (READING_PRESETS.find((p) => p.id === goal)?.corpus ?? WHOLE);
 
   const perDay = avgPerDay(corpus, days);
   const mins = estimateMinutes(perDay);
@@ -51,9 +48,8 @@ export default function NewQuranPlan() {
     router.replace('/reading');
   };
 
-  const GOALS: { id: GoalKind; title: string; sub: string }[] = [
-    { id: 'whole', title: 'The whole Qur’an', sub: 'All 114 surahs, beginning to end' },
-    { id: 'juz-amma', title: 'Juz ʿAmma', sub: 'The 30th juz — An-Naba to An-Nas' },
+  const GOALS: { id: string; title: string; sub: string }[] = [
+    ...READING_PRESETS.map((p) => ({ id: p.id, title: p.title, sub: p.sub })),
     { id: 'custom', title: 'A custom range', sub: 'Pick the surahs to read' },
   ];
 

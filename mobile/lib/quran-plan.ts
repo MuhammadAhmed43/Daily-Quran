@@ -11,6 +11,7 @@ export type Corpus = { fromSurah: number; toSurah: number };
 
 export const WHOLE: Corpus = { fromSurah: 1, toSurah: 114 };
 export const JUZ_AMMA: Corpus = { fromSurah: 78, toSurah: 114 }; // Juz 30: An-Naba → An-Nas
+export const MUFASSAL: Corpus = { fromSurah: 50, toSurah: 114 }; // Qāf → An-Nās: the oft-recited last seventh
 
 type Meta = { number: number; count: number; name: string };
 const META: Meta[] = SURAHS.map((s) => ({ number: s.number, count: s.numberOfAyahs, name: s.englishName }));
@@ -23,8 +24,20 @@ export function surahName(n: number): string {
 export function corpusLabel(c: Corpus): string {
   if (c.fromSurah === 1 && c.toSurah === 114) return 'The whole Qur’an';
   if (c.fromSurah === 78 && c.toSurah === 114) return 'Juz ʿAmma';
+  if (c.fromSurah === 50 && c.toSurah === 114) return 'The Mufaṣṣal';
   return c.fromSurah === c.toSurah ? surahName(c.fromSurah) : `${surahName(c.fromSurah)} → ${surahName(c.toSurah)}`;
 }
+
+// Curated reading plans — each a contiguous run of whole surahs. "Custom" in the setup covers any range.
+export type ReadingPreset = { id: string; title: string; sub: string; corpus: Corpus };
+export const READING_PRESETS: ReadingPreset[] = [
+  { id: 'whole', title: 'The whole Qur’an', sub: 'All 114 surahs, beginning to end', corpus: WHOLE },
+  { id: 'mufassal', title: 'The Mufaṣṣal', sub: 'Qāf to An-Nās — the oft-recited shorter surahs', corpus: MUFASSAL },
+  { id: 'juz-amma', title: 'Juz ʿAmma', sub: 'The 30th juz — An-Naba to An-Nas', corpus: JUZ_AMMA },
+  { id: 'baqarah', title: 'Sūrah al-Baqarah', sub: 'The longest surah — a journey on its own', corpus: { fromSurah: 2, toSurah: 2 } },
+  { id: 'kahf', title: 'Sūrah al-Kahf', sub: 'The Cave — a Friday companion', corpus: { fromSurah: 18, toSurah: 18 } },
+  { id: 'yasin', title: 'Sūrah Yā-Sīn', sub: 'Often called the heart of the Qur’an', corpus: { fromSurah: 36, toSurah: 36 } },
+];
 
 // Flat, ordered ayah list for a corpus (memoized). Each entry is a {surah, ayah} reference.
 const flatCache = new Map<string, Ref[]>();
