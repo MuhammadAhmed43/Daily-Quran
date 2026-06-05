@@ -1,109 +1,169 @@
+// Journeys library (Bible Chat frame 52, onyx). A featured journey hero (cosmic bg), theme filter-chips,
+// and the full set of guided study-plans as seal-medallion cards with live progress. Re-skin + compose
+// only — the progress logic (usePlanProgress) and the plan data (PLANS) are unchanged. The Qur'an reading
+// plan now lives behind its own Explore tile (/reading), so this screen is journeys-only.
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { FadeIn } from '@/components/fade-in';
-import { QuranPlanCard } from '@/components/home/quran-plan-card';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { SealMedallion } from '@/components/atlas-tile';
+import { CosmicCardBg } from '@/components/cosmic-field';
+import { IconButton, Txt } from '@/components/ui/primitives';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Screen } from '@/components/ui/screen';
 import { haptic } from '@/lib/haptics';
-import { PLANS } from '@/lib/plans';
+import { getPlan, PLANS, suggestedPlan } from '@/lib/plans';
 import { usePlanProgress } from '@/lib/plan-progress';
+import { planIcon } from '@/lib/plan-visuals';
+import { useProfile } from '@/lib/profile';
+import { c, font, radius, space } from '@/lib/theme';
 
-// "Journeys" hub — the four guided tracks as cards, each with its own progress. Mirrors the watch
-// hub list. Position-based: a started journey shows where you are; missing days never shows here.
+const THEMES: { key: string; label: string; ids: string[] | null }[] = [
+  { key: 'all', label: 'All', ids: null },
+  { key: 'start', label: 'Start here', ids: ['new-to-quran', 'juz-amma'] },
+  { key: 'heart', label: 'For the heart', ids: ['gratitude', 'mercy-forgiveness', 'patience-trust', 'contentment-provision', 'through-hardship'] },
+  { key: 'worship', label: 'Worship', ids: ['understanding-salah', 'calling-on-allah', 'remembrance', 'ramadan-fasting'] },
+  { key: 'knowing', label: 'Knowing Allah', ids: ['names-of-allah', 'reflection-knowledge', 'the-hereafter', 'stories-of-the-prophets'] },
+  { key: 'living', label: 'Living it', ids: ['good-character', 'parents-family'] },
+];
+
 export default function PlansScreen() {
   const router = useRouter();
   const progress = usePlanProgress();
+  const { profile } = useProfile();
+  const [theme, setTheme] = useState('all');
+
+  const featured = getPlan(suggestedPlan(profile)) ?? PLANS[0];
+  const active = THEMES.find((t) => t.key === theme) ?? THEMES[0];
+  const list = active.ids ? PLANS.filter((p) => active.ids!.includes(p.id)) : PLANS;
+
+  const openPlan = (id: string) => {
+    haptic.light();
+    router.push({ pathname: '/plan/[id]', params: { id } });
+  };
 
   return (
-    <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Plans', headerBackTitle: 'Home' }} />
-      <SafeAreaView edges={['bottom']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <ThemedText style={styles.h1}>Plans</ThemedText>
-            <ThemedText style={styles.sub}>
-              Read through the Qur’an at your own pace, or follow a short guided journey.
-            </ThemedText>
+    <Screen edges={['top']}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.header}>
+        <IconButton name="chevron-back" onPress={() => router.back()} diameter={38} size={22} color={c.textPrimary} />
+        <Txt variant="cardTitle">Journeys</Txt>
+        <View style={styles.spacer} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Featured journey */}
+        <PressableScale style={styles.featured} onPress={() => openPlan(featured.id)}>
+          <CosmicCardBg hueIndex={1} id={featured.id} />
+          <View style={styles.featuredContent}>
+            <SealMedallion name={planIcon(featured.id)} frame={54} ring={40} glyph={25} glowStrength={0.26} />
+            <View style={styles.featuredText}>
+              <Txt style={styles.featuredEyebrow}>✦ FEATURED JOURNEY</Txt>
+              <Txt variant="h2" numberOfLines={2} style={styles.featuredTitle}>
+                {featured.title}
+              </Txt>
+              <Txt variant="caption" color={c.textSecondary} numberOfLines={1}>
+                {featured.steps.length} steps · {featured.blurb}
+              </Txt>
+            </View>
+            <View style={styles.featuredArrow}>
+              <Ionicons name="arrow-forward" size={17} color={c.bg} />
+            </View>
           </View>
+        </PressableScale>
 
-          <ThemedText style={styles.sectionLabel}>Your Qur’an plan</ThemedText>
-          <QuranPlanCard />
-          <ThemedText style={[styles.sectionLabel, styles.sectionGap]}>Guided journeys</ThemedText>
-
-          {PLANS.map((p, i) => {
-            const s = progress.summary(p.id);
-            const pill = s.finished
-              ? 'Completed ✓'
-              : s.started
-                ? `Step ${Math.min(s.currentOrder, s.total)} of ${s.total}`
-                : `${s.total} steps · not started`;
+        {/* Theme filter chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {THEMES.map((t) => {
+            const on = t.key === theme;
             return (
-              <FadeIn key={p.id} delay={i * 50} duration={420}>
-                <Pressable
-                  style={[styles.card, { backgroundColor: p.accent + '12', borderColor: p.accent + '33' }]}
-                  onPress={() => {
-                    haptic.light();
-                    router.push({ pathname: '/plan/[id]', params: { id: p.id } });
-                  }}>
-                  <View style={[styles.iconWell, { backgroundColor: p.accent + '22' }]}>
-                    <ThemedText style={styles.emoji}>{p.emoji}</ThemedText>
-                  </View>
-                  <View style={styles.body}>
-                    <View style={styles.titleRow}>
-                      <ThemedText style={styles.title}>{p.title}</ThemedText>
-                      {s.isActive && !s.finished ? (
-                        <View style={[styles.tag, { backgroundColor: p.accent }]}>
-                          <ThemedText style={styles.tagText}>FOCUS</ThemedText>
-                        </View>
-                      ) : null}
-                    </View>
-                    <ThemedText style={styles.blurb} numberOfLines={2}>
-                      {p.blurb}
-                    </ThemedText>
-                    <ThemedText style={[styles.pill, { color: p.accent }]}>{pill}</ThemedText>
-                  </View>
-                  <ThemedText style={styles.arrow}>›</ThemedText>
-                </Pressable>
-              </FadeIn>
+              <PressableScale
+                key={t.key}
+                onPress={() => {
+                  haptic.light();
+                  setTheme(t.key);
+                }}
+                style={[styles.chip, on && styles.chipOn]}>
+                <Txt variant="caption" style={[styles.chipText, on && styles.chipTextOn]}>
+                  {t.label}
+                </Txt>
+              </PressableScale>
             );
           })}
-
-          <ThemedText style={styles.disclaimer}>
-            A study aid for reflection — not a fatwa or a substitute for a qualified scholar.
-          </ThemedText>
         </ScrollView>
-      </SafeAreaView>
-    </ThemedView>
+
+        {/* Journey cards */}
+        <View style={styles.cards}>
+          {list.map((p, i) => {
+            const s = progress.summary(p.id);
+            const cur = Math.min(s.currentOrder, s.total);
+            const pill = s.finished ? 'Completed' : s.started ? `Step ${cur} of ${s.total}` : `${s.total} steps`;
+            return (
+              <Animated.View key={`${theme}-${p.id}`} entering={FadeInDown.delay(i * 35).duration(300)}>
+                <PressableScale style={styles.card} onPress={() => openPlan(p.id)}>
+                <SealMedallion name={planIcon(p.id)} frame={50} ring={36} glyph={21} glowStrength={0.18} />
+                <View style={styles.cardBody}>
+                  <View style={styles.cardTitleRow}>
+                    <Txt variant="cardTitle" numberOfLines={1} style={styles.cardTitle}>
+                      {p.title}
+                    </Txt>
+                    {s.isActive && !s.finished ? (
+                      <View style={styles.focusTag}>
+                        <Txt style={styles.focusTagText}>FOCUS</Txt>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Txt variant="caption" color={c.textSecondary} numberOfLines={2} style={styles.cardBlurb}>
+                    {p.blurb}
+                  </Txt>
+                  <Txt variant="caption" color={s.finished ? c.success : c.accent} style={styles.cardPill}>
+                    {pill}
+                  </Txt>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+                </PressableScale>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        <Txt variant="caption" color={c.textMuted} style={styles.disclaimer}>
+          A study aid for reflection — not a fatwa or a substitute for a qualified scholar.
+        </Txt>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 16, paddingBottom: 40, gap: 14 },
-  header: { gap: 4, marginBottom: 2 },
-  h1: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
-  sub: { fontSize: 14, opacity: 0.6, lineHeight: 20 },
-  sectionLabel: { fontSize: 12.5, fontWeight: '800', opacity: 0.5, letterSpacing: 0.6, textTransform: 'uppercase' },
-  sectionGap: { marginTop: 6 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  iconWell: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 24 },
-  body: { flex: 1, gap: 3 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 17, fontWeight: '700' },
-  tag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
-  tagText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
-  blurb: { fontSize: 13.5, opacity: 0.7, lineHeight: 19 },
-  pill: { fontSize: 12.5, fontWeight: '700', marginTop: 1 },
-  arrow: { fontSize: 22, opacity: 0.4 },
-  disclaimer: { fontSize: 11, opacity: 0.45, lineHeight: 16, textAlign: 'center', marginTop: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.gutter, paddingBottom: space.sm },
+  spacer: { width: 38 },
+  scroll: { paddingHorizontal: space.gutter, paddingBottom: space.section, gap: 16 },
+
+  featured: { height: 150, borderRadius: radius.lg, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, justifyContent: 'flex-end' },
+  featuredContent: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.card },
+  featuredText: { flex: 1, gap: 3 },
+  featuredEyebrow: { fontFamily: font.sansBold, fontSize: 10, letterSpacing: 1.3, color: c.accent },
+  featuredTitle: { lineHeight: 26 },
+  featuredArrow: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
+
+  chips: { gap: 8, paddingRight: space.gutter },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.full, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, backgroundColor: c.surface1 },
+  chipOn: { backgroundColor: c.primary, borderColor: c.primary },
+  chipText: { fontFamily: font.sansSemi, color: c.textSecondary },
+  chipTextOn: { color: c.bg },
+
+  cards: { gap: 10 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.md, backgroundColor: c.surface1, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline },
+  cardBody: { flex: 1, gap: 3 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTitle: { flexShrink: 1 },
+  focusTag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.full, backgroundColor: c.accent },
+  focusTagText: { fontFamily: font.sansBold, fontSize: 8.5, letterSpacing: 0.5, color: c.bg },
+  cardBlurb: { lineHeight: 17 },
+  cardPill: { fontFamily: font.sansSemi, marginTop: 1 },
+
+  disclaimer: { textAlign: 'center', lineHeight: 16, marginTop: 4 },
 });
