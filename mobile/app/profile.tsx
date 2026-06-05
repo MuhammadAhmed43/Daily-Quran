@@ -1,277 +1,248 @@
+// PROFILE DRAWER (onyx, Bible Chat frames 19/24) — a LEFT SLIDE-OVER hub opened from the top-left
+// avatar on Today. Presented as a transparentModal so the real Today screen dims + peeks on the right;
+// the panel slides in (and out) on a single shared value, with a scrim tap + swipe-left to close.
+// Contents: gradient avatar + name + email/guest · 2-up streak StatCards · Your Verses (bookmarks) ·
+// a color-coded menu (Daily Quiz / Holy Calendar / Ameen wall) · a share/encouragement card · footer
+// (About / Account). It is a NAV HUB — every destination already exists; this only restyles + routes.
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { type Href, useRouter } from 'expo-router';
+import { useCallback, useEffect } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { Easing, FadeInDown, interpolate, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { VerseReminder } from '@/components/home/verse-reminder';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { TranslationSheet } from '@/components/translation-sheet';
-import { signOut, useAuth } from '@/lib/auth';
+import { SkyBand } from '@/components/sky-band';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { IconButton, Txt } from '@/components/ui/primitives';
+import { SettingsCard, SettingsRow, StatCard } from '@/components/ui/settings';
+import { useAuth } from '@/lib/auth';
 import { haptic } from '@/lib/haptics';
-import { updateProfile } from '@/lib/profile';
-import { useQuizStats } from '@/lib/quiz';
-import { syncNow } from '@/lib/sync';
-import { translationMeta, useTranslation } from '@/lib/translations';
+import { useStreak } from '@/lib/streak';
+import { c, font, glow, grad, radius, space } from '@/lib/theme';
 
-const ACCENT = '#0a7ea4';
-const GREEN = '#2e9e6b';
-
-export default function ProfileScreen() {
+export default function ProfileDrawer() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { id: trId, setId: setTr } = useTranslation();
-  const quiz = useQuizStats();
-  const [trOpen, setTrOpen] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [synced, setSynced] = useState(false);
+  const streak = useStreak();
+  const { width } = useWindowDimensions();
+  const PANEL_W = Math.min(width * 0.87, 372);
+
   const guest = !user || user.isAnonymous;
+  const name = guest ? 'Guest' : user?.name || 'Friend';
+  const initial = !guest && user?.name ? user.name.charAt(0).toUpperCase() : null;
+  const subline = guest ? 'Browsing on this device' : user?.email || 'Signed in';
 
-  const onSyncNow = async () => {
-    if (syncing) return;
+  // One shared value drives open (1) and close (0): scrim opacity + panel translateX both read it,
+  // so opening and closing are a true mirror (entering/exiting are dead on the New Arch — see spec §9).
+  const p = useSharedValue(0);
+  useEffect(() => {
+    p.value = withTiming(1, { duration: 360, easing: Easing.out(Easing.cubic) });
+  }, [p]);
+
+  const dismiss = useCallback(() => {
+    p.value = withTiming(0, { duration: 230, easing: Easing.in(Easing.cubic) }, (fin) => {
+      if (fin) runOnJS(router.back)();
+    });
+  }, [p, router]);
+
+  const close = useCallback(() => {
     haptic.light();
-    setSyncing(true);
-    const ok = await syncNow();
-    setSyncing(false);
-    setSynced(ok);
-  };
+    dismiss();
+  }, [dismiss]);
 
-  const onRedoSetup = () => {
-    Alert.alert('Redo setup?', 'You will answer the welcome questions again. Your reading progress and bookmarks are kept.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Redo',
-        onPress: async () => {
-          haptic.light();
-          await updateProfile({ onboarded: false }); // the launch gate shows onboarding again
-        },
-      },
-    ]);
-  };
+  // Picking an item CLOSES the drawer and opens the destination. We REPLACE the transparent modal with
+  // the destination instead of stacking a card on top of it: a screen pushed over a transparentModal can
+  // render beneath the still-mounted drawer (so it "doesn't open"). Replacing also matches the drawer UX
+  // — the drawer dismisses, the destination opens, and back from it returns to Today.
+  const finishNav = useCallback((path: string) => router.replace(path as Href), [router]);
+  const go = useCallback(
+    (path: string) => {
+      haptic.light();
+      p.value = withTiming(0, { duration: 190, easing: Easing.in(Easing.cubic) }, (fin) => {
+        if (fin) runOnJS(finishNav)(path);
+      });
+    },
+    [p, finishNav],
+  );
 
-  const onSignOut = () => {
-    Alert.alert('Sign out?', 'You can sign back in anytime — your account and Ameen posts are kept.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign out',
-        style: 'destructive',
-        onPress: async () => {
-          haptic.light();
-          await signOut(); // the launch gate returns to the landing screen automatically
-        },
-      },
-    ]);
-  };
+  const onShare = useCallback(() => {
+    haptic.light();
+    Share.share({
+      message: 'I have been reading and reflecting on the Qur’an with Daily Qur’an — come read with me.',
+    }).catch(() => {});
+  }, []);
+
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: p.value * 0.58 }));
+  const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateX: interpolate(p.value, [0, 1], [-PANEL_W - 24, 0]) }] }));
+
+  const pan = Gesture.Pan()
+    .activeOffsetX(-18)
+    .failOffsetY([-14, 14])
+    .onUpdate((e) => {
+      const dx = Math.min(0, e.translationX);
+      p.value = 1 + dx / PANEL_W;
+    })
+    .onEnd((e) => {
+      const shouldClose = e.translationX < -PANEL_W * 0.33 || e.velocityX < -650;
+      if (shouldClose) {
+        p.value = withTiming(0, { duration: 220, easing: Easing.in(Easing.cubic) }, (fin) => {
+          if (fin) runOnJS(router.back)();
+        });
+      } else {
+        p.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
+      }
+    });
+
+  const totalDays = streak.totalDays;
+  const encourageTitle = totalDays > 0 ? `${totalDays} ${totalDays === 1 ? 'day' : 'days'} with the Qur’an` : 'Begin your journey today';
 
   return (
-    <ThemedView style={styles.container}>
-      <Stack.Screen options={{ title: 'Profile', headerBackTitle: 'Home' }} />
-      <SafeAreaView edges={['bottom']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <View style={styles.account}>
-            <View style={styles.avatar}>
-              {guest ? (
-                <Ionicons name="person" size={30} color="#fff" />
-              ) : (
-                <ThemedText style={styles.avatarText}>{(user?.name || 'F').charAt(0).toUpperCase()}</ThemedText>
-              )}
-            </View>
-            <ThemedText style={styles.name}>{guest ? 'Guest' : user?.name}</ThemedText>
-            {!guest && user?.email ? <ThemedText style={styles.email}>{user.email}</ThemedText> : null}
-            {guest ? <ThemedText style={styles.email}>Browsing on this device only</ThemedText> : null}
-          </View>
+    <View style={styles.root}>
+      {/* tap the dimmed Today (peeking on the right) to close */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.scrim, scrimStyle]} />
 
-          {guest ? (
-            <Pressable
-              style={styles.primary}
-              onPress={() => {
-                haptic.light();
-                router.push('/auth');
-              }}>
-              <Ionicons name="person-add-outline" size={18} color="#fff" />
-              <ThemedText style={styles.primaryText}>Create an account or log in</ThemedText>
-            </Pressable>
-          ) : null}
-
-          <ThemedText style={styles.sectionLabel}>DAILY QUIZ</ThemedText>
-          <Pressable
-            style={styles.quizCard}
-            onPress={() => {
-              haptic.light();
-              router.push('/quiz');
-            }}>
-            <View style={styles.quizIcon}>
-              <Ionicons name="school" size={22} color="#fff" />
-            </View>
-            <View style={styles.rowText}>
-              <ThemedText style={styles.rowTitle}>Daily Quiz</ThemedText>
-              <ThemedText style={styles.rowSub}>
-                {quiz.todayDone
-                  ? `Today: ${quiz.todayScore}/${quiz.todayTotal} — come back tomorrow`
-                  : '10 questions · test your knowledge'}
-              </ThemedText>
-            </View>
-            {quiz.todayDone ? (
-              <Ionicons name="checkmark-circle" size={24} color={GREEN} />
-            ) : (
-              <View style={styles.quizGo}>
-                <ThemedText style={styles.quizGoText}>Start</ThemedText>
+      <GestureDetector gesture={pan}>
+        <Animated.View style={[styles.panel, { width: PANEL_W, paddingTop: insets.top }, panelStyle]}>
+          <SkyBand height={insets.top + 28} />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + space.section }]}>
+            {/* Header: avatar (-> edit) + name + email + quick settings gear */}
+            <Animated.View entering={FadeInDown.delay(70).duration(320)} style={styles.headerRow}>
+              <Pressable onPress={() => go('/profile/edit')} hitSlop={6}>
+                <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.avatar}>
+                  {initial ? <Txt style={styles.avatarInitial}>{initial}</Txt> : <Ionicons name="person" size={24} color={c.bg} />}
+                </LinearGradient>
+                <View style={styles.pencil}>
+                  <Ionicons name="pencil" size={10} color={c.bg} />
+                </View>
+              </Pressable>
+              <View style={styles.nameCol}>
+                <Txt variant="h2" numberOfLines={1}>
+                  {name}
+                </Txt>
+                <Txt variant="caption" color={c.textMuted} numberOfLines={1}>
+                  {subline}
+                </Txt>
               </View>
-            )}
-          </Pressable>
-          {quiz.daysPlayed > 0 ? (
-            <View style={styles.statRow}>
-              <View style={styles.stat}>
-                <ThemedText style={styles.statNum}>{quiz.daysPlayed}</ThemedText>
-                <ThemedText style={styles.statLabel}>{quiz.daysPlayed === 1 ? 'day' : 'days'}</ThemedText>
-              </View>
-              <View style={styles.stat}>
-                <ThemedText style={styles.statNum}>{Math.round(quiz.accuracy * 100)}%</ThemedText>
-                <ThemedText style={styles.statLabel}>accuracy</ThemedText>
-              </View>
-              <View style={styles.stat}>
-                <ThemedText style={styles.statNum}>
-                  {quiz.bestScore}/{quiz.bestTotal}
-                </ThemedText>
-                <ThemedText style={styles.statLabel}>best</ThemedText>
-              </View>
-            </View>
-          ) : null}
+              <IconButton name="settings-outline" onPress={() => go('/profile/account')} diameter={38} size={19} bg={c.surface2} color={c.textSecondary} />
+            </Animated.View>
 
-          <ThemedText style={styles.sectionLabel}>SETTINGS</ThemedText>
-          <View style={styles.card}>
-            <Pressable
-              style={styles.row}
-              onPress={() => {
-                haptic.light();
-                setTrOpen(true);
-              }}>
-              <Ionicons name="language" size={20} color={ACCENT} />
-              <View style={styles.rowText}>
-                <ThemedText style={styles.rowTitle}>Translation</ThemedText>
-                <ThemedText style={styles.rowSub}>{translationMeta(trId).label}</ThemedText>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="rgba(127,127,127,0.5)" />
-            </Pressable>
-            <View style={styles.rowDivider} />
-            <Pressable style={styles.row} onPress={onRedoSetup}>
-              <Ionicons name="refresh" size={20} color={ACCENT} />
-              <View style={styles.rowText}>
-                <ThemedText style={styles.rowTitle}>Redo setup</ThemedText>
-                <ThemedText style={styles.rowSub}>Re-answer the welcome questions</ThemedText>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="rgba(127,127,127,0.5)" />
-            </Pressable>
-            {!guest ? (
-              <>
-                <View style={styles.rowDivider} />
-                <Pressable style={styles.row} onPress={onSyncNow} disabled={syncing}>
-                  <Ionicons name="cloud-upload-outline" size={20} color={ACCENT} />
-                  <View style={styles.rowText}>
-                    <ThemedText style={styles.rowTitle}>Sync now</ThemedText>
-                    <ThemedText style={styles.rowSub}>
-                      {syncing ? 'Syncing…' : synced ? 'Synced — your data is backed up' : 'Back up across your devices'}
-                    </ThemedText>
-                  </View>
-                  {syncing ? (
-                    <ActivityIndicator size="small" color={ACCENT} />
-                  ) : (
-                    <Ionicons name="chevron-forward" size={18} color="rgba(127,127,127,0.5)" />
-                  )}
-                </Pressable>
-              </>
-            ) : null}
-          </View>
+            {/* 2-up streak stats */}
+            <Animated.View entering={FadeInDown.delay(120).duration(320)} style={styles.statRow}>
+              <StatCard icon="flame" value={streak.current} label="Current streak" />
+              <StatCard icon="trophy" value={streak.longest} label="Longest streak" tint={c.accent} />
+            </Animated.View>
 
-          <VerseReminder />
+            {/* Your Verses */}
+            <Animated.View entering={FadeInDown.delay(165).duration(320)}>
+              <SettingsCard>
+                <SettingsRow icon="bookmark" badge={c.accent} title="Your Verses" subtitle="Saved ayat and bookmarks" onPress={() => go('/bookmarks')} />
+              </SettingsCard>
+            </Animated.View>
 
-          {!guest ? (
-            <Pressable style={styles.signOut} onPress={onSignOut}>
-              <ThemedText style={styles.signOutText}>Sign out</ThemedText>
-            </Pressable>
-          ) : null}
+            {/* Color-coded menu */}
+            <Animated.View entering={FadeInDown.delay(205).duration(320)}>
+              <SettingsCard>
+                <SettingsRow icon="school" badge="#7E72A6" title="Daily Quiz" subtitle="Test your knowledge" onPress={() => go('/quiz')} />
+                <SettingsRow icon="calendar" badge="#C99A5E" title="Holy Calendar" subtitle="Sacred days through the year" onPress={() => go('/calendar')} />
+                <SettingsRow icon="people" badge="#B5807A" title="Ameen Wall" subtitle="Pray with the community" onPress={() => go('/ameen')} />
+              </SettingsCard>
+            </Animated.View>
 
-          <ThemedText style={styles.version}>Daily Qur&apos;an</ThemedText>
-        </ScrollView>
-      </SafeAreaView>
+            {/* Share / encouragement */}
+            <Animated.View entering={FadeInDown.delay(245).duration(320)}>
+              <PressableScale onPress={onShare} style={styles.encourage}>
+                <View style={styles.encourageIcon}>
+                  <Ionicons name="gift-outline" size={19} color={c.accent} />
+                </View>
+                <View style={styles.encourageText}>
+                  <Txt variant="cardTitle" numberOfLines={1}>
+                    {encourageTitle}
+                  </Txt>
+                  <Txt variant="caption" color={c.textSecondary} numberOfLines={2}>
+                    Pass on the gift — share Daily Qur’an with someone you love.
+                  </Txt>
+                </View>
+                <Ionicons name="share-outline" size={18} color={c.textMuted} />
+              </PressableScale>
+            </Animated.View>
 
-      <TranslationSheet visible={trOpen} currentId={trId} onClose={() => setTrOpen(false)} onSelect={setTr} />
-    </ThemedView>
+            {/* Footer */}
+            <Animated.View entering={FadeInDown.delay(285).duration(320)}>
+              <SettingsCard>
+                <SettingsRow icon="information-circle-outline" title="About" onPress={() => go('/profile/about')} />
+                <SettingsRow icon="settings-outline" title="Account" onPress={() => go('/profile/account')} />
+              </SettingsCard>
+            </Animated.View>
+          </ScrollView>
+        </Animated.View>
+      </GestureDetector>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 18, gap: 14, paddingBottom: 40 },
-  account: { alignItems: 'center', gap: 6, paddingVertical: 12 },
-  avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: ACCENT,
+  root: { flex: 1 },
+  scrim: { backgroundColor: '#000' },
+  panel: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: c.bg,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: c.hairline,
+    shadowColor: '#000',
+    shadowOffset: { width: 8, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    elevation: 16,
+  },
+  scroll: { paddingHorizontal: space.gutter, paddingTop: space.sm, gap: 14 },
+
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingTop: space.sm, paddingBottom: space.xs },
+  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { fontFamily: font.sansBold, fontSize: 22, color: c.bg },
+  pencil: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: c.accentBright,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    borderWidth: 2,
+    borderColor: c.bg,
   },
-  avatarText: { color: '#fff', fontSize: 34, fontWeight: '800' },
-  name: { fontSize: 21, fontWeight: '800' },
-  email: { fontSize: 14, opacity: 0.6 },
-  primary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: ACCENT,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  primaryText: { color: '#fff', fontSize: 15.5, fontWeight: '700' },
-  sectionLabel: { fontSize: 12, fontWeight: '800', opacity: 0.45, letterSpacing: 0.6, marginTop: 8, marginLeft: 4 },
-  quizCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(127,127,127,0.25)',
-  },
-  quizIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center' },
-  quizGo: { backgroundColor: ACCENT, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
-  quizGoText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  nameCol: { flex: 1, gap: 2 },
+
   statRow: { flexDirection: 'row', gap: 10 },
-  stat: {
-    flex: 1,
+
+  encourage: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingVertical: 14,
-    borderRadius: 14,
+    gap: 13,
+    padding: 15,
+    borderRadius: radius.lg,
+    backgroundColor: c.surface2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(127,127,127,0.25)',
+    borderColor: 'rgba(201,189,166,0.28)',
+    ...glow(c.accent, 0.12, 14),
   },
-  statNum: { fontSize: 18, fontWeight: '800', color: ACCENT },
-  statLabel: { fontSize: 12, opacity: 0.6, fontWeight: '600' },
-  card: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(127,127,127,0.25)',
-    overflow: 'hidden',
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 14 },
-  rowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(127,127,127,0.2)', marginLeft: 48 },
-  rowText: { flex: 1, gap: 2 },
-  rowTitle: { fontSize: 15.5, fontWeight: '600' },
-  rowSub: { fontSize: 13, opacity: 0.6 },
-  signOut: {
+  encourageIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(201,189,166,0.12)',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(214,84,84,0.4)',
-    marginTop: 6,
+    justifyContent: 'center',
   },
-  signOutText: { color: '#c1554f', fontSize: 15.5, fontWeight: '700' },
-  version: { fontSize: 12, opacity: 0.4, textAlign: 'center', marginTop: 10 },
+  encourageText: { flex: 1, gap: 2 },
 });

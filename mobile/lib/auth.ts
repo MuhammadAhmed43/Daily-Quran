@@ -142,6 +142,17 @@ export async function signInGoogle(): Promise<AuthResult> {
   return { ok: true };
 }
 
+// Update the signed-in user's display name (full_name metadata). Guests have no permanent account to
+// save to, so the Edit-profile screen gates the name field behind sign-in.
+export async function updateDisplayName(name: string): Promise<AuthResult> {
+  if (!supabase) return { ok: false, message: 'Accounts are unavailable right now.' };
+  const display = name.trim();
+  if (!display) return { ok: false, message: 'Please enter a name.' };
+  const { error } = await supabase.auth.updateUser({ data: { full_name: display } });
+  if (error) return { ok: false, message: prettyAuthError(error.message) };
+  return { ok: true };
+}
+
 export async function signOut(): Promise<void> {
   await syncNow(); // push any unsynced local changes before we lose the session
   await markDecided(false);

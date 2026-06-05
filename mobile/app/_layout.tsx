@@ -94,6 +94,9 @@ function RootGate() {
       <Stack.Screen name="reflect" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="ask" options={{ headerShown: false }} />
       <Stack.Screen name="chat-history" options={{ headerShown: false }} />
+      {/* Profile is a LEFT slide-over drawer: transparent so Today dims + peeks behind it; the panel
+          animates in/out on its own shared value (see app/profile.tsx), so the container itself does not animate. */}
+      <Stack.Screen name="profile" options={{ headerShown: false, presentation: 'transparentModal', animation: 'none' }} />
     </Stack>
   );
 }
