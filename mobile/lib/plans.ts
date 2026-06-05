@@ -23,7 +23,10 @@ export type PlanId =
   | 'names-of-allah'
   | 'calling-on-allah'
   | 'stories-of-the-prophets'
-  | 'patience-trust';
+  | 'patience-trust'
+  | 'good-character'
+  | 'contentment-provision'
+  | 'parents-family';
 
 export type PlanStep = {
   order: number; // 1-based position within the track
@@ -957,6 +960,221 @@ const PATIENCE_TRUST: PlanTrack = {
   ],
 };
 
+// ───────────────────────────── Good Character (8) — ḥusn al-khuluq ─────────────────────────────
+const GOOD_CHARACTER: PlanTrack = {
+  id: 'good-character',
+  title: 'Good Character',
+  emoji: '🤝',
+  blurb: 'The faith that shows in how you treat people.',
+  intro:
+    'In the Qur’an, character is not a side-note to faith — it sits near its heart. A journey through the manners the Qur’an praises most: gentle speech, restraint, humility, fairness, and mercy toward whoever is in front of you.',
+  accent: '#4f9d8a',
+  steps: [
+    {
+      order: 1,
+      title: 'A great character',
+      verses: ref(68, 4),
+      framing:
+        'Of all the praise Allah gives the Prophet ﷺ, this stands out: “Indeed, you are of a great moral character.” How we actually treat people is not separate from faith — in the Qur’an it is one of its clearest proofs.',
+      reflection: 'If your character were described in one honest line, what would it say?',
+    },
+    {
+      order: 2,
+      title: 'Say what is best',
+      verses: ref(17, 53),
+      framing:
+        '“Tell My servants to say that which is best.” Our words can build or wound. The Qur’an asks us to reach, deliberately, for the better word — even when a sharper one is right there and would feel good to use.',
+      reflection: 'Where could choosing “the better word” change a relationship this week?',
+    },
+    {
+      order: 3,
+      title: 'Restrain anger, pardon people',
+      verses: ref(3, 134),
+      framing:
+        'Among the qualities of the righteous: “those who restrain anger and who pardon people — and Allah loves the doers of good.” Strength here is not winning the argument; it is swallowing the anger and letting the hurt go.',
+      reflection: 'Who is testing your patience right now — and what would pardoning them free in you?',
+    },
+    {
+      order: 4,
+      title: 'Repel evil with what is better',
+      verses: ref(41, 34),
+      framing:
+        '“Repel [evil] with that which is better, and the one between you and whom there was enmity will become as though a devoted friend.” A radical instruction: meet harm with good, and watch hardened things soften.',
+      reflection: 'Is there a tension you could try to disarm with unexpected kindness?',
+    },
+    {
+      order: 5,
+      title: 'Walk humbly',
+      verses: ref(31, 18),
+      framing:
+        'Luqman advises his son: “Do not turn your cheek in scorn toward people, nor walk the earth in arrogance — Allah does not love the self-deluded and boastful.” Humility is not thinking less of yourself; it is not needing to look down on anyone.',
+      reflection: 'Where does a little arrogance sneak into how you treat people?',
+    },
+    {
+      order: 6,
+      title: 'Keep your word',
+      verses: ref(23, 8),
+      framing:
+        'Among the successful believers: “those who are faithful to their trusts and their promises.” A kept word is a quiet act of worship — it tells people that your faith makes you safe to rely on.',
+      reflection: 'Is there a promise, big or small, you have let slip?',
+    },
+    {
+      order: 7,
+      title: 'Fair, even against yourself',
+      verses: ref(4, 135),
+      framing:
+        '“Stand firm for justice, as witnesses for Allah, even if it be against yourselves, or your parents and relatives.” Fairness that only runs in our own favor is not fairness — the Qur’an asks for the harder, truer kind.',
+      reflection: 'Where is it costing you something to be fair?',
+    },
+    {
+      order: 8,
+      title: 'Patience and compassion',
+      verses: ref(90, 17),
+      framing:
+        'The Qur’an describes the people of the right hand as those who “urge one another to patience, and urge one another to compassion.” Good character, in the end, is just patience and mercy — offered again and again, to whoever is before you.',
+      reflection: 'To whom could you show a little more patience and compassion today?',
+    },
+  ],
+};
+
+// ───────────────────────────── Contentment & Provision (7) — rizq & qanāʿa ─────────────────────────────
+const CONTENTMENT_PROVISION: PlanTrack = {
+  id: 'contentment-provision',
+  title: 'Contentment & Provision',
+  emoji: '🍃',
+  blurb: 'Trusting the One who provides.',
+  intro:
+    'For the worry that never quite switches off — money, security, enough. A journey through how the Qur’an speaks about rizq (provision) and the quiet wealth of a contented heart.',
+  accent: '#7aa35a',
+  steps: [
+    {
+      order: 1,
+      title: 'Your provision is with Allah',
+      verses: ref(51, 22),
+      framing:
+        '“And in the heaven is your provision, and whatever you are promised.” Your sustenance is not ultimately in a job, a market, or a person — it is written with Allah, and it will reach you.',
+      reflection: 'What worry about provision could you hand back to Allah today?',
+    },
+    {
+      order: 2,
+      title: 'Not one creature is forgotten',
+      verses: ref(11, 6),
+      framing:
+        '“There is no creature on earth but that its provision is upon Allah.” The bird that wakes with nothing and sleeps fed, the ant, the child — all are provided for. You are not the exception to a promise that holds for the smallest of creatures.',
+      reflection: 'When has provision reached you from a way you did not expect?',
+    },
+    {
+      order: 3,
+      title: 'He gives without measure',
+      verses: ref(3, 37),
+      framing:
+        'When Zakariya found Maryam with provision out of season, she said simply: “It is from Allah. Indeed, Allah provides for whom He wills without measure.” His giving is not limited by what seems possible.',
+      reflection: 'What “out of season” provision are you quietly hoping for?',
+    },
+    {
+      order: 4,
+      title: 'Do not strain your eyes at others',
+      verses: ref(20, 131),
+      framing:
+        '“Do not strain your eyes toward the fleeting splendor We have given some of them to enjoy… the provision of your Lord is better and more lasting.” Comparison steals the peace of what you already have.',
+      reflection: 'Whose life have you been measuring yours against — and what does it cost you?',
+    },
+    {
+      order: 5,
+      title: 'Wealth is a test, not a verdict',
+      verses: ref(89, 15, 16),
+      framing:
+        'The Qur’an names a trap: when honored with wealth, man says “My Lord has honored me,” but when his provision is restricted he says “My Lord has humiliated me.” Both are tests, not verdicts. Neither your balance nor your struggle is Allah’s judgment of your worth.',
+      reflection: 'Have you ever mistaken ease for approval, or hardship for rejection?',
+    },
+    {
+      order: 6,
+      title: 'Spend, and it returns',
+      verses: ref(34, 39),
+      framing:
+        '“Whatever you spend, He will replace it; and He is the best of providers.” Generosity feels like loss but is described as exchange — what leaves your hand for Allah’s sake is never truly gone.',
+      reflection: 'What could you give, trusting it will return in a better form?',
+    },
+    {
+      order: 7,
+      title: 'The good life',
+      verses: ref(16, 97),
+      framing:
+        '“Whoever does good, while believing — We will surely give them a good life.” The good life the Qur’an promises is not the richest one; it is the contented one — a heart at peace with what Allah has portioned, a wealth no money can buy.',
+      reflection: 'What would “a good life,” measured in peace rather than possessions, look like for you?',
+    },
+  ],
+};
+
+// ───────────────────────────── Honoring Family (7) — birr al-wālidayn & the home ─────────────────────────────
+const PARENTS_FAMILY: PlanTrack = {
+  id: 'parents-family',
+  title: 'Honoring Family',
+  emoji: '🏡',
+  blurb: 'Kindness that begins at home.',
+  intro:
+    'The Qur’an ties our nearness to Allah tightly to how we treat the people closest to us. A journey through honoring parents, mercy between spouses, and building a home turned toward Allah.',
+  accent: '#c08a6a',
+  steps: [
+    {
+      order: 1,
+      title: 'Worship Him, and be good to parents',
+      verses: ref(17, 23),
+      framing:
+        'Right after the command to worship Him alone, Allah places this: “and to parents, good treatment.” Devotion to Allah and kindness to parents are named in one breath — the first feels incomplete without the second.',
+      reflection: 'What is one act of kindness your parents would feel this week?',
+    },
+    {
+      order: 2,
+      title: 'Lower the wing of mercy',
+      verses: ref(17, 24),
+      framing:
+        '“Lower to them the wing of humility out of mercy, and say: My Lord, have mercy on them as they raised me when I was small.” A whole ethic of gratitude in one line — and a duʿāʾ to keep making for them, in their life and after it.',
+      reflection: 'When did you last make duʿāʾ for your parents by name?',
+    },
+    {
+      order: 3,
+      title: 'Grateful to Me and to them',
+      verses: ref(31, 14),
+      framing:
+        '“Be grateful to Me and to your parents.” The mother who “carried him in weakness upon weakness” is honored by Allah Himself — gratitude to them is woven right into gratitude to Him.',
+      reflection: 'What did a parent sacrifice for you that you have never fully thanked them for?',
+    },
+    {
+      order: 4,
+      title: 'Kindness, widening outward',
+      verses: ref(4, 36),
+      framing:
+        'The circle of kindness keeps widening: parents, then relatives, orphans, the needy, the near neighbor and the far one, the companion at your side, the traveler. Faith is meant to make us gentler to everyone within reach.',
+      reflection: 'Which of these — a neighbor, a traveler, someone at your side — have you been overlooking?',
+    },
+    {
+      order: 5,
+      title: 'Tranquility, love, and mercy',
+      verses: ref(30, 21),
+      framing:
+        '“He created for you, from yourselves, mates that you may find tranquility in them, and He placed between you love and mercy.” Marriage is named a sign of Allah — a place meant for rest, affection, and mercy.',
+      reflection: 'How could you add a little more mercy to your closest relationship?',
+    },
+    {
+      order: 6,
+      title: 'Those you love are a trust',
+      verses: ref(8, 28),
+      framing:
+        '“Know that your wealth and your children are a test.” The people we love most can become our greatest excuse to forget Allah, or our greatest reason to draw near — a trust we will one day be asked about.',
+      reflection: 'Are your closest people pulling you toward Allah, or away — and what would help?',
+    },
+    {
+      order: 7,
+      title: 'A home turned toward Him',
+      verses: ref(20, 132),
+      framing:
+        '“Enjoin prayer upon your family, and be steadfast in it yourself.” The greatest kindness to those we love is not only providing for them, but pointing them — gently, patiently — toward the One who never leaves. It begins with your own steadiness.',
+      reflection: 'How could you nurture faith in your home this week, starting with yourself?',
+    },
+  ],
+};
+
 export const PLANS: PlanTrack[] = [
   NEW_TO_QURAN,
   JUZ_AMMA,
@@ -969,6 +1187,9 @@ export const PLANS: PlanTrack[] = [
   CALLING_ON_ALLAH,
   STORIES_OF_THE_PROPHETS,
   PATIENCE_TRUST,
+  GOOD_CHARACTER,
+  CONTENTMENT_PROVISION,
+  PARENTS_FAMILY,
 ];
 
 // ───────────────────────────── lookups (mirror watch.ts getChapter / neighbors) ─────────────────────────────
