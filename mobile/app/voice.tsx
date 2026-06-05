@@ -8,11 +8,11 @@ import {
   type AudioPlayer,
 } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { askQuestion, type ChatTurn } from '@/lib/chat';
@@ -20,11 +20,10 @@ import { haptic } from '@/lib/haptics';
 import { useRecitation } from '@/lib/recitation-context';
 import { fetchSpokenReply } from '@/lib/speak';
 import { recordActivity } from '@/lib/streak';
+import { c, font, grad } from '@/lib/theme';
 import { transcribeAudio } from '@/lib/voice';
 import { pushVoiceExchange } from '@/lib/voice-bridge';
 
-const BG = '#000000';
-const CRESCENT = require('../assets/voice/crescent-2.jpg');
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'denied';
@@ -239,6 +238,8 @@ export default function VoiceScreen() {
   const playerRef = useRef<AudioPlayer | null>(null);
   const subRef = useRef<{ remove: () => void } | null>(null);
   const intensity = useRef(new Animated.Value(0.12)).current;
+  const ripple1 = useRef(new Animated.Value(0)).current;
+  const ripple2 = useRef(new Animated.Value(0)).current;
   const rafRef = useRef<number | null>(null);
   const t0Ref = useRef(0);
   const envRef = useRef(0.12);
@@ -266,8 +267,8 @@ export default function VoiceScreen() {
     if (typeof recState.metering === 'number') meterRef.current = recState.metering;
   }, [recState.metering]);
 
-  // ---- crescent pulse ----
-  // One rAF-driven, sum-of-sines envelope makes the moon breathe and swell smoothly and
+  // ---- orb pulse ----
+  // One rAF-driven, sum-of-sines envelope makes the orb breathe and swell smoothly and
   // continuously — like ChatGPT's voice orb — instead of jerky random steps. The whole envelope
   // is low-passed each frame so phase changes glide rather than snap. (This screen is light, so
   // a JS-thread rAF stays buttery here — unlike the heavy reader ScrollView.)
@@ -668,6 +669,26 @@ export default function VoiceScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ambient ripples radiating from the orb — a calm, alive "I'm here, listening" pulse.
+  useEffect(() => {
+    const loop = (v: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(v, { toValue: 1, duration: 2800, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ]),
+      );
+    const a = loop(ripple1, 0);
+    const b = loop(ripple2, 1400);
+    a.start();
+    b.start();
+    return () => {
+      a.stop();
+      b.stop();
+    };
+  }, [ripple1, ripple2]);
+
   const toggleMute = () => {
     haptic.medium();
     if (mutedRef.current) {
@@ -713,7 +734,11 @@ export default function VoiceScreen() {
             ? 'Microphone access is needed'
             : "I'm listening";
 
-  const moonScale = intensity.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1.32] });
+  const orbScale = intensity.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.28] });
+  const rscale1 = ripple1.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1.7] });
+  const rop1 = ripple1.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 0.5, 0] });
+  const rscale2 = ripple2.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1.7] });
+  const rop2 = ripple2.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 0.5, 0] });
   const capText =
     (phase === 'speaking' || phase === 'idle') && chunks.length
       ? chunks[Math.min(chunkIdx, chunks.length - 1)]
@@ -746,9 +771,13 @@ export default function VoiceScreen() {
         )}
 
         <View style={styles.center}>
-          <Animated.View style={{ transform: [{ scale: moonScale }] }}>
-            <Image source={CRESCENT} style={styles.moon} contentFit="contain" />
-          </Animated.View>
+          <View style={styles.orbStage}>
+            <Animated.View style={[styles.ripple, { transform: [{ scale: rscale1 }], opacity: rop1 }]} pointerEvents="none" />
+            <Animated.View style={[styles.ripple, { transform: [{ scale: rscale2 }], opacity: rop2 }]} pointerEvents="none" />
+            <Animated.View style={[styles.orbGlow, { transform: [{ scale: orbScale }] }]}>
+              <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.orb} />
+            </Animated.View>
+          </View>
 
           <Text style={styles.status}>{status}</Text>
 
@@ -765,13 +794,16 @@ export default function VoiceScreen() {
 
         <View style={styles.controls}>
           <Pressable onPress={close} hitSlop={12} style={styles.ctrlBtn}>
-            <Ionicons name="close" size={26} color="#fff" />
+            <Ionicons name="close" size={26} color={c.textPrimary} />
           </Pressable>
           <Pressable
             onPress={toggleMute}
             hitSlop={12}
             style={[styles.micBtn, muted && styles.micBtnOff]}>
-            <Ionicons name={muted ? 'mic-off' : 'mic'} size={28} color={muted ? '#fff' : '#0b0d12'} />
+            {!muted ? (
+              <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={StyleSheet.absoluteFill} />
+            ) : null}
+            <Ionicons name={muted ? 'mic-off' : 'mic'} size={28} color={muted ? c.textSecondary : c.bg} />
           </Pressable>
         </View>
       </SafeAreaView>
@@ -780,21 +812,21 @@ export default function VoiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: BG },
+  fill: { flex: 1, backgroundColor: c.bg },
   brand: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontFamily: font.sansSemi,
+    color: c.textSecondary,
+    fontSize: 14,
+    letterSpacing: 1,
     textAlign: 'center',
     paddingTop: 10,
   },
 
   transcript: {
-    color: 'rgba(255,255,255,0.78)',
-    fontSize: 16,
-    lineHeight: 22,
-    fontStyle: 'italic',
+    fontFamily: font.serifItalic,
+    color: c.textSecondary,
+    fontSize: 17,
+    lineHeight: 24,
     textAlign: 'center',
     paddingHorizontal: 28,
     marginTop: 18,
@@ -808,23 +840,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  waveBar: { width: 3, height: 28, borderRadius: 2, backgroundColor: 'rgba(224,196,138,0.95)' },
+  waveBar: { width: 3, height: 28, borderRadius: 2, backgroundColor: c.accent },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  moon: { width: 320, height: 320 },
+  orbStage: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center' },
+  ripple: { position: 'absolute', width: 188, height: 188, borderRadius: 94, borderWidth: 1.5, borderColor: 'rgba(201,189,166,0.5)' },
+  orbGlow: {
+    width: 168,
+    height: 168,
+    borderRadius: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: c.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 40,
+    shadowOpacity: 0.55,
+  },
+  orb: {
+    width: 168,
+    height: 168,
+    borderRadius: 84,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
 
   status: {
-    color: 'rgba(255,255,255,0.6)',
+    fontFamily: font.sansMed,
+    color: c.textMuted,
     fontSize: 15,
-    fontWeight: '600',
     textAlign: 'center',
     letterSpacing: 0.3,
+    marginTop: 24,
   },
 
   captionWrap: { minHeight: 112, justifyContent: 'center', paddingHorizontal: 28, paddingTop: 14 },
-  caption: { color: 'rgba(255,255,255,0.92)', fontSize: 16, lineHeight: 25, textAlign: 'center' },
-  captionRef: { color: '#d6a84e', fontWeight: '700' },
-  note: { color: 'rgba(255,200,120,0.85)', fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  caption: { fontFamily: font.serifReg, color: c.scriptureInk, fontSize: 17, lineHeight: 26, textAlign: 'center' },
+  captionRef: { fontFamily: font.sansSemi, color: c.accent },
+  note: { fontFamily: font.sans, color: c.textMuted, fontSize: 14, lineHeight: 20, textAlign: 'center' },
 
   controls: {
     flexDirection: 'row',
@@ -840,15 +893,17 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: c.surface2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
   },
   micBtn: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    overflow: 'hidden',
   },
-  micBtnOff: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  micBtnOff: { backgroundColor: c.surface2, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline },
 });
