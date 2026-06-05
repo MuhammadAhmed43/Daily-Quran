@@ -1,20 +1,23 @@
+// Watch player (onyx). Topbar + embedded YouTube + a watched-progress bar, then chapter title/era/blurb,
+// a Mark-watched button, and prev/next nav. Re-skin only: the player ref, progress polling + persistence,
+// recitation hand-off, streak credit, and prev/next logic are unchanged.
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { type YoutubeIframeRef } from 'react-native-youtube-iframe';
 
 import { FadeIn } from '@/components/fade-in';
-import { ThemedText } from '@/components/themed-text';
+import { PressableScale } from '@/components/ui/pressable-scale';
+import { Txt } from '@/components/ui/primitives';
 import { YouTube } from '@/components/watch/youtube-player';
 import { haptic } from '@/lib/haptics';
 import { useRecitation } from '@/lib/recitation-context';
 import { recordActivity } from '@/lib/streak';
-import { getChapter, getChapters, neighbors, trackAccent } from '@/lib/watch';
+import { c, font, radius, space } from '@/lib/theme';
+import { getChapter, getChapters, neighbors } from '@/lib/watch';
 import { markWatched as saveWatched, setPct as saveProgress, useWatchProgress } from '@/lib/watch-progress';
-
-const GOLD = '#c8a24a';
 
 export default function WatchPlayer() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,8 +32,6 @@ export default function WatchPlayer() {
 
   const chapter = id ? getChapter(id) : undefined;
 
-  // Opening a video counts toward the streak; and YouTube grabs the audio session, so stop any
-  // recitation that's playing (same coordination Stories/voice already use). Reset per-video state.
   useEffect(() => {
     if (!chapter) return;
     setEnded(false);
@@ -41,7 +42,6 @@ export default function WatchPlayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Poll playback position for the watched-progress bar; persist every ~5s + on leave (throttled).
   useEffect(() => {
     if (!chapter) return;
     latest.current = 0;
@@ -70,18 +70,21 @@ export default function WatchPlayer() {
     return (
       <View style={[styles.root, styles.center]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ThemedText style={styles.notFound}>Chapter not found.</ThemedText>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <ThemedText style={styles.backLink}>Go back</ThemedText>
-        </Pressable>
+        <Txt variant="body" color={c.textMuted}>
+          Chapter not found.
+        </Txt>
+        <PressableScale onPress={() => router.back()}>
+          <Txt variant="caption" color={c.accent}>
+            Go back
+          </Txt>
+        </PressableScale>
       </View>
     );
   }
 
   const list = getChapters(chapter.track);
-  const pos = list.findIndex((c) => c.id === chapter.id) + 1;
+  const pos = list.findIndex((ch) => ch.id === chapter.id) + 1;
   const { prev, next } = neighbors(chapter.id);
-  const accent = trackAccent(chapter.track);
   const watched = progress.isWatched(chapter.id) || ended;
   const video = chapter.videos[0];
 
@@ -97,13 +100,13 @@ export default function WatchPlayer() {
       <Stack.Screen options={{ headerShown: false, animation: 'fade' }} />
       <SafeAreaView edges={['top']}>
         <View style={styles.topbar}>
-          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.iconBtn}>
-            <Ionicons name="chevron-back" size={26} color="#fff" />
-          </Pressable>
+          <PressableScale onPress={() => router.back()} style={styles.iconBtn}>
+            <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
+          </PressableScale>
           <View style={styles.crumb}>
-            <ThemedText style={styles.crumbText}>
+            <Txt variant="caption" style={styles.crumbText}>
               {chapter.track === 'seerah' ? 'Seerah' : 'History'} · {pos} / {list.length}
-            </ThemedText>
+            </Txt>
           </View>
           <View style={styles.iconBtn} />
         </View>
@@ -111,13 +114,15 @@ export default function WatchPlayer() {
 
       {failed ? (
         <View style={styles.failBox}>
-          <Ionicons name="alert-circle-outline" size={28} color="rgba(255,255,255,0.6)" />
-          <ThemedText style={styles.failText}>This video can’t play here.</ThemedText>
-          <Pressable
-            onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${video.youtubeId}`)}
-            style={styles.failBtn}>
-            <ThemedText style={styles.failBtnText}>Open in YouTube ↗</ThemedText>
-          </Pressable>
+          <Ionicons name="alert-circle-outline" size={28} color={c.textMuted} />
+          <Txt variant="body" color={c.textSecondary}>
+            This video can&apos;t play here.
+          </Txt>
+          <PressableScale onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${video.youtubeId}`)} style={styles.failBtn}>
+            <Txt variant="caption" color={c.textPrimary} style={styles.failBtnText}>
+              Open in YouTube ↗
+            </Txt>
+          </PressableScale>
         </View>
       ) : (
         <>
@@ -139,53 +144,51 @@ export default function WatchPlayer() {
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <FadeIn delay={120}>
-          <ThemedText style={styles.kicker}>CHAPTER {chapter.order}</ThemedText>
-          <ThemedText style={styles.title}>{chapter.title}</ThemedText>
-          <ThemedText style={[styles.era, { color: accent }]}>{chapter.era}</ThemedText>
-          <ThemedText style={styles.blurb}>{chapter.blurb}</ThemedText>
-          <ThemedText style={styles.source}>Source: {video.source}</ThemedText>
+          <Txt variant="eyebrow">Chapter {chapter.order}</Txt>
+          <Txt variant="h1" style={styles.title}>
+            {chapter.title}
+          </Txt>
+          <Txt variant="caption" color={c.accent} style={styles.era}>
+            {chapter.era}
+          </Txt>
+          <Txt style={styles.blurb}>{chapter.blurb}</Txt>
+          <Txt variant="caption" color={c.textMuted} style={styles.source}>
+            Source: {video.source}
+          </Txt>
         </FadeIn>
 
         <FadeIn delay={200}>
-          <Pressable
+          <PressableScale
             onPress={() => {
               haptic.light();
               progress.toggleWatched(chapter.id);
               setEnded(false);
             }}
             style={[styles.markBtn, watched ? styles.markDone : styles.markTodo]}>
-            <Ionicons
-              name={watched ? 'checkmark-circle' : 'ellipse-outline'}
-              size={20}
-              color={watched ? GOLD : '#fff'}
-            />
-            <ThemedText style={[styles.markText, watched && { color: GOLD }]}>
-              {watched ? 'Watched' : 'Mark as watched'}
-            </ThemedText>
-          </Pressable>
+            <Ionicons name={watched ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={watched ? c.accent : c.bg} />
+            <Txt style={[styles.markText, watched && styles.markTextDone]}>{watched ? 'Watched' : 'Mark as watched'}</Txt>
+          </PressableScale>
         </FadeIn>
 
         <FadeIn delay={280}>
           <View style={styles.nav}>
-            <Pressable
-              disabled={!prev}
-              onPress={() => prev && go(prev.id)}
-              style={[styles.navSide, !prev && styles.navDisabled]}>
-              <ThemedText style={styles.navLabel}>PREVIOUS</ThemedText>
-              <ThemedText style={styles.navTitle} numberOfLines={1}>
+            <PressableScale disabled={!prev} onPress={() => prev && go(prev.id)} style={[styles.navSide, !prev && styles.navDisabled]}>
+              <Txt variant="caption" color={c.textMuted} style={styles.navLabel}>
+                PREVIOUS
+              </Txt>
+              <Txt variant="caption" numberOfLines={1} style={styles.navTitle}>
                 {prev ? prev.title : '—'}
-              </ThemedText>
-            </Pressable>
+              </Txt>
+            </PressableScale>
             <View style={styles.navDivider} />
-            <Pressable
-              disabled={!next}
-              onPress={() => next && go(next.id)}
-              style={[styles.navSide, styles.navRight, !next && styles.navDisabled]}>
-              <ThemedText style={[styles.navLabel, styles.navLabelRight]}>UP NEXT</ThemedText>
-              <ThemedText style={[styles.navTitle, styles.navTitleRight]} numberOfLines={1}>
+            <PressableScale disabled={!next} onPress={() => next && go(next.id)} style={[styles.navSide, styles.navRight, !next && styles.navDisabled]}>
+              <Txt variant="caption" color={c.textMuted} style={[styles.navLabel, styles.navLabelRight]}>
+                UP NEXT
+              </Txt>
+              <Txt variant="caption" numberOfLines={1} style={[styles.navTitle, styles.navTitleRight]}>
                 {next ? next.title : '—'}
-              </ThemedText>
-            </Pressable>
+              </Txt>
+            </PressableScale>
           </View>
         </FadeIn>
       </ScrollView>
@@ -194,83 +197,37 @@ export default function WatchPlayer() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0b0d12' },
+  root: { flex: 1, backgroundColor: c.bg },
   center: { alignItems: 'center', justifyContent: 'center', gap: 12 },
-  notFound: { color: '#fff', fontSize: 16 },
-  backLink: { color: GOLD, fontSize: 14, fontWeight: '600' },
-  topbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  crumb: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  crumbText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  progressTrack: { height: 2, backgroundColor: 'rgba(255,255,255,0.15)' },
-  progressFill: { height: '100%', backgroundColor: GOLD },
-  failBox: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  failText: { color: 'rgba(255,255,255,0.7)', fontSize: 15 },
-  failBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  failBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  body: { padding: 20, paddingBottom: 48, gap: 18 },
-  kicker: { color: GOLD, fontSize: 12, fontWeight: '800', letterSpacing: 1.5 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '800', lineHeight: 30, marginTop: 6 },
-  era: { fontSize: 13, fontWeight: '600', marginTop: 4 },
-  blurb: { color: 'rgba(255,255,255,0.86)', fontSize: 16, lineHeight: 25, marginTop: 10 },
-  source: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 10 },
-  markBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  markTodo: { backgroundColor: '#0a7ea4' },
-  markDone: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  markText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  nav: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.12)',
-    paddingTop: 14,
-  },
+  topbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface2 },
+  crumb: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: c.surface2 },
+  crumbText: { fontFamily: font.sansSemi, color: c.textSecondary },
+  progressTrack: { height: 2, backgroundColor: c.surface3 },
+  progressFill: { height: '100%', backgroundColor: c.accent },
+  failBox: { width: '100%', aspectRatio: 16 / 9, backgroundColor: c.surface1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  failBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radius.full, backgroundColor: c.surface2 },
+  failBtnText: { fontFamily: font.sansSemi },
+
+  body: { padding: space.card, paddingBottom: 48, gap: 18 },
+  title: { marginTop: 8, lineHeight: 33 },
+  era: { fontFamily: font.sansSemi, marginTop: 4 },
+  blurb: { fontFamily: font.serifReg, fontSize: 16.5, lineHeight: 26, color: c.scriptureInk, marginTop: 10 },
+  source: { marginTop: 10 },
+
+  markBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15, borderRadius: radius.full },
+  markTodo: { backgroundColor: c.primary },
+  markDone: { backgroundColor: c.surface2, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline },
+  markText: { fontFamily: font.sansBold, fontSize: 15, color: c.bg },
+  markTextDone: { color: c.accent },
+
+  nav: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.hairline, paddingTop: 14 },
   navSide: { flex: 1, gap: 3 },
   navRight: { alignItems: 'flex-end' },
   navDisabled: { opacity: 0.3 },
-  navDivider: { width: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.12)' },
-  navLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  navDivider: { width: StyleSheet.hairlineWidth, backgroundColor: c.hairline },
+  navLabel: { fontFamily: font.sansBold, letterSpacing: 0.5 },
   navLabelRight: { textAlign: 'right' },
-  navTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  navTitle: { fontFamily: font.sansSemi, color: c.textPrimary },
   navTitleRight: { textAlign: 'right' },
 });
