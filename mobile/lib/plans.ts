@@ -26,7 +26,10 @@ export type PlanId =
   | 'patience-trust'
   | 'good-character'
   | 'contentment-provision'
-  | 'parents-family';
+  | 'parents-family'
+  | 'reflection-knowledge'
+  | 'remembrance'
+  | 'ramadan-fasting';
 
 export type PlanStep = {
   order: number; // 1-based position within the track
@@ -1175,6 +1178,190 @@ const PARENTS_FAMILY: PlanTrack = {
   ],
 };
 
+// ───────────────────────────── Reflection & Knowledge (7) — tafakkur & ʿilm ─────────────────────────────
+const REFLECTION_KNOWLEDGE: PlanTrack = {
+  id: 'reflection-knowledge',
+  title: 'Reflection & Knowledge',
+  emoji: '🔭',
+  blurb: 'A faith that asks you to think.',
+  intro:
+    'The Qur’an does not ask for blind belief — it asks, again and again, that we look, reflect, and learn. A journey through its call to ponder creation, seek knowledge, and let understanding deepen into awe.',
+  accent: '#5b8fb0',
+  steps: [
+    {
+      order: 1,
+      title: 'Signs for those who reflect',
+      verses: ref(3, 190),
+      framing:
+        '“In the creation of the heavens and the earth, and the alternation of night and day, are signs for people of understanding.” The Qur’an sends us outside to look — at the sky, at day turning into night — and lets creation point back to its Creator.',
+      reflection: 'When did something in nature last make you pause and feel small in a good way?',
+    },
+    {
+      order: 2,
+      title: 'Reflection ends in awe',
+      verses: ref(3, 191),
+      framing:
+        'The people of understanding reflect on the creation of the heavens and the earth and conclude: “Our Lord, You did not create all this without purpose.” In the Qur’an, real reflection does not end in cleverness — it ends in awe, and in prayer.',
+      reflection: 'If creation is not aimless, what might your own life not be aimless for?',
+    },
+    {
+      order: 3,
+      title: 'Are the knowing and the unknowing equal?',
+      verses: ref(39, 9),
+      framing:
+        '“Say: Are those who know equal to those who do not know?” The Qur’an gives knowledge a special honor — not knowledge for status, but the kind that makes you see, and live, more truly.',
+      reflection: 'What is one thing you would like to truly understand about your faith?',
+    },
+    {
+      order: 4,
+      title: 'Knowledge that deepens awe',
+      verses: ref(35, 28),
+      framing:
+        '“It is only those of His servants who have knowledge that truly stand in awe of Allah.” Real knowledge is not cold; the more you understand of His creation and His words, the more the heart softens before Him.',
+      reflection: 'Has learning something ever deepened your awe rather than dimmed it?',
+    },
+    {
+      order: 5,
+      title: 'My Lord, increase me in knowledge',
+      verses: ref(20, 114),
+      framing:
+        'The one thing Allah tells the Prophet ﷺ to ask for more of is knowledge: “Say: My Lord, increase me in knowledge.” A short, lifelong duʿāʾ for anyone who wants to keep growing.',
+      reflection: 'Could you make that duʿāʾ — “increase me in knowledge” — your own this week?',
+    },
+    {
+      order: 6,
+      title: 'Just look',
+      verses: ref(88, 17, 18, 19, 20),
+      framing:
+        '“Do they not look at the camel, how it was created? At the sky, how it was raised? At the mountains, how they were set? At the earth, how it was spread?” An invitation to simply notice — the ordinary world, looked at closely, is full of signs.',
+      reflection: 'What ordinary thing could you look at today as if for the first time?',
+    },
+    {
+      order: 7,
+      title: 'Wisdom is a great good',
+      verses: ref(2, 269),
+      framing:
+        '“He gives wisdom to whom He wills, and whoever is given wisdom has been given much good.” Beyond information, the Qur’an prizes ḥikma — knowing what to do, when, and why. It is named one of the greatest gifts.',
+      reflection: 'Where in your life do you most need wisdom, not just more information?',
+      note: 'The Qur’an is the first place to seek this — a Qur’an reading plan is one way to keep returning to it.',
+    },
+  ],
+};
+
+// ───────────────────────────── The Remembrance of Allah (7) — dhikr ─────────────────────────────
+const REMEMBRANCE: PlanTrack = {
+  id: 'remembrance',
+  title: 'The Remembrance of Allah',
+  emoji: '📿',
+  blurb: 'Hearts find rest in remembering Him.',
+  intro:
+    'A short phrase on the tongue, a heart quietly turned toward Him — dhikr is the most portable worship there is. A journey through what the Qur’an says about remembering Allah, and the peace it brings.',
+  accent: '#8a7fc0',
+  steps: [
+    {
+      order: 1,
+      title: 'Where hearts find rest',
+      verses: ref(13, 28),
+      framing:
+        '“Truly, in the remembrance of Allah do hearts find rest.” For every restless heart, the Qur’an names one reliable home — not a place or a person, but the simple, repeated turning of the heart back to Him.',
+      reflection: 'Where do you usually go for rest — and how does it compare to this?',
+    },
+    {
+      order: 2,
+      title: 'Remember Him often',
+      verses: ref(33, 41, 42),
+      framing:
+        '“O you who believe, remember Allah with much remembrance, and glorify Him morning and evening.” The Qur’an does not ask for occasional remembrance, but abundant — a heart kept moist with His name through the day.',
+      reflection: 'What one moment in your day could you fill with His remembrance?',
+    },
+    {
+      order: 3,
+      title: 'Do not let it crowd Him out',
+      verses: ref(63, 9),
+      framing:
+        '“Let not your wealth or your children divert you from the remembrance of Allah.” The very things we love most can quietly crowd Him out. Remembrance is how we keep Him at the center while we live our busy lives.',
+      reflection: 'What good thing in your life most often crowds out your remembrance of Allah?',
+    },
+    {
+      order: 4,
+      title: 'When His name moves the heart',
+      verses: ref(8, 2),
+      framing:
+        '“The believers are those whose hearts tremble when Allah is mentioned, and whose faith increases when His verses are recited.” Remembrance is not only words on the tongue — at its best, it moves something in the heart.',
+      reflection: 'When does the mention of Allah actually move something in you?',
+    },
+    {
+      order: 5,
+      title: 'Morning and evening',
+      verses: ref(76, 25),
+      framing:
+        '“And mention the name of your Lord, morning and evening.” Two anchors for the day — its beginning and its end wrapped in His name — so the hours in between are quietly held by it.',
+      reflection: 'Could you bookend tomorrow — its start and its close — with a moment of remembrance?',
+    },
+    {
+      order: 6,
+      title: 'The remembering men and women',
+      verses: ref(33, 35),
+      framing:
+        'Among those Allah praises and rewards are “the men and women who remember Allah often.” It is open to everyone, costs nothing, needs no special place — and its reward is named as forgiveness and a great reward.',
+      reflection: 'What simple phrase of remembrance could you carry with you today?',
+    },
+    {
+      order: 7,
+      title: 'He remembers you',
+      verses: ref(2, 152),
+      framing:
+        'And the most beautiful promise of all: “So remember Me — I will remember you.” Your small, quiet remembrance is met by His remembrance of you. The One who needs nothing chooses to mention the servant who mentions Him.',
+      reflection: 'What would it mean to you to be remembered by Allah?',
+    },
+  ],
+};
+
+// ───────────────────────────── Ramadan & Fasting (5) — ṣawm ─────────────────────────────
+const RAMADAN_FASTING: PlanTrack = {
+  id: 'ramadan-fasting',
+  title: 'Ramadan & Fasting',
+  emoji: '🌙',
+  blurb: 'The meaning of the blessed month.',
+  intro:
+    'Beyond hunger and thirst, fasting is meant to do something to the heart. A short journey through what the Qur’an says about Ramadan, the month it honors, and the night within it that is better than a thousand.',
+  accent: '#c0a24a',
+  steps: [
+    {
+      order: 1,
+      title: 'Fasting, for nearness',
+      verses: ref(2, 183),
+      framing:
+        '“Fasting is prescribed for you, as it was for those before you, so that you may attain taqwa.” Fasting is older than us, given to nations before us, with one aim named plainly: not hunger, but God-consciousness.',
+      reflection: 'What would you like this kind of fasting to grow in you?',
+    },
+    {
+      order: 2,
+      title: 'The month of the Qur’an',
+      verses: ref(2, 185),
+      framing:
+        '“The month of Ramadan is that in which the Qur’an was revealed — guidance for mankind… Allah intends ease for you, not hardship.” The month is honored because of the Book that descended in it; to fast it is also to return to reading it.',
+      reflection: 'How could the Qur’an be more present in your days this Ramadan?',
+    },
+    {
+      order: 3,
+      title: 'A night better than a thousand months',
+      verses: ref(97, 1, 2, 3),
+      framing:
+        '“We sent it down on the Night of Decree. And what can make you know what the Night of Decree is? The Night of Decree is better than a thousand months.” Hidden in the last nights of Ramadan is a single night worth more than a lifetime.',
+      reflection: 'What would you ask for, on a night better than a thousand months?',
+    },
+    {
+      order: 4,
+      title: 'Peace, until dawn',
+      verses: ref(97, 4, 5),
+      framing:
+        '“The angels and the Spirit descend therein, by the permission of their Lord, for every matter. Peace it is, until the emergence of dawn.” The night the Qur’an began to descend is described in one word above all: peace.',
+      reflection: 'What would a night of pure peace, spent with Allah, look like for you?',
+    },
+  ],
+};
+
 export const PLANS: PlanTrack[] = [
   NEW_TO_QURAN,
   JUZ_AMMA,
@@ -1190,6 +1377,9 @@ export const PLANS: PlanTrack[] = [
   GOOD_CHARACTER,
   CONTENTMENT_PROVISION,
   PARENTS_FAMILY,
+  REFLECTION_KNOWLEDGE,
+  REMEMBRANCE,
+  RAMADAN_FASTING,
 ];
 
 // ───────────────────────────── lookups (mirror watch.ts getChapter / neighbors) ─────────────────────────────
