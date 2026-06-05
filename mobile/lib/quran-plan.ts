@@ -37,6 +37,8 @@ export const READING_PRESETS: ReadingPreset[] = [
   { id: 'baqarah', title: 'Sūrah al-Baqarah', sub: 'The longest surah — a journey on its own', corpus: { fromSurah: 2, toSurah: 2 } },
   { id: 'kahf', title: 'Sūrah al-Kahf', sub: 'The Cave — a Friday companion', corpus: { fromSurah: 18, toSurah: 18 } },
   { id: 'yasin', title: 'Sūrah Yā-Sīn', sub: 'Often called the heart of the Qur’an', corpus: { fromSurah: 36, toSurah: 36 } },
+  { id: 'rahman', title: 'Sūrah ar-Raḥmān', sub: 'The Most Merciful — a litany of His gifts', corpus: { fromSurah: 55, toSurah: 55 } },
+  { id: 'mulk', title: 'Sūrah al-Mulk', sub: 'The Sovereignty — a nightly companion', corpus: { fromSurah: 67, toSurah: 67 } },
 ];
 
 // Flat, ordered ayah list for a corpus (memoized). Each entry is a {surah, ayah} reference.

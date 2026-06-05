@@ -21,7 +21,9 @@ export type PlanId =
   | 'mercy-forgiveness'
   | 'the-hereafter'
   | 'names-of-allah'
-  | 'calling-on-allah';
+  | 'calling-on-allah'
+  | 'stories-of-the-prophets'
+  | 'patience-trust';
 
 export type PlanStep = {
   order: number; // 1-based position within the track
@@ -800,6 +802,161 @@ const CALLING_ON_ALLAH: PlanTrack = {
   ],
 };
 
+// ───────────────────────────── Stories of the Prophets (9) — lessons from the messengers ─────────────────────────────
+const STORIES_OF_THE_PROPHETS: PlanTrack = {
+  id: 'stories-of-the-prophets',
+  title: 'Stories of the Prophets',
+  emoji: '🌟',
+  blurb: 'Lessons from the lives of the messengers.',
+  intro:
+    'The Qur’an tells the stories of the prophets not as distant history, but as a mirror and a map. A journey through their lives — and the single lesson each one leaves for the road we are walking now.',
+  accent: '#c8923f',
+  steps: [
+    {
+      order: 1,
+      title: 'Adam — the first to turn back',
+      verses: ref(7, 23),
+      framing:
+        'The first human was also the first to slip — and the first to return. Adam and his wife prayed: “Our Lord, we have wronged ourselves; if You do not forgive us and have mercy on us, we will surely be among the losers.” The story of humanity begins not with a perfect record, but with a sincere turning back.',
+      reflection: 'When you slip, can you turn back as openly as Adam did?',
+    },
+    {
+      order: 2,
+      title: 'Nuh — patience across a lifetime',
+      verses: ref(29, 14),
+      framing:
+        'Nuh called his people to Allah for nearly a thousand years, met mostly with rejection — and still he did not stop. His is a story of patience stretched across a lifetime: doing what is right, faithfully, without ever seeing the result he hoped for.',
+      reflection: 'Where are you being asked to persevere without a quick reward?',
+    },
+    {
+      order: 3,
+      title: 'Ibrahim — cool in the fire',
+      verses: ref(21, 69),
+      framing:
+        'Thrown into a fire for standing against his people’s idols, Ibrahim was saved by a single command: “O fire, be coolness and safety upon Abraham.” When you stand for the truth and everything feels like flames, the same Lord can make them cool.',
+      reflection: 'What “fire” are you afraid to walk into for the sake of what is right?',
+    },
+    {
+      order: 4,
+      title: 'Yusuf — the long road had a meaning',
+      verses: ref(12, 90),
+      framing:
+        'Betrayed, enslaved, imprisoned — and finally raised to honor, Yusuf summed up his whole journey in one line: “Whoever is mindful of Allah and patient — Allah does not let the reward of the doers of good go to waste.” The hard road had a meaning all along.',
+      reflection: 'Looking back, where can you see a hard road that was quietly leading somewhere good?',
+    },
+    {
+      order: 5,
+      title: 'Musa — a small, honest prayer',
+      verses: ref(28, 24),
+      framing:
+        'Fleeing for his life, exhausted and alone in a strange land, Musa sat in the shade and made a small, honest prayer: “My Lord, I am truly in need of whatever good You send me.” From that low moment came shelter, work, and eventually prophethood. No duʿāʾ is too small or too desperate.',
+      reflection: 'Could you make Musa’s prayer your own today?',
+    },
+    {
+      order: 6,
+      title: 'Ayyub — patient, and still turning to Him',
+      verses: ref(38, 44),
+      framing:
+        'After losing his health, his wealth, and his family, the Prophet Ayyub is remembered by Allah with words anyone would long to hear: “We found him patient. What an excellent servant! He was ever turning back to Us.” His patience was not silence — it was staying turned toward Allah through all of it.',
+      reflection: 'What would “patient, and still turning toward Allah” look like in your hardest area?',
+    },
+    {
+      order: 7,
+      title: 'Isa — the honor of being a servant',
+      verses: ref(19, 30),
+      framing:
+        'As a newborn, by Allah’s leave, Isa spoke from the cradle to defend his mother: “I am the servant of Allah. He has given me the Scripture and made me a prophet.” Even one of the greatest of the prophets named himself first as a servant — the most honored title there is.',
+      reflection: 'What does it mean to you that the prophets’ highest honor was simply to be Allah’s servant?',
+    },
+    {
+      order: 8,
+      title: 'Muhammad ﷺ — a mercy to the worlds',
+      verses: ref(21, 107),
+      framing:
+        'Of the final Messenger ﷺ, Allah says simply: “We have not sent you except as a mercy to the worlds.” Not only to his people, not only to his time — a mercy meant for all people, everywhere, including you.',
+      reflection: 'Where do you most need to feel that mercy reaching you?',
+    },
+    {
+      order: 9,
+      title: 'Their guidance is your map',
+      verses: ref(6, 90),
+      framing:
+        'After recounting prophet after prophet, the Qur’an tells the Prophet ﷺ — and us: “Those are the ones Allah has guided, so follow their guidance.” Their stories are not just the past; they are a map, left for whoever wants to walk the same road home.',
+      reflection: 'Which prophet’s example do you most want to carry with you?',
+      note: 'You can sit with any of these stories more deeply in the Stories tab, where Yūsuf’s is told scene by scene.',
+    },
+  ],
+};
+
+// ───────────────────────────── Patience & Trust (7) — ṣabr & tawakkul ─────────────────────────────
+const PATIENCE_TRUST: PlanTrack = {
+  id: 'patience-trust',
+  title: 'Patience & Trust',
+  emoji: '🌧️',
+  blurb: 'Steadiness and reliance for the long road.',
+  intro:
+    'Some seasons are not about a single hard blow, but a long, slow road. A journey through ṣabr (patience) and tawakkul (trust) — the two quiet strengths the Qur’an returns to again and again for exactly those stretches.',
+  accent: '#5a8fa8',
+  steps: [
+    {
+      order: 1,
+      title: 'Two quiet sources of strength',
+      verses: ref(2, 45),
+      framing:
+        '“Seek help through patience and prayer.” When the load is heavy, the Qur’an points to two quiet sources of strength — the steadiness to endure, and the prayer that keeps you connected to the One who can carry what you cannot.',
+      reflection: 'When things get hard, which comes less naturally to you — patience, or turning to prayer?',
+    },
+    {
+      order: 2,
+      title: 'Patience is given, not just summoned',
+      verses: ref(16, 127),
+      framing:
+        '“Be patient — and your patience is only through Allah.” Real patience is not gritted teeth and willpower alone; it is something Allah Himself supplies when you ask. You were never meant to be patient on your own strength.',
+      reflection: 'Could you ask Allah for patience itself, the way you would ask for any other help?',
+    },
+    {
+      order: 3,
+      title: 'Do your part, then trust',
+      verses: ref(3, 159),
+      framing:
+        '“Once you have made your decision, put your trust in Allah. Indeed, Allah loves those who trust in Him.” Tawakkul is not refusing to plan — it is planning, doing your part, and then handing the outcome to the One who controls it. And that handing-over is beloved to Him.',
+      reflection: 'What decision are you gripping too tightly, afraid to entrust to Allah?',
+    },
+    {
+      order: 4,
+      title: 'Nothing reaches you but by His decree',
+      verses: ref(9, 51),
+      framing:
+        '“Say: Nothing will ever befall us except what Allah has decreed for us; He is our Protector. And upon Allah let the believers rely.” Whatever comes, came with His knowledge and within His care. That certainty is the ground that trust stands on.',
+      reflection: 'How would today feel, held inside “nothing reaches me except by His decree”?',
+    },
+    {
+      order: 5,
+      title: 'A reward without measure',
+      verses: ref(39, 10),
+      framing:
+        '“The patient will be given their reward without measure.” Every other deed has a known return; patience alone is promised a reward beyond counting. The hardest, most thankless season may quietly be earning the most.',
+      reflection: 'What patience of yours, unseen by anyone, might be worth more than you think?',
+    },
+    {
+      order: 6,
+      title: 'We belong to Him',
+      verses: ref(2, 156),
+      framing:
+        'The steadfast are those who, when hardship strikes, say: “Indeed, we belong to Allah, and to Him we will return.” A single sentence that re-centers everything — we are His, on loan, heading home. It turns a moment of loss into a moment of remembrance.',
+      reflection: 'What would it steady in you to truly say, “we belong to Allah”?',
+    },
+    {
+      order: 7,
+      title: 'Peace, at the end of the road',
+      verses: ref(13, 24),
+      framing:
+        'The Qur’an pictures the angels greeting the patient in the Garden: “Peace be upon you for what you patiently endured. How excellent is the final home.” Every hard thing borne for Allah’s sake is seen, remembered, and answered — with peace, at the end of the road.',
+      reflection: 'What hardship would you most want met, one day, with “peace be upon you for your patience”?',
+    },
+  ],
+};
+
 export const PLANS: PlanTrack[] = [
   NEW_TO_QURAN,
   JUZ_AMMA,
@@ -810,6 +967,8 @@ export const PLANS: PlanTrack[] = [
   THE_HEREAFTER,
   NAMES_OF_ALLAH,
   CALLING_ON_ALLAH,
+  STORIES_OF_THE_PROPHETS,
+  PATIENCE_TRUST,
 ];
 
 // ───────────────────────────── lookups (mirror watch.ts getChapter / neighbors) ─────────────────────────────
