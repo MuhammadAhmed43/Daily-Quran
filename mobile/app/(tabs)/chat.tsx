@@ -82,7 +82,7 @@ export default function AskBrowseScreen() {
   };
 
   return (
-    <Screen>
+    <Screen stars>
       <View style={styles.topBar}>
         <PressableScale onPress={() => router.push('/profile')}>
           <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.avatar}>

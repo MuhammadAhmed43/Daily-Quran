@@ -3,19 +3,23 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { SafeAreaView, type Edge, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SkyBand } from '@/components/sky-band';
 import { c } from '@/lib/theme';
 
 export function Screen({
   children,
   edges = ['top'],
   glow = true,
+  stars = false,
 }: {
   children: ReactNode;
   edges?: readonly Edge[];
   glow?: boolean;
+  stars?: boolean;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <View style={styles.root}>
       {glow ? (
@@ -27,6 +31,8 @@ export function Screen({
           pointerEvents="none"
         />
       ) : null}
+      {/* Optional magical constellation in the status-bar / notch band (best on genuinely dark headers). */}
+      {stars ? <SkyBand height={insets.top + 40} /> : null}
       <SafeAreaView edges={edges} style={styles.fill}>
         {children}
       </SafeAreaView>

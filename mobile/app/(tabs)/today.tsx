@@ -100,7 +100,7 @@ export default function TodayScreen() {
   };
 
   return (
-    <Screen>
+    <Screen stars>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <TopBar hijri={info.hijri.label} streak={streak.current} />
         <WeekRow week={week} />

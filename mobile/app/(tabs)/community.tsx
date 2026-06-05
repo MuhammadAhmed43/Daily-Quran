@@ -6,7 +6,7 @@ import { Screen } from '@/components/ui/screen';
 
 export default function CommunityScreen() {
   return (
-    <Screen>
+    <Screen stars>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         <Txt variant="h1">Community</Txt>
         <Txt variant="subtitle">Coming soon</Txt>
