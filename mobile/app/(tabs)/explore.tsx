@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AtlasTile, type AtlasCategory, SealMedallion } from '@/components/atlas-tile';
 import { IconButton, Txt } from '@/components/ui/primitives';
@@ -36,6 +38,7 @@ export default function ExploreScreen() {
   const qplan = useQuranPlan();
   const watch = useWatchProgress();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const CARD_W = Math.round(width * 0.72);
   const HERO_W = width - 2 * space.gutter;
 
@@ -136,7 +139,7 @@ export default function ExploreScreen() {
   }
 
   return (
-    <Screen>
+    <Screen stars>
       <View style={styles.topBar}>
         <PressableScale onPress={() => router.push('/profile')}>
           <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.avatar}>
@@ -220,8 +223,8 @@ export default function ExploreScreen() {
       </ScrollView>
 
       {searching ? (
-        <View style={[StyleSheet.absoluteFill, styles.searchOverlay]}>
-          <View style={styles.searchBar}>
+        <Animated.View entering={FadeIn.duration(160)} style={[StyleSheet.absoluteFill, styles.searchOverlay]}>
+          <View style={[styles.searchBar, { paddingTop: insets.top + space.sm }]}>
             <View style={styles.searchField}>
               <Ionicons name="search" size={18} color={c.textMuted} />
               <TextInput
@@ -250,7 +253,7 @@ export default function ExploreScreen() {
               </Txt>
             </Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.searchResults}>
+          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.searchResults}>
             {results.map((r) => (
               <ContentRow key={r.key} item={r} />
             ))}
@@ -260,7 +263,7 @@ export default function ExploreScreen() {
               </Txt>
             ) : null}
           </ScrollView>
-        </View>
+        </Animated.View>
       ) : null}
     </Screen>
   );
@@ -407,12 +410,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    height: 44,
+    height: 46,
     paddingHorizontal: 14,
-    borderRadius: radius.full,
-    backgroundColor: c.surface1,
+    borderRadius: 16,
+    backgroundColor: '#000000',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.hairline,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   searchInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: c.textPrimary, padding: 0 },
   searchResults: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.section, gap: 10 },

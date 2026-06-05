@@ -7,8 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Keyboard, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { IconButton, Txt } from '@/components/ui/primitives';
 import { PressableScale } from '@/components/ui/pressable-scale';
@@ -22,8 +23,11 @@ import { c, font, grad, radius, space } from '@/lib/theme';
 export default function QuranScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [last, setLast] = useState<LastRead | null>(null);
   const bookmarks = useBookmarks();
+  const inputRef = useRef<TextInput>(null);
+  const sv = useSharedValue(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -105,6 +109,26 @@ export default function QuranScreen() {
   );
   const voice = useVoiceSearch(onVoiceResult);
 
+  const openSearch = () => setSearchOpen(true);
+  const closeSearch = () => {
+    if (voice.listening) voice.toggle();
+    setQuery('');
+    setSearchOpen(false);
+    Keyboard.dismiss();
+  };
+
+  // Cross-fade the masthead <-> search field (both animate, open AND close — no broken exiting anims).
+  useEffect(() => {
+    sv.value = withTiming(searchOpen ? 1 : 0, { duration: 300, easing: Easing.bezier(0.22, 1, 0.36, 1) });
+    if (searchOpen) inputRef.current?.focus();
+    else inputRef.current?.blur();
+  }, [searchOpen, sv]);
+  const mastheadAnim = useAnimatedStyle(() => ({ opacity: 1 - sv.value, transform: [{ translateY: sv.value * -6 }] }));
+  const fieldAnim = useAnimatedStyle(() => ({
+    opacity: sv.value,
+    transform: [{ translateX: (1 - sv.value) * 32 }, { scale: 0.97 + 0.03 * sv.value }],
+  }));
+
   const lastSurah = last ? getSurah(last.surah) : undefined;
 
   const renderSurahRow = (item: Surah) => (
@@ -125,57 +149,79 @@ export default function QuranScreen() {
   );
 
   return (
-    <Screen>
+    <Screen stars>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <View style={styles.titleCol}>
-            <Txt variant="h1">Qur&apos;an</Txt>
-            <Txt variant="subtitle">114 surahs</Txt>
-          </View>
-          <IconButton
-            name={bookmarks.length > 0 ? 'bookmark' : 'bookmark-outline'}
-            color={c.accent}
-            onPress={() => router.push('/bookmarks')}
-            diameter={42}
-            size={19}
-          />
-        </View>
+        <View style={styles.headerInner}>
+          <Animated.View style={[styles.titleRow, mastheadAnim]} pointerEvents={searchOpen ? 'none' : 'auto'}>
+            <View style={styles.titleCol}>
+              <Txt variant="h1">Qur&apos;an</Txt>
+              <Txt variant="subtitle">114 surahs</Txt>
+            </View>
+            <IconButton name="search" color={c.textPrimary} onPress={openSearch} diameter={42} size={20} />
+            <IconButton
+              name={bookmarks.length > 0 ? 'bookmark' : 'bookmark-outline'}
+              color={c.accent}
+              onPress={() => router.push('/bookmarks')}
+              diameter={42}
+              size={19}
+            />
+          </Animated.View>
 
-        <View style={styles.searchPill}>
-          <Ionicons name="search" size={17} color={c.textMuted} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search, or jump to 2:255 / Ayat al-Kursi"
-            placeholderTextColor={c.textMuted}
-            style={styles.searchInput}
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            returnKeyType="search"
-          />
-          {voice.enabled ? (
-            <PressableScale
-              onPress={voice.toggle}
-              accessibilityRole="button"
-              accessibilityLabel={voice.listening ? 'Stop listening' : 'Search by voice'}
-              style={[styles.mic, voice.listening && styles.micActive]}>
-              {voice.busy ? (
-                <ActivityIndicator color={voice.listening ? c.bg : c.accent} size="small" />
-              ) : (
-                <Ionicons name={voice.listening ? 'stop' : 'mic'} size={17} color={voice.listening ? c.bg : c.accent} />
-              )}
+          <Animated.View style={[styles.searchRow, fieldAnim]} pointerEvents={searchOpen ? 'auto' : 'none'}>
+            <View style={styles.searchField}>
+              <Ionicons name="search" size={18} color={c.textMuted} />
+              <TextInput
+                ref={inputRef}
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Surah, 2:255, or Ayat al-Kursi"
+                placeholderTextColor={c.textMuted}
+                style={styles.searchInput}
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+                returnKeyType="search"
+              />
+              {voice.enabled ? (
+                <PressableScale
+                  onPress={voice.toggle}
+                  accessibilityRole="button"
+                  accessibilityLabel={voice.listening ? 'Stop listening' : 'Search by voice'}
+                  style={[styles.mic, voice.listening && styles.micActive]}>
+                  {voice.busy ? (
+                    <ActivityIndicator color={voice.listening ? c.bg : c.accent} size="small" />
+                  ) : (
+                    <Ionicons name={voice.listening ? 'stop' : 'mic'} size={17} color={voice.listening ? c.bg : c.accent} />
+                  )}
+                </PressableScale>
+              ) : null}
+            </View>
+            <PressableScale onPress={closeSearch} hitSlop={8} style={styles.cancelBtn}>
+              <Txt style={styles.cancelText}>Cancel</Txt>
             </PressableScale>
-          ) : null}
+          </Animated.View>
         </View>
-        {voice.listening ? (
+        {searchOpen && voice.listening ? (
           <Txt variant="caption" color={c.accent} style={styles.listening}>
             Listening… tap to stop
           </Txt>
         ) : null}
       </View>
 
-      {searching ? (
-        <ScrollView style={styles.fill} contentContainerStyle={styles.results} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      {searchOpen && !searching ? (
+        <Pressable style={styles.searchHint} onPress={closeSearch}>
+          <Ionicons name="search" size={26} color={c.textMuted} style={styles.searchHintIcon} />
+          <Txt variant="caption" color={c.textMuted} style={styles.searchHintText}>
+            Jump to a surah, an ayah like 2:255, or search by name.
+          </Txt>
+        </Pressable>
+      ) : searching ? (
+        <ScrollView
+          style={styles.fill}
+          contentContainerStyle={styles.results}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScrollBeginDrag={closeSearch}
+          showsVerticalScrollIndicator={false}>
           {ref ? (
             <PressableScale style={styles.goTo} onPress={() => open(ref.surah, ref.ayah)}>
               <Ionicons name="arrow-forward-circle" size={19} color={c.accent} />
@@ -269,23 +315,31 @@ export default function QuranScreen() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
 
-  header: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.md, gap: space.md },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.md, gap: space.sm },
+  headerInner: { position: 'relative', justifyContent: 'center' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   titleCol: { flex: 1, gap: 2 },
 
-  searchPill: {
+  searchRow: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  searchField: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    height: 48,
+    height: 46,
     paddingLeft: 14,
     paddingRight: 6,
-    borderRadius: radius.full,
-    backgroundColor: c.surface2,
+    borderRadius: 16,
+    backgroundColor: '#000000',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.hairline,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  searchInput: { flex: 1, fontFamily: font.sans, fontSize: 15.5, color: c.textPrimary, padding: 0 },
+  searchInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: c.textPrimary, padding: 0 },
+  cancelBtn: { paddingHorizontal: 2 },
+  cancelText: { fontFamily: font.sansSemi, fontSize: 15, color: c.accent },
+  searchHint: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 14 },
+  searchHintIcon: { opacity: 0.45 },
+  searchHintText: { textAlign: 'center', lineHeight: 20 },
   mic: {
     width: 36,
     height: 36,
