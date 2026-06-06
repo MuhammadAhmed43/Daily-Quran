@@ -72,7 +72,7 @@ export function SkySplash({ phase, onDone }: { phase: Phase; onDone?: () => void
     mark.value = withDelay(BEAT.markIn.delay, withTiming(1, { duration: BEAT.markIn.dur, easing: Easing.out(Easing.cubic) }));
     sky.value = withDelay(BEAT.sky.delay, withTiming(1, { duration: BEAT.sky.dur, easing: Easing.out(Easing.quad) }));
     reveal.value = withDelay(BEAT.reveal.delay, withTiming(1, { duration: BEAT.reveal.dur, easing: Easing.out(Easing.cubic) }));
-    orn.value = withDelay(640, withTiming(1, { duration: 1100, easing: Easing.out(Easing.cubic) }));
+    orn.value = withDelay(900, withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) }));
     const h = setTimeout(() => haptic.light(), BEAT.hapticAt);
     const d = onDone ? setTimeout(onDone, BEAT.doneAt) : undefined;
     return () => {
@@ -162,7 +162,7 @@ export function SkySplash({ phase, onDone }: { phase: Phase; onDone?: () => void
           </Animated.View>
         </View>
         <Brandmark anim={mark} />
-        <SplashVerse reveal={reveal} greeting={meta.greeting} tone={meta.tone} style={styles.verse} />
+        <SplashVerse reveal={reveal} greeting={meta.greeting} tone={meta.tone} hideGreeting style={styles.verse} />
       </View>
     </View>
   );

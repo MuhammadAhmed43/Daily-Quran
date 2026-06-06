@@ -18,13 +18,11 @@ export const APP_NAME = 'Daily Qur’an';
 
 // ───────────────────────────── time of day ─────────────────────────────
 export type Phase = 'day' | 'night';
-export const PHASES: Phase[] = ['day', 'night'];
+// The splash is night-only for now (the day variant was dropped), so only Night is offered + used.
+export const PHASES: Phase[] = ['night'];
 
-// Fixed clock bands (the user's choice — no location needed; the device clock already reflects their region).
-// Day 06-18 · Night 18-06. Tunable on device.
-export function phaseFromClock(d: Date = new Date()): Phase {
-  const h = d.getHours();
-  return h >= 6 && h < 18 ? 'day' : 'night';
+export function phaseFromClock(): Phase {
+  return 'night';
 }
 
 // ───────────────────────────── the verse (Ayat an-Nur 24:35) ─────────────────────────────
@@ -42,11 +40,11 @@ export const NUR = buildNur();
 
 // ───────────────────────────── motion rhythm (shared beats, ms) ─────────────────────────────
 export const BEAT = {
-  markIn: { delay: 0, dur: 720 },
-  sky: { delay: 460, dur: 1080 },
-  reveal: { delay: 1240, dur: 880 },
-  hapticAt: 1500,
-  doneAt: 2680,
+  markIn: { delay: 0, dur: 900 },
+  sky: { delay: 500, dur: 1400 },
+  reveal: { delay: 1500, dur: 1100 },
+  hapticAt: 1800,
+  doneAt: 4400, // hold the finished splash a beat longer before it dissolves
 } as const;
 
 // ───────────────────────────── per-phase palette ─────────────────────────────
@@ -99,7 +97,7 @@ export const SKY: Record<Phase, SkyMeta> = {
     ],
     stars: 34,
     starSeed: 0x4404,
-    crescent: { x: 0.78, y: 0.15, size: 54, bright: 1 },
+    crescent: null,
     tone: '#C9BDA6',
   },
 };
