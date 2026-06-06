@@ -340,14 +340,22 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
     ];
 
     // Streaming path: proxy Groq tokens as NDJSON, then a final event carrying the verse/tafsir
-    // cards (which need the whole answer to validate citations).
+    // cards (which need the whole answer to validate citations). Voice replies stream too — on the
+    // fast non-reasoning model so the FIRST token (and so the first spoken sentence) arrives in a
+    // fraction of a second instead of after gpt-oss's hidden reasoning pause.
     if (stream) {
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
       let answer = '';
       try {
         answer = await streamGroq(
-          { model: GROQ_MODEL, messages, maxTokens: voice ? 260 : 800, reasoningEffort: 'low' },
+          {
+            model: voice ? VOICE_MODEL : GROQ_MODEL,
+            messages,
+            maxTokens: voice ? 260 : 800,
+            // reasoning_effort only helps gpt-oss (text); the fast voice model has no reasoning step.
+            reasoningEffort: voice ? undefined : 'low',
+          },
           (delta) => res.write(JSON.stringify({ t: delta }) + '\n'),
         );
       } catch (e) {
@@ -367,7 +375,8 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
       return res.end();
     }
 
-    // 3) Groq, grounded (non-streaming — used by voice mode, which needs the whole text for TTS).
+    // 3) Groq, grounded (non-streaming — the buffered fallback, used by askQuestion() when the
+    //    streaming pipeline is unavailable; voice mode now prefers the streaming path above).
     const groqRes = await fetch(GROQ_URL, {
       method: 'POST',
       headers: {

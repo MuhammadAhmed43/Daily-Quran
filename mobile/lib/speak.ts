@@ -11,13 +11,17 @@ let seq = 0;
  *  caption cards exactly as each word is spoken. Downloading to a file (rather than streaming a
  *  URL) also gives a reliable duration. Returns null on any failure so the caller can fall back
  *  to streaming / on-device speech — the voice still works, only the sync degrades. */
-export async function fetchSpokenReply(text: string): Promise<SpokenReply | null> {
+export async function fetchSpokenReply(
+  text: string,
+  signal?: AbortSignal,
+): Promise<SpokenReply | null> {
   if (!API_BASE || !text) return null;
   try {
     const res = await fetch(`${API_BASE}/api/speak`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, marks: true }),
+      signal,
     });
     if (!res.ok) return null;
     const data = (await res.json()) as {

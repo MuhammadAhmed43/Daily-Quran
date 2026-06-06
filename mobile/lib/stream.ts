@@ -9,12 +9,14 @@ export async function streamNDJSON<T>(
   path: string,
   body: unknown,
   onEvent: (obj: T) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
   if (!API_BASE) throw new Error('Streaming isn’t configured (EXPO_PUBLIC_API_BASE is missing).');
   const res = await streamFetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal,
   });
   if (!res.ok || !res.body) throw new Error(`Stream failed (${res.status}).`);
 

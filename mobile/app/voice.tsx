@@ -8,6 +8,7 @@ import {
   type AudioPlayer,
 } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
+import { File } from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -15,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { askQuestion, type ChatTurn } from '@/lib/chat';
+import { askQuestion, type ChatResponse, type ChatTurn } from '@/lib/chat';
 import { haptic } from '@/lib/haptics';
 import { useRecitation } from '@/lib/recitation-context';
 import { fetchSpokenReply } from '@/lib/speak';
@@ -23,10 +24,28 @@ import { recordActivity } from '@/lib/streak';
 import { c, font, grad } from '@/lib/theme';
 import { transcribeAudio } from '@/lib/voice';
 import { pushVoiceExchange } from '@/lib/voice-bridge';
+import { streamSpokenReply, type SpokenClip, type VoiceReplyHandle } from '@/lib/voice-reply';
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'denied';
+
+// One streaming spoken-reply turn. The screen owns playback of the in-order clips the
+// voice-reply pipeline produces; this holds that turn's mutable state so a stale turn can never
+// touch a newer one (every callback checks `cancelled` and that it's still the current pipe).
+type VoicePipe = {
+  cancelled: boolean;
+  items: SpokenClip[]; // ready sentence clips, in order
+  playIdx: number; // which clip is playing / up next
+  playing: boolean; // a clip is currently playing
+  everSpoke: boolean; // has any audio started? (gates the fallback + the safety timer)
+  streamDone: boolean; // the answer finished generating + all sentences were synthesized
+  logged: boolean; // streak/history/hand-off recorded once
+  files: string[]; // temp clip URIs to clean up
+  answer: string; // cumulative answer text (kept fresh for the fallback)
+  handle: VoiceReplyHandle | null;
+  question: string;
+};
 
 // The "Andrew" voice speaks ~15 chars/sec; used to estimate how long the reply takes so the
 // caption cards keep pace (slightly leading rather than lagging). Streamed MP3s don't report a
@@ -237,6 +256,11 @@ export default function VoiceScreen() {
   // so no audio player ever holds the iOS audio session while the mic needs to record.
   const playerRef = useRef<AudioPlayer | null>(null);
   const subRef = useRef<{ remove: () => void } | null>(null);
+  // Streaming spoken-reply pipeline (the low-latency path): current turn + its first-audio safety
+  // timer + a throttle so we warm the serverless functions during listening, not on every frame.
+  const voicePipeRef = useRef<VoicePipe | null>(null);
+  const firstAudioTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastWarmRef = useRef(0);
   const intensity = useRef(new Animated.Value(0.12)).current;
   const ripple1 = useRef(new Animated.Value(0)).current;
   const ripple2 = useRef(new Animated.Value(0)).current;
@@ -310,9 +334,8 @@ export default function VoiceScreen() {
     rafRef.current = requestAnimationFrame(pulse);
   };
   // Phase changes just set the phase now (via go()) — the pulse loop reads phaseRef and follows,
-  // so these are no-ops kept only so existing call sites stay tidy.
+  // so this is a no-op kept only so existing call sites stay tidy.
   const stopAnim = () => {};
-  const breathe = () => {};
 
   // ---- caption pacing ----
   const resetCaption = () => {
@@ -383,6 +406,7 @@ export default function VoiceScreen() {
       stopAnim();
       Speech.stop();
       teardownPlayer();
+      cancelVoicePipeline(); // a previous reply must never bleed into the new turn
       if (capTimerRef.current) clearInterval(capTimerRef.current);
       if (tickRef.current) clearInterval(tickRef.current);
       if (transcriptTimerRef.current) {
@@ -400,6 +424,7 @@ export default function VoiceScreen() {
       await recorder.prepareToRecordAsync();
       recorder.record();
       go('listening');
+      warm(); // spin up the serverless functions while the user speaks → no cold start after
       // Voice-activity detection: once you've begun speaking, a short pause ends the turn.
       speechStartedRef.current = false;
       silenceStartRef.current = 0;
@@ -508,41 +533,283 @@ export default function VoiceScreen() {
       tickRef.current = null;
     }
     go('thinking');
-    breathe();
+    // Transcribe the clip. A transcription failure recycles the mic; once we have a question, the
+    // reply pipeline owns its own error handling (and falls back to the buffered path).
+    let text = '';
     try {
       await recorder.stop();
       const uri = recorder.uri;
       if (!uri) throw new Error('no audio');
-      const text = (await transcribeAudio(uri)).trim();
-      if (!mountedRef.current) return;
-      if (!text || isJunk(text)) {
-        setNote('I didn’t catch that.');
-        go('idle');
-        relisten();
-        return;
-      }
-      revealTranscript(text);
-      setNote('');
-      const data = await askQuestion(text, historyRef.current.slice(-6), { voice: true });
-      if (!mountedRef.current) return;
-      recordActivity('asked'); // counts toward the streak
-      historyRef.current.push(
-        { role: 'user', content: text },
-        { role: 'assistant', content: data.answer },
-      );
-      pushVoiceExchange({ question: text, response: data });
-      void playReply(data.answer);
+      text = (await transcribeAudio(uri)).trim();
     } catch {
       if (!mountedRef.current) return;
       setNote('Something went wrong.');
       go('idle');
       relisten();
+      return;
+    }
+    if (!mountedRef.current) return;
+    if (!text || isJunk(text)) {
+      setNote('I didn’t catch that.');
+      go('idle');
+      relisten();
+      return;
+    }
+    revealTranscript(text); // types the question out while the answer streams + speaks
+    setNote('');
+    void playReplyStreaming(text);
+  };
+
+  // ---- low-latency streaming reply: stream the answer + speak it sentence-by-sentence ----
+  const safeDeleteUri = (uri: string) => {
+    try {
+      new File(uri).delete();
+    } catch {}
+  };
+  const cleanupFiles = (pipe: VoicePipe) => {
+    for (const u of pipe.files.splice(0)) safeDeleteUri(u);
+  };
+
+  // Tear down any in-flight streaming reply (a new turn, mute, or close). Aborts the chat stream +
+  // synth, deletes orphan clips, and clears the latency timers so nothing from the old turn fires.
+  const cancelVoicePipeline = () => {
+    const pipe = voicePipeRef.current;
+    if (pipe) {
+      pipe.cancelled = true;
+      try {
+        pipe.handle?.cancel();
+      } catch {}
+      cleanupFiles(pipe);
+      voicePipeRef.current = null;
+    }
+    if (firstAudioTimerRef.current) {
+      clearTimeout(firstAudioTimerRef.current);
+      firstAudioTimerRef.current = null;
+    }
+    if (failTimerRef.current) {
+      clearTimeout(failTimerRef.current);
+      failTimerRef.current = null;
     }
   };
 
-  // Speak in the deep "Christopher" voice via /api/speak (on-demand player); fall back to
-  // on-device if it's slow or fails.
-  const playReply = async (full: string) => {
+  // Warm the serverless functions DURING listening so the first real round-trip (transcribe → chat
+  // → speak) doesn't pay a cold start. Each GET hits the function's fast early-return; throttled.
+  const warm = () => {
+    if (!API_BASE) return;
+    const now = Date.now();
+    if (now - lastWarmRef.current < 60000) return;
+    lastWarmRef.current = now;
+    const ctrl = new AbortController();
+    setTimeout(() => {
+      try {
+        ctrl.abort();
+      } catch {}
+    }, 4000);
+    for (const p of ['/api/transcribe', '/api/chat', '/api/speak']) {
+      fetch(`${API_BASE}${p}`, { method: 'GET', signal: ctrl.signal }).catch(() => {});
+    }
+  };
+
+  // Record the turn ONCE (streak + conversation history + chat hand-off) — guarded so the streaming
+  // and fallback paths can never double-log the same turn.
+  const logTurn = (pipe: VoicePipe, answer: string, response: ChatResponse) => {
+    if (pipe.logged) return;
+    pipe.logged = true;
+    recordActivity('asked');
+    historyRef.current.push(
+      { role: 'user', content: pipe.question },
+      { role: 'assistant', content: answer },
+    );
+    pushVoiceExchange({ question: pipe.question, response });
+  };
+
+  // Play the next ready clip; if the queue is drained AND the stream is done, finish the reply.
+  const pumpPipe = (pipe: VoicePipe) => {
+    if (pipe.cancelled || !mountedRef.current || voicePipeRef.current !== pipe) return;
+    if (pipe.playing) return;
+    const item = pipe.items[pipe.playIdx];
+    if (!item) {
+      if (pipe.streamDone) finishPipe(pipe);
+      return; // otherwise wait — more clips are still arriving
+    }
+    pipe.playing = true;
+
+    // captions for THIS sentence — word-synced via its own marks, or paced off an estimate
+    const cs = makeChunks(item.spoken);
+    chunksRef.current = cs;
+    cardTimesRef.current = buildCardTimes(cs, item.spoken, item.marks, item.dur);
+    estTotalRef.current = Math.max(1.2, (item.dur || (item.spoken.length / CHARS_PER_SEC) * 1000) / 1000);
+    setChunks(cs);
+    resetCaption();
+
+    let finishedOnce = false;
+    try {
+      const player = createAudioPlayer({ uri: item.uri }, { updateInterval: 90 });
+      playerRef.current = player;
+      subRef.current = player.addListener('playbackStatusUpdate', (st) => {
+        if (pipe.cancelled || !mountedRef.current || voicePipeRef.current !== pipe) return;
+        if (st.playing && phaseRef.current === 'thinking') {
+          // the first clip of the reply has begun — stop the safety timer, switch to "Speaking"
+          if (firstAudioTimerRef.current) {
+            clearTimeout(firstAudioTimerRef.current);
+            firstAudioTimerRef.current = null;
+          }
+          pipe.everSpoke = true;
+          go('speaking');
+          haptic.light();
+        }
+        if (phaseRef.current === 'speaking' && st.currentTime > 0) {
+          if (cardTimesRef.current.length) syncCaption(st.currentTime * 1000);
+          else advanceCaption(st.currentTime / estTotalRef.current);
+        }
+        if (st.didJustFinish && !finishedOnce) {
+          finishedOnce = true;
+          teardownPlayer();
+          safeDeleteUri(item.uri);
+          pipe.playing = false;
+          pipe.playIdx += 1;
+          pumpPipe(pipe);
+        }
+      });
+      player.play();
+    } catch {
+      // couldn't create/play this clip — skip it and keep the reply moving
+      teardownPlayer();
+      safeDeleteUri(item.uri);
+      pipe.playing = false;
+      pipe.playIdx += 1;
+      pumpPipe(pipe);
+    }
+  };
+
+  const finishPipe = (pipe: VoicePipe) => {
+    if (pipe.cancelled || !mountedRef.current || voicePipeRef.current !== pipe) return;
+    if (pipe.playing || pipe.playIdx < pipe.items.length || !pipe.streamDone) return;
+    // If NOTHING was ever spoken (every sentence's TTS failed) fall back so the user still hears it.
+    if (!pipe.everSpoke) {
+      if (pipe.answer.trim()) {
+        fallbackToBuffered(pipe);
+        return;
+      }
+      voicePipeRef.current = null;
+      cleanupFiles(pipe);
+      go('idle');
+      relisten();
+      return;
+    }
+    voicePipeRef.current = null;
+    restCaptionAtEnd();
+    cleanupFiles(pipe);
+    go('idle');
+    relisten();
+  };
+
+  // Safety net: abandon the streaming pipeline and use the proven buffered path (which itself falls
+  // back to on-device speech). Triggered by a stream error or the first-audio deadline.
+  const fallbackToBuffered = (pipe: VoicePipe) => {
+    if (pipe.cancelled) return;
+    pipe.cancelled = true;
+    try {
+      pipe.handle?.cancel();
+    } catch {}
+    if (firstAudioTimerRef.current) {
+      clearTimeout(firstAudioTimerRef.current);
+      firstAudioTimerRef.current = null;
+    }
+    teardownPlayer();
+    cleanupFiles(pipe);
+    if (voicePipeRef.current === pipe) voicePipeRef.current = null;
+
+    const partial = pipe.answer.trim();
+    if (partial) {
+      logTurn(pipe, partial, { answer: partial, verses: [], tafsir: [], video: null, disclaimer: '' });
+      void playBuffered(partial);
+      return;
+    }
+    // no text at all yet → the original full round-trip (buffered chat → buffered TTS → on-device)
+    go('thinking');
+    void (async () => {
+      try {
+        const data = await askQuestion(pipe.question, historyRef.current.slice(-6), { voice: true });
+        if (!mountedRef.current) return;
+        logTurn(pipe, data.answer, data);
+        void playBuffered(data.answer);
+      } catch {
+        if (!mountedRef.current) return;
+        setNote('Something went wrong.');
+        go('idle');
+        relisten();
+      }
+    })();
+  };
+
+  // The fast path: stream the grounded answer and speak it sentence-by-sentence as it generates.
+  const playReplyStreaming = async (question: string) => {
+    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
+    if (!mountedRef.current) return;
+    teardownPlayer();
+
+    const pipe: VoicePipe = {
+      cancelled: false,
+      items: [],
+      playIdx: 0,
+      playing: false,
+      everSpoke: false,
+      streamDone: false,
+      logged: false,
+      files: [],
+      answer: '',
+      handle: null,
+      question,
+    };
+    voicePipeRef.current = pipe;
+
+    if (firstAudioTimerRef.current) clearTimeout(firstAudioTimerRef.current);
+    // if no audio has started within 10s, abandon streaming for the buffered path — never hang
+    firstAudioTimerRef.current = setTimeout(() => {
+      if (!mountedRef.current || pipe.cancelled || pipe.everSpoke) return;
+      fallbackToBuffered(pipe);
+    }, 10000);
+
+    pipe.handle = streamSpokenReply({
+      question,
+      history: historyRef.current.slice(-6),
+      onText: (full) => {
+        if (!pipe.cancelled) pipe.answer = full;
+      },
+      onClip: (clip) => {
+        if (pipe.cancelled || !mountedRef.current) {
+          safeDeleteUri(clip.uri);
+          return;
+        }
+        pipe.items.push(clip);
+        pipe.files.push(clip.uri);
+        pumpPipe(pipe);
+      },
+      onDone: (m) => {
+        if (pipe.cancelled || !mountedRef.current) return;
+        pipe.answer = m.answer;
+        pipe.streamDone = true;
+        logTurn(pipe, m.answer, {
+          answer: m.answer,
+          verses: m.verses,
+          tafsir: m.tafsir,
+          video: m.video,
+          disclaimer: m.disclaimer,
+        });
+        pumpPipe(pipe); // play next, or finish if there is nothing left to play
+      },
+      onError: () => {
+        if (pipe.cancelled || !mountedRef.current) return;
+        fallbackToBuffered(pipe);
+      },
+    });
+  };
+
+  // Buffered fallback: synthesize the WHOLE reply at once via /api/speak (on-demand player), with
+  // on-device speech if that's slow or fails. The streaming path above falls back to this; it's the
+  // original, proven path kept intact as the safety net.
+  const playBuffered = async (full: string) => {
     const speakText = forSpeech(full);
     await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
     teardownPlayer();
@@ -664,6 +931,7 @@ export default function VoiceScreen() {
       stopAnim();
       Speech.stop();
       teardownPlayer();
+      cancelVoicePipeline();
       recorder.stop().catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -698,14 +966,15 @@ export default function VoiceScreen() {
     } else {
       mutedRef.current = true;
       setMuted(true);
-      if (phaseRef.current === 'listening') {
-        if (tickRef.current) {
-          clearInterval(tickRef.current);
-          tickRef.current = null;
-        }
-        recorder.stop().catch(() => {});
-        go('idle');
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
       }
+      cancelVoicePipeline(); // stop a streaming reply mid-speech too, not just a listening session
+      Speech.stop();
+      teardownPlayer();
+      if (phaseRef.current === 'listening') recorder.stop().catch(() => {});
+      go('idle');
     }
   };
 
@@ -718,6 +987,7 @@ export default function VoiceScreen() {
     stopAnim();
     Speech.stop();
     teardownPlayer();
+    cancelVoicePipeline();
     recorder.stop().catch(() => {});
     router.back();
   };
