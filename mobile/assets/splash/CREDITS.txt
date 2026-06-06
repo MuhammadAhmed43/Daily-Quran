@@ -1,0 +1,4 @@
+night.jpg - Unsplash (Tobias Rademacher), Unsplash License (free commercial, no attribution required). Source: https://unsplash.com/photos/milky-way-and-stars-in-a-dark-night-sky-oQR1B87HsNs
+dawn.jpg - Pexels (Szabo Viktor), Pexels License (free commercial, no attribution required). Source: https://www.pexels.com/photo/photo-of-clouds-during-dawn-3227984/
+
+lottie/golden-particle.json, nebula-stars.json, light-rays.json - LottieFiles community (Lottie Simple License: free commercial use, no attribution required).

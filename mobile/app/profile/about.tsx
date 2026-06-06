@@ -61,6 +61,19 @@ export default function AboutScreen() {
           <SettingsRow icon="document-text-outline" title="Terms of use" onPress={() => showLegal('terms')} />
         </SettingsCard>
 
+        {/* DEV: compare the launch-splash concepts on device (remove once a concept is chosen + wired in). */}
+        <SettingsCard>
+          <SettingsRow
+            icon="sparkles-outline"
+            title="Preview launch splash"
+            subtitle="Compare the splash concepts"
+            onPress={() => {
+              haptic.light();
+              router.push('/splash-preview');
+            }}
+          />
+        </SettingsCard>
+
         <View style={styles.footer}>
           <Txt variant="caption" color={c.textMuted}>
             Daily Qur’an
