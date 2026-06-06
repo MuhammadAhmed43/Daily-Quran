@@ -10,6 +10,10 @@
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'openai/gpt-oss-120b';
+// Voice replies must come back FAST — the user stares at a "Thinking…" spinner until TTS starts. gpt-oss is a
+// reasoning model and spends several seconds on hidden reasoning before any output; for the short, spoken
+// voice answers we use a fast non-reasoning model instead (same grounded context, a fraction of the latency).
+const VOICE_MODEL = 'llama-3.3-70b-versatile'; // fast, non-reasoning, ~2s; 8b-instant's 6k TPM free limit rate-limits the token-heavy grounded prompt
 
 const { streamGroq } = require('./_groq');
 
@@ -371,11 +375,12 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: voice ? VOICE_MODEL : GROQ_MODEL,
         messages,
         temperature: 0.3,
         max_tokens: voice ? 260 : 800, // voice replies are short & spoken → fewer tokens, faster to generate and to speak
-        reasoning_effort: 'low', // gpt-oss is a reasoning model — keep hidden reasoning small so it's fast and the visible answer isn't truncated
+        // reasoning_effort only applies to gpt-oss (the non-voice path); the fast voice model has no reasoning step
+        ...(voice ? {} : { reasoning_effort: 'low' }),
       }),
     });
     if (!groqRes.ok) {

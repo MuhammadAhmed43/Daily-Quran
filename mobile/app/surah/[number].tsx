@@ -40,6 +40,7 @@ export default function SurahReader() {
     ayah?: string;
     autoplay?: string;
     continuous?: string;
+    whole?: string; // arrived from "Listen to the whole Qur'an" — track the listen point, not the read point
   }>();
   const routeSurahNo = Number(params.number);
   const targetAyah = params.ayah ? Number(params.ayah) : undefined;
@@ -98,7 +99,10 @@ export default function SurahReader() {
     didAutostartRef.current = true;
     if (params.continuous === '1') ctx.setContinuous(true);
     if (params.autoplay === '1') {
-      const t = setTimeout(() => ctx.playFrom(routeSurahNo, targetAyah ?? 1), 80);
+      const t = setTimeout(() => {
+        if (params.whole === '1') ctx.playWhole(routeSurahNo, targetAyah ?? 1);
+        else ctx.playFrom(routeSurahNo, targetAyah ?? 1);
+      }, 80);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,7 +112,8 @@ export default function SurahReader() {
   useEffect(() => {
     if (!surah) return;
     const openAyah = displayedSurah === routeSurahNo ? (targetAyah ?? 1) : 1;
-    setLastRead({ surah: displayedSurah, ayah: openAyah });
+    // Opening via "Listen to the whole Qur'an" must NOT move the reading position (Continue reading).
+    if (params.whole !== '1') setLastRead({ surah: displayedSurah, ayah: openAyah });
     return () => {
       let top = 1;
       for (const a of surah.ayahs) {
@@ -291,7 +296,20 @@ export default function SurahReader() {
                 <Txt style={styles.vnum}>{item.n}</Txt>
                 {bookmarked ? <Ionicons name="bookmark" size={13} color={c.accent} style={styles.bookmarkMark} /> : null}
                 <Txt style={styles.trans}>{verseText(surah.number, item.n)}</Txt>
-                <PressableScale onPress={() => ctx.toggle(displayedSurah, item.n)} hitSlop={8} style={styles.ayBtn}>
+                <PressableScale
+                  onPress={() => ctx.playWhole(displayedSurah, item.n)}
+                  hitSlop={6}
+                  style={styles.ayBtn}
+                  accessibilityLabel="Recite the whole Qur'an from this ayah">
+                  <Ionicons name="infinite" size={19} color={c.textMuted} />
+                </PressableScale>
+                <PressableScale
+                  onPress={() => {
+                    if (!isThis) setLastRead({ surah: displayedSurah, ayah: item.n }); // a newly tapped ayah is a manual read
+                    ctx.toggle(displayedSurah, item.n);
+                  }}
+                  hitSlop={8}
+                  style={styles.ayBtn}>
                   {isThis && ctx.loading ? (
                     <ActivityIndicator size="small" color={c.accent} />
                   ) : (
@@ -363,7 +381,10 @@ export default function SurahReader() {
         ayah={activeAyah}
         surah={surah}
         onClose={() => setActiveAyah(null)}
-        onPlay={(n) => ctx.playFrom(displayedSurah, n)}
+        onPlay={(n) => {
+          setLastRead({ surah: displayedSurah, ayah: n }); // a tapped ayah is a manual read → Continue reading
+          ctx.playFrom(displayedSurah, n);
+        }}
         onExplain={(a) =>
           setExplainTarget({
             surah: surah.number,

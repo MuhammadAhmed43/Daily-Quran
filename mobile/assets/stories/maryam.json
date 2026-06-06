@@ -1,0 +1,120 @@
+{
+  "id": "maryam",
+  "title": "Maryam",
+  "subtitle": "A Sign to the Worlds",
+  "arabicName": "سُورَةُ مَرۡيَمَ",
+  "surah": 19,
+  "blurb": "The story of Maryam, a pure and devoted servant of God: the provision sent to her, the glad tidings of a son created by His word, and the newborn who spoke from the cradle as a prophet of God.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "She Withdraws to Pray",
+      "ref": "Maryam 19:16",
+      "verse": "19:16",
+      "narration": "Maryam was a pure and devoted servant of God, raised in His worship from her earliest years. Seeking nearness to her Lord, she withdrew from her people to a quiet place in the east, where she could be alone in prayer and remembrance. There, in stillness and devotion, she gave herself wholly to the One who had chosen her and purified her above the women of the world.",
+      "visual": "A carved stone prayer niche where Maryam withdraws in solitude to worship her Lord.",
+      "scene": "A carved stone prayer niche in a quiet sanctuary, a single shaft of cool morning light falling across its arch, smooth worn steps, calm devotional stillness, deep stone-blue shadows and pale dawn glow.",
+      "color": "#3a4a63",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "Provision from God",
+      "ref": "Aal-Imran 3:37",
+      "verse": "3:37",
+      "narration": "Her Lord accepted her with gracious favor and gave her a beautiful upbringing. Whenever the one who cared for her entered the sanctuary, he found fresh provision already with her, fruit out of its season and beyond reckoning. Asked where it came from, she answered simply that it was from God, who provides to whom He wills without measure. Even her sustenance was a quiet sign of His care.",
+      "visual": "A bowl of fresh out-of-season fruit found waiting in the sanctuary, provision from God.",
+      "scene": "A simple clay bowl heaped with ripe out-of-season fruit resting on a stone ledge within a sanctuary, soft light from above, faint dust motes in the beam, serene and grateful, warm stone-blue and honey tones.",
+      "color": "#46566f",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 3,
+      "title": "Glad Tidings",
+      "ref": "Maryam 19:17-19",
+      "verse": "19:19",
+      "narration": "She screened herself away from her people, and God sent His messenger to her, who appeared in the form of a perfect human. Startled, she sought refuge in the Most Merciful from him, should he intend any harm. But he reassured her that he was only a messenger sent by her Lord, come to give her glad tidings of a pure son, a gift decreed for her by the will of God alone.",
+      "visual": "A flowing curtain drawn across the room as a messenger brings glad tidings of a pure son.",
+      "scene": "A long flowing curtain drawn across a stone chamber, edges stirred by a gentle draft, a soft luminous glow spilling through the parting fabric, tender hushed wonder, twilight violet and dusky rose light.",
+      "color": "#5a5276",
+      "motion": "panLeft"
+    },
+    {
+      "n": 4,
+      "title": "How Can This Be?",
+      "ref": "Maryam 19:20-21",
+      "verse": "19:20",
+      "narration": "In astonishment she asked how she could have a son when no man had ever touched her and she had never been unchaste. The messenger answered with the word of her Lord: that this was easy for Him, and that her child would be made a sign for all humanity and a mercy from Him. It was a matter already decided, written by the One for whom nothing is impossible.",
+      "visual": "A shaft of light breaking through high windows as the question rises and is answered by God's decree.",
+      "scene": "Tall narrow windows in a stone wall with a single beam of light angling down through dim air, motes drifting, a sense of awe and quiet questioning, soft twilight indigo deepening toward warm gold at the beam's edge.",
+      "color": "#6b5b7a",
+      "motion": "rise"
+    },
+    {
+      "n": 5,
+      "title": "A Far and Quiet Place",
+      "ref": "Maryam 19:22",
+      "verse": "19:22",
+      "narration": "So she conceived him, and carried him in trust, and withdrew with the burden God had given her to a remote and distant place, far from the eyes of her people. Alone in the wide quiet of the land, she carried the sign her Lord had promised. The world was hushed around her, and she walked onward in patience, sheltered by the One who had decreed all that was unfolding.",
+      "visual": "A lone desert valley stretching toward distant hills where Maryam withdraws in seclusion.",
+      "scene": "A lone desert valley at dusk, rolling pale dunes and far violet hills under a wide quiet sky, a faint winding footpath, vast solitude and calm, hushed twilight mauve fading to soft amber on the horizon.",
+      "color": "#7d6470",
+      "motion": "panRight"
+    },
+    {
+      "n": 6,
+      "title": "By the Palm Tree",
+      "ref": "Maryam 19:23",
+      "verse": "19:23",
+      "narration": "The pains of childbirth overtook her, and they drove her to the trunk of a date palm. In her distress she cried out, wishing she had died before this and been a thing forgotten, so heavy was the trial upon her. Yet even in that lonely hour, beneath the bare crown of the palm, the care of her Lord was already near, ready to turn her sorrow into consolation.",
+      "visual": "A tall date palm with a bare, withered crown beneath which Maryam labors in distress.",
+      "scene": "A tall lone date palm with a bare withered crown rising over empty sand at dusk, its trunk strong and rough, long shadows stretching across the ground, aching solitude and strain, dim mauve sky with a faint warm horizon.",
+      "color": "#8a6a5e",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 7,
+      "title": "Stream and Ripe Dates",
+      "ref": "Maryam 19:24-25",
+      "verse": "19:25",
+      "narration": "Then comfort came to her from below: she was told not to grieve, for her Lord had placed a flowing stream beneath her. She was bidden to shake the trunk of the palm toward herself, and it would drop fresh ripe dates upon her. Where there had been bare branches and dry sand, God brought forth sweet fruit and clear water, tender mercy sent down in her hour of greatest need.",
+      "visual": "A clear stream running below the palm as ripe dates fall onto the sand, comfort from God.",
+      "scene": "A clear stream winding across golden sand beneath a date palm now bearing ripe clusters, several dates fallen on the bank catching first light, gentle relief and renewal, warm dawn gold with soft greens by the water.",
+      "color": "#b08a4a",
+      "motion": "rise"
+    },
+    {
+      "n": 8,
+      "title": "A Vow of Silence",
+      "ref": "Maryam 19:26",
+      "verse": "19:26",
+      "narration": "She was told to eat and drink and be consoled, and if she saw anyone, to say that she had vowed a fast of silence to the Most Gracious and would not speak to any person that day. So, comforted and strengthened, she gathered the child God had given her and turned back toward her people, carrying him and the promise of her Lord, her answer entrusted to the silence she had vowed.",
+      "visual": "An old town gateway at dawn toward which Maryam returns, carrying the child in silence.",
+      "scene": "An old stone town gateway at dawn, its arch warmed by early gold light, a quiet empty road leading in, soft morning calm and gentle hope, glowing dawn amber against cool blue shadows in the stonework.",
+      "color": "#c89a52",
+      "motion": "panRight"
+    },
+    {
+      "n": 9,
+      "title": "Her People's Shock",
+      "ref": "Maryam 19:27-28",
+      "verse": "19:27",
+      "narration": "When she came to her people carrying the child, they were astonished and dismayed. They called it a terrible thing and reminded her of the righteousness of her family, of a father who was no evil man and a mother who was no sinner. Yet Maryam held to the command of her Lord and kept her vow, answering not a word, trusting that God Himself would clear her and make the truth plain.",
+      "visual": "A simple woven cradle resting in soft light amid the murmur of an astonished crowd.",
+      "scene": "an old stone town gateway and quiet courtyard at dusk, long cool shadows stretching across worn cobblestones, shuttered windows and still empty lanes, a hushed and tense mood, deep twilight blue washing into faint amber",
+      "color": "#d4a85a",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 10,
+      "title": "The Child Speaks",
+      "ref": "Maryam 19:29-30",
+      "verse": "19:30",
+      "narration": "When they asked how they could speak to an infant in the cradle, she pointed to him. Then, by the power of God, Isa (peace be upon him) spoke from the cradle, declaring himself the servant of God, given the Scripture and made a prophet. In a single moment the accusation was silenced and the sign was complete, a newborn bearing witness that worship belongs to God alone, the straight and only path.",
+      "visual": "A simple woven cradle glowing softly as the newborn declares himself a servant of God.",
+      "scene": "a single radiant vertical shaft of golden light falling into a quiet vaulted stone chamber, glowing Arabic calligraphy shimmering within the light high on the wall, an empty worn stone floor below, profound awe and wonder, luminous gold against warm sandstone",
+      "color": "#e8b85e",
+      "motion": "zoomOut"
+    }
+  ]
+}

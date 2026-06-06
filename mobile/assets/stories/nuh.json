@@ -1,0 +1,120 @@
+{
+  "id": "nuh",
+  "title": "Nuh",
+  "subtitle": "The Ark and the Flood",
+  "arabicName": "سُورَةُ نُوحٍ",
+  "surah": 71,
+  "blurb": "A prophet who called his people for generations, an ark built on dry land amid mockery, and a flood that cleansed the earth — told in 10 fully aniconic scenes.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "A People Lost to Idols",
+      "ref": "71:1",
+      "verse": "71:1",
+      "narration": "God sent Nuh (peace be upon him) to a people who had abandoned their Lord and bowed instead to carved idols, names handed down from their forefathers. He came as a clear warner, calling them back from stone gods to the One who made them, before a painful punishment could overtake a nation that had forgotten the very One who gave it life.",
+      "visual": "Carved stone idols clustered in a dim hall, the One God forgotten — the warning has only just begun.",
+      "scene": "a dim ancient temple hall of cold grey carved stone idols clustered on pedestals, dust hanging in still air, faint cold blue light through high stone openings, a single forgotten lamp, ominous and somber, deep indigo shadow",
+      "color": "#171430",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "Calling Night and Day",
+      "ref": "71:5",
+      "verse": "71:5",
+      "narration": "For lifetimes Nuh (peace be upon him) called his people, night and day, openly and in private — promising that if they turned back, God would forgive them, send rain in torrents, and bless them with wealth, children, gardens, and rivers. He pointed them to the seven heavens, the moon for light, the sun a lamp. Tirelessly, patiently, he pleaded — asking them only to worship their Lord alone.",
+      "visual": "A humble settlement under a vast starlit sky, the moon and a single lamp glowing — a tireless call repeated for generations.",
+      "scene": "a small humble mud-brick settlement beneath a vast deep-blue starlit night sky, one warm lamp glowing in a window and a thin crescent moon above, quiet and patient, atmospheric painterly depth, indigo and faint gold",
+      "color": "#121730",
+      "motion": "panLeft"
+    },
+    {
+      "n": 3,
+      "title": "Mockery and Stubborn Refusal",
+      "ref": "54:9",
+      "verse": "54:9",
+      "narration": "But his people turned away. Whenever he called them, they thrust their fingers into their ears and wrapped themselves in their garments, growing only more arrogant. They rejected God's servant, called him mad, and threatened and rebuked him. The notables sneered that only the poor and the weak had followed him — and they clung defiantly to their idols, refusing to give up a single one.",
+      "visual": "A cracked clay idol fallen on its side, scornful shadows turned away from a lamp — a message met with ridicule and contempt.",
+      "scene": "a cracked clay idol toppled on its side on dusty ground, cold scornful shadows stretching away from a small steady lamp, harsh grey light, a sense of ridicule and stubborn darkness, bleak slate-blue tones",
+      "color": "#222a38",
+      "motion": "panRight"
+    },
+    {
+      "n": 4,
+      "title": "Building the Ark on Dry Land",
+      "ref": "11:37-38",
+      "verse": "11:38",
+      "narration": "When at last it was clear none more would believe, God revealed to Nuh (peace be upon him) to build an ark, under His eyes and by His inspiration. So he labored, shaping a great ship far from any sea. As his people passed by, they ridiculed him — what use was a ship on dry land? He answered that one day they would know upon whom a lasting torment would fall.",
+      "visual": "Long wooden ribs and planks rising on bare dry earth, an adze and tools resting in the dust — a great ship taking shape far from any water.",
+      "scene": "long wooden ribs and curved planks of a great ship rising on bare dry cracked earth, an adze and woodworking tools resting in the dust, scattered timber, far from any water, overcast grey daylight, dust and isolation",
+      "color": "#2f3530",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 5,
+      "title": "The Oven Gushes Water",
+      "ref": "11:40",
+      "verse": "11:40",
+      "narration": "Then came God's command, and the sign appeared: the oven gushed forth water, bursting where fire had always been. The floodgates of heaven opened with rain pouring down, and the earth split into springs until the waters met for a purpose long destined. Nuh (peace be upon him) was told to load aboard a pair of every kind, and his family, save those already condemned, and the few who had believed.",
+      "visual": "A humble clay oven brimming and overflowing with water, springs bursting from the cracked ground as the first heavy rain begins to fall.",
+      "scene": "a humble clay oven brimming and overflowing with gushing water, springs bursting up through cracked ground as the first heavy dark rain begins to fall, dramatic ominous grey-green storm light, rising water everywhere",
+      "color": "#27313a",
+      "motion": "rise"
+    },
+    {
+      "n": 6,
+      "title": "In the Name of God",
+      "ref": "11:41",
+      "verse": "11:41",
+      "narration": "Nuh (peace be upon him) called the believers aboard, telling them to embark in the name of God — in His name would be its sailing and its anchorage, for his Lord was Forgiving and Merciful. As the rain hammered down and the waters climbed, the little ship that the people had mocked became the only refuge on a drowning earth, carried forward under the watch of its Maker.",
+      "visual": "A lone wooden ark riding rising grey waters in driving rain, calligraphy of the name of God glowing faintly above its deck — a vessel setting out under divine protection.",
+      "scene": "a lone wooden ark riding rising grey floodwaters in driving rain, golden Arabic calligraphy glowing faintly above its deck, warm lantern light on wet timber, solemn and protected, slate-blue and warm gold",
+      "color": "#2b3848",
+      "motion": "panRight"
+    },
+    {
+      "n": 7,
+      "title": "Waves Like Mountains",
+      "ref": "11:42",
+      "verse": "11:42",
+      "narration": "And so the ark sailed with them amidst waves that towered like hills, the whole world vanishing beneath a churning sea. From the deck, Nuh (peace be upon him) called out to his son, who had kept himself apart, urging him to embark with the believers and not to remain among those who denied their Lord — pleading even now, as the dark water rose higher and higher around them.",
+      "visual": "Black mountainous waves towering over a small wooden ark, walls of water rising into a storm-torn sky — a vessel dwarfed by a drowning world.",
+      "scene": "a small wooden ark dwarfed by towering black mountainous waves under a violent storm sky, sheets of rain and forked lightning, vast and terrifying, deep charcoal and storm-blue, dramatic cinematic scale",
+      "color": "#243748",
+      "motion": "rise"
+    },
+    {
+      "n": 8,
+      "title": "The One Who Trusted a Mountain",
+      "ref": "11:43",
+      "verse": "11:43",
+      "narration": "But his son refused, certain he could climb to a mountain that would shield him from the water. Nuh (peace be upon him) warned that there was no protection that day from God's decree, except for the one God chose to spare. Then a wave surged between them, and the son was lost among the drowned — for no peak and no plan could stand against the command of the Lord of all things.",
+      "visual": "A rocky mountain peak half-swallowed by churning floodwater, a single wave surging against bare stone — a refuge that could not save.",
+      "scene": "a dark rocky mountain peak being swallowed by surging black floodwaters and crashing waves, cold hopeless grey light, rain lashing bare stone, a sense of loss and finality, charcoal and slate tones",
+      "color": "#2a3a46",
+      "motion": "sink"
+    },
+    {
+      "n": 9,
+      "title": "O Earth, Swallow Your Water",
+      "ref": "11:44",
+      "verse": "11:44",
+      "narration": "When the command was fulfilled, it was said: 'O earth, swallow your waters,' and 'O heaven, clear up.' The rain ceased, the flood drew back, and the waters sank away. The matter was concluded, and the ark came to rest upon Mount Judi. So ended the people who had wronged themselves — while the believers, carried safely through it all, looked out upon a washed and silent world.",
+      "visual": "Receding floodwaters draining from rocky slopes, a lone ark settled upon a mountain ridge as the storm clouds begin to part — the deluge concluded at last.",
+      "scene": "vast floodwaters receding from a rocky mountain peak where a wooden ark has come to rest, breaking storm clouds parting to reveal warm dawn light, calming slate-blue washing into gold",
+      "color": "#4a5a5a",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 10,
+      "title": "Peace and a Renewed Earth",
+      "ref": "11:48",
+      "verse": "11:48",
+      "narration": "Then it was said: 'O Nuh, disembark with peace from Us, and with blessings upon you and upon the communities that will spring from those with you.' The believers stepped onto a renewed earth, washed clean and bright with dawn. From their patience and trust a new world would grow — a lasting sign that God never wastes those who hold fast to Him through the longest and darkest of nights.",
+      "visual": "An olive branch against a clearing sky pierced by warm golden dawn light, calm bright water below — a cleansed earth blessed with peace and a fresh beginning.",
+      "scene": "a fresh green earth after the flood, a single olive branch in soft golden dawn light, calm still water and a clearing radiant sky, an arc of light, hopeful serene and luminous, warm gold and gentle green",
+      "color": "#9a7c3a",
+      "motion": "rise"
+    }
+  ]
+}

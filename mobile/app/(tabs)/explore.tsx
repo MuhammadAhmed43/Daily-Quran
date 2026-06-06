@@ -6,9 +6,10 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
-import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { Easing, FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AtlasTile, type AtlasCategory, SealMedallion } from '@/components/atlas-tile';
@@ -55,10 +56,9 @@ export default function ExploreScreen() {
   const greeting = tod === 'morning' ? 'Good morning' : tod === 'afternoon' ? 'Good afternoon' : tod === 'evening' ? 'Good evening' : 'A peaceful night';
   const leadEyebrow = tod === 'morning' ? 'JOURNEY' : tod === 'evening' ? 'WATCH' : 'STORY';
 
-  // The four category tiles. Stories has one finished story today, so it opens straight into it; the others
-  // open their library/dashboard. (A Stories browse screen arrives with more stories.)
+  // The four category tiles. Each opens its library/dashboard.
   const tiles: { category: AtlasCategory; title: string; sublabel: string; go: Go }[] = [
-    { category: 'stories', title: 'Stories', sublabel: 'Illustrated & narrated', go: () => router.push({ pathname: '/stories/[id]', params: { id: 'yusuf' } }) },
+    { category: 'stories', title: 'Stories', sublabel: 'Illustrated & narrated', go: () => router.push('/stories') },
     { category: 'watch', title: 'Watch', sublabel: 'Seerah & history', go: () => router.push('/watch') },
     { category: 'journeys', title: 'Journeys', sublabel: 'Guided study plans', go: () => router.push('/plan') },
     { category: 'quran-plan', title: 'Qur’an Plan', sublabel: 'Read it through', go: () => router.push('/reading') },
@@ -78,6 +78,31 @@ export default function ExploreScreen() {
   // Lead the pager with the time-appropriate hero (stable order for the rest).
   heroes.sort((a, b) => (b.eyebrow === leadEyebrow ? 1 : 0) - (a.eyebrow === leadEyebrow ? 1 : 0));
   const heroCount = heroes.length;
+
+  // Swipe the "Most popular" hero left/right — it cross-fades to the next/previous slide (same look as the
+  // auto-advance), and changing heroIdx also resets the auto-advance timer below.
+  const heroCountRef = useRef(heroCount);
+  heroCountRef.current = heroCount;
+  const advanceHero = useCallback((dir: number) => {
+    const n = heroCountRef.current;
+    if (n <= 1) return;
+    setHeroIdx((i) => (i + dir + n) % n);
+  }, []);
+  const heroPan = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-14, 14])
+        .onEnd((e) => {
+          'worklet';
+          if (Math.abs(e.translationX) < 40) return;
+          runOnJS(advanceHero)(e.translationX < 0 ? 1 : -1);
+        }),
+    [advanceHero],
+  );
+  const closeSearch = useCallback(() => {
+    setSearching(false);
+    setQuery('');
+  }, []);
 
   // Auto-advance the hero gently — the slides CROSS-FADE (see FadeHero), they do not slide horizontally.
   useEffect(() => {
@@ -167,11 +192,13 @@ export default function ExploreScreen() {
                 Most popular right now
               </Txt>
             </View>
-            <View style={[styles.heroStack, { height: HERO_W / 1.6 }]}>
-              {heroes.map((h, i) => (
-                <FadeHero key={h.key} item={h} active={i === heroIdx} width={HERO_W} />
-              ))}
-            </View>
+            <GestureDetector gesture={heroPan}>
+              <View style={[styles.heroStack, { height: HERO_W / 1.6 }]}>
+                {heroes.map((h, i) => (
+                  <FadeHero key={h.key} item={h} active={i === heroIdx} width={HERO_W} />
+                ))}
+              </View>
+            </GestureDetector>
             {heroes.length > 1 ? (
               <View style={styles.dots}>
                 {heroes.map((h, i) => (
@@ -246,26 +273,24 @@ export default function ExploreScreen() {
                 </Pressable>
               ) : null}
             </View>
-            <Pressable
-              hitSlop={8}
-              onPress={() => {
-                setSearching(false);
-                setQuery('');
-              }}>
+            <Pressable hitSlop={8} onPress={closeSearch}>
               <Txt variant="body" color={c.accent}>
                 Cancel
               </Txt>
             </Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.searchResults}>
-            {results.map((r) => (
-              <ContentRow key={r.key} item={r} />
-            ))}
-            {q.length > 0 && results.length === 0 ? (
-              <Txt variant="body" color={c.textMuted} style={styles.noResults}>
-                Nothing found for &ldquo;{query.trim()}&rdquo;
-              </Txt>
-            ) : null}
+          {/* Tap anywhere outside a result row (the empty area) to dismiss search, in addition to Cancel. */}
+          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.searchResultsContainer}>
+            <Pressable onPress={closeSearch} style={styles.searchResultsInner}>
+              {results.map((r) => (
+                <ContentRow key={r.key} item={r} />
+              ))}
+              {q.length > 0 && results.length === 0 ? (
+                <Txt variant="body" color={c.textMuted} style={styles.noResults}>
+                  Nothing found for &ldquo;{query.trim()}&rdquo;
+                </Txt>
+              ) : null}
+            </Pressable>
           </ScrollView>
         </Animated.View>
       ) : null}
@@ -438,6 +463,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   searchInput: { flex: 1, fontFamily: font.sans, fontSize: 16, color: c.textPrimary, padding: 0 },
-  searchResults: { paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.section, gap: 10 },
+  searchResultsContainer: { flexGrow: 1 },
+  searchResultsInner: { flexGrow: 1, paddingHorizontal: space.gutter, paddingTop: space.xs, paddingBottom: space.section, gap: 10 },
   noResults: { textAlign: 'center', marginTop: space.section },
 });

@@ -697,15 +697,17 @@ export const font = {
 // Type scale (color applied per-use unless noted). Returns plain TextStyle objects.
 export const type: Record<string, TextStyle> = {
   display: { fontFamily: font.serif, fontSize: 34, lineHeight: 40, color: c.textPrimary },
-  h1: { fontFamily: font.serif, fontSize: 27, lineHeight: 33, color: c.textPrimary },
-  h2: { fontFamily: font.serif, fontSize: 21, lineHeight: 27, color: c.textPrimary },
-  cardTitle: { fontFamily: font.serif, fontSize: 17, lineHeight: 23, color: c.textPrimary },
-  verseEn: { fontFamily: font.serifItalic, fontSize: 18, lineHeight: 28, color: c.scriptureInk },
+  // lineHeights are intentionally generous: the honorific ligature ﷺ (and Arabic glyph fallbacks) has a
+  // tall flourish that gets clipped / collides with the next line when the leading is tight.
+  h1: { fontFamily: font.serif, fontSize: 27, lineHeight: 35, color: c.textPrimary },
+  h2: { fontFamily: font.serif, fontSize: 21, lineHeight: 30, color: c.textPrimary },
+  cardTitle: { fontFamily: font.serif, fontSize: 17, lineHeight: 26, color: c.textPrimary },
+  verseEn: { fontFamily: font.serifItalic, fontSize: 18, lineHeight: 29, color: c.scriptureInk },
   verseAr: { fontFamily: font.arabic, fontSize: 25, lineHeight: 50, color: c.scriptureInk, textAlign: 'right', writingDirection: 'rtl' },
-  body: { fontFamily: font.sans, fontSize: 15, lineHeight: 23, color: c.textSecondary },
-  subtitle: { fontFamily: font.sans, fontSize: 13.5, lineHeight: 19, color: c.textMuted },
+  body: { fontFamily: font.sans, fontSize: 15, lineHeight: 26, color: c.textSecondary },
+  subtitle: { fontFamily: font.sans, fontSize: 13.5, lineHeight: 21, color: c.textMuted },
   eyebrow: { fontFamily: font.sansBold, fontSize: 11, letterSpacing: 1.3, textTransform: 'uppercase', color: c.accent },
-  caption: { fontFamily: font.sansMed, fontSize: 11.5, lineHeight: 16, color: c.textMuted },
+  caption: { fontFamily: font.sansMed, fontSize: 11.5, lineHeight: 18, color: c.textMuted },
   button: { fontFamily: font.sansSemi, fontSize: 16, color: c.bg },
 };
 

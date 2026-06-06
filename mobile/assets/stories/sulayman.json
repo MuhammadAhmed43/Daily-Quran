@@ -1,0 +1,120 @@
+{
+  "id": "sulayman",
+  "title": "Sulayman",
+  "subtitle": "The Kingdom and the Queen",
+  "arabicName": "سُورَةُ النَّمۡلِ",
+  "surah": 27,
+  "blurb": "Granted knowledge and a kingdom like no other, Sulayman commanded the wind and the jinn, understood the speech of the birds, and called a sun-worshipping queen from her dazzling throne to the worship of the One God.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "Knowledge and a Kingdom",
+      "ref": "An-Naml 27:15",
+      "verse": "27:15",
+      "narration": "To Dawud (peace be upon him) and Sulayman (peace be upon him) Allah gave knowledge, and they answered the gift with gratitude, praising the Lord who had favored them above many of His believing servants. So begins the story of a kingdom unlike any granted before or since, founded not on conquest alone but on wisdom, on listening, and on a heart that turned every blessing back toward the One who bestowed it.",
+      "visual": "A vast columned throne hall opens beneath regal twilight, sign of a kingdom built on God-given knowledge.",
+      "scene": "A vast columned throne hall in deep teal twilight, towering polished pillars receding into shadow, an intricate geometric marble floor, faint calligraphy carved along the cornices, still air, a hushed and majestic regal mood lit by cool indigo light.",
+      "color": "#0f3b45",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "The Wind and the Workers",
+      "ref": "Saba 34:12",
+      "verse": "34:12",
+      "narration": "For Sulayman the wind itself was made obedient, carrying him a month's journey out and a month's journey home, and a spring of molten tar was made to flow. Beneath his command labored the jinn, building and shaping whatever he wished by the leave of his Lord. Power upon power was placed in his hand, yet each marvel remained a trust, governed by obedience to God alone.",
+      "visual": "The tamed wind sweeps sand and cloud across a valley as unseen hands raise great works.",
+      "scene": "A sweeping wind drives ribbons of sand and torn cloud across a wide valley at dusk, distant half-built sanctuaries and great cauldrons silhouetted, a glinting spring of dark molten tar, deep indigo and teal sky, charged and powerful atmosphere.",
+      "color": "#173a5e",
+      "motion": "panRight"
+    },
+    {
+      "n": 3,
+      "title": "The Valley of the Ants",
+      "ref": "An-Naml 27:18-19",
+      "verse": "27:19",
+      "narration": "Passing the valley of the ants, Sulayman heard one of them warn the others to hurry into their dwellings, lest his marching hosts crush them unaware. He smiled, amused and humbled at once, and turned at once to prayer, asking his Lord to keep him thankful for the favors given to him and his parents, and to admit him by mercy among the righteous.",
+      "visual": "A wide quiet valley at the moment a passing host pauses, the king moved to gratitude.",
+      "scene": "A wide open valley floor of warm sand at golden hour, low rolling dunes and a few hardy desert shrubs, long soft shadows stretching across the ground, the deep teal of departing night warming into amber light, a tender reflective mood.",
+      "color": "#2f5a4f",
+      "motion": "panLeft"
+    },
+    {
+      "n": 4,
+      "title": "News from Sheba",
+      "ref": "An-Naml 27:22-24",
+      "verse": "27:24",
+      "narration": "Word reached Sulayman of a distant land, the realm of Sheba, ruled by a queen given abundance and seated upon a magnificent throne. But her people, the report said, bowed to the sun instead of to God, their misguidance made to seem beautiful to them so that they strayed from the straight path. The news settled upon the court, and a decision began to form in the heart of the king.",
+      "visual": "A radiant sun blazes over a far southern land where worship has gone astray.",
+      "scene": "A blazing low sun floods a distant southern landscape of pale terraced gardens and golden minareted rooftops, long rays cutting through warm haze, opulent gold and amber tones deepening the palette, a beautiful yet uneasy luminous mood.",
+      "color": "#9a6a1f",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 5,
+      "title": "The Sealed Letter",
+      "ref": "An-Naml 27:28-31",
+      "verse": "27:28",
+      "narration": "Sulayman entrusted a single letter to be carried to the queen and her people, then to withdraw and watch how they would answer. It opened in the Name of God, the Gracious, the Merciful, and it called them, gently but plainly, not to set themselves above the truth but to come in submission to the One God. A small folded message, sent to turn a whole kingdom toward its Lord.",
+      "visual": "A sealed royal scroll waits to carry a summons to the worship of God.",
+      "scene": "A single sealed royal scroll bound with cord and a deep crimson wax seal rests on a low carved table, flowing gold calligraphy faintly visible on its edge, warm candlelight pooling around it, rich amber and bronze tones, an intimate and momentous quiet.",
+      "color": "#b5832b",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 6,
+      "title": "The Gift Refused",
+      "ref": "An-Naml 27:35-36",
+      "verse": "27:36",
+      "narration": "Wary of war, the queen took counsel and chose to test the king with a lavish gift, sending envoys laden with treasure to see how he would respond. But when the gift reached Sulayman he refused it, for what Allah had given him was better than any wealth a kingdom could offer. Let them keep their riches, he said; it was guidance, not gold, that he sought for them.",
+      "visual": "Trays of royal treasure are set down and turned away, for true wealth is from God.",
+      "scene": "Ornate trays heaped with gold coins, jeweled vessels and folded brocade set upon a marble floor and pushed gently aside, soft shafts of palace light falling across them, lustrous gold and bronze giving way to cooler stone, a dignified mood of refusal.",
+      "color": "#c79a3a",
+      "motion": "sink"
+    },
+    {
+      "n": 7,
+      "title": "The Throne in an Instant",
+      "ref": "An-Naml 27:38-40",
+      "verse": "27:40",
+      "narration": "Sulayman asked his court who could bring him the queen's mighty throne before her arrival. One endowed with knowledge from the Book answered that he would fetch it before a glance could return to him, and in less than the blink of an eye the great throne stood settled before the king. Seeing it, Sulayman bowed in his heart, calling it a test from his Lord of whether he would be grateful.",
+      "visual": "A magnificent jeweled throne appears in the hall faster than an eye can turn.",
+      "scene": "A magnificent empty jeweled throne stands suddenly at the center of a luminous columned hall, gold inlay and gemstones catching brilliant light, faint streaks of radiance trailing as if just arrived, warm gold deepening toward white, an awed and breathless mood.",
+      "color": "#d4a843",
+      "motion": "rise"
+    },
+    {
+      "n": 8,
+      "title": "The Throne Disguised",
+      "ref": "An-Naml 27:41",
+      "verse": "27:41",
+      "narration": "Then Sulayman commanded that the throne be altered and disguised, so that they might see whether the queen would recognize it and be rightly guided, or remain among those who do not see. It was a gentle test, not of her wealth but of her perception, a way to open her eyes by degrees, that when truth was set before her she might know it for what it truly was.",
+      "visual": "The same throne, subtly altered, waits to reveal whether truth will be recognized.",
+      "scene": "a magnificent empty ornate golden throne standing in a grand domed hall, its tall jeweled back inlaid with intricate geometric arabesque patterns, shifting veils of shadow half-concealing its gilded ornament, slanting cool light, gold cooling toward pale silver, a mood of quiet expectant mystery, no statue",
+      "color": "#c9b876",
+      "motion": "panRight"
+    },
+    {
+      "n": 9,
+      "title": "A Floor Like Water",
+      "ref": "An-Naml 27:44",
+      "verse": "27:44",
+      "narration": "The queen was invited to enter the palace, and seeing the floor before her she took it for a deep pool of water and drew up her garment to cross. But Sulayman told her it was no water at all; it was a courtyard paved with smooth, gleaming glass. What had seemed a flood was solid ground, and the illusion gave way, in that bright hall, to a clarity she had not expected.",
+      "visual": "A dazzling crystal floor shines like still water beneath shafts of palace light.",
+      "scene": "A dazzling floor of polished crystal and glass stretches across a sunlit hall, clear water glimmering beneath the transparent panes, tall windows pouring brilliant white light, intricate geometric patterns shining underfoot, luminous crystal-white and pale gold, a wondrous radiant mood.",
+      "color": "#e8ddb5",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 10,
+      "title": "Submission to the Lord of the Worlds",
+      "ref": "An-Naml 27:44",
+      "verse": "27:44",
+      "narration": "In that moment of clarity the queen turned to her Lord, confessing that she had wronged her own soul, and she submitted, together with Sulayman, to Allah, the Lord of the Worlds. The sun she had once worshipped faded before the One who made it, and a kingdom of abundance found its truest treasure at last: a heart laid open, in light, before its Creator.",
+      "visual": "Radiant light fills the hall as a soul turns, with the prophet, to the One God.",
+      "scene": "A vast hall flooded with pure radiant light, the crystal floor and gleaming columns dissolving into luminous white, a single shaft of glory descending from above, faint gold calligraphy glowing along the far wall, serene crystal-white brilliance, a mood of peace and surrender.",
+      "color": "#f5efdc",
+      "motion": "rise"
+    }
+  ]
+}

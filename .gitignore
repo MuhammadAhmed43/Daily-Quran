@@ -37,9 +37,17 @@ scripts/test-results.json
 # throwaway smoke-test photos for scripts/test-see.mjs (download via that flow; not source)
 scripts/test-images/
 
-# Story-art originals (large; regenerate with scripts/gen-story-art.mjs, then
-# scripts/bundle-story-art.mjs writes the lean committed copies into mobile/assets)
-content/stories/yusuf-art/
+# Story-art originals + montage contact-sheets (large; regenerate with
+# scripts/gen-stories-art.mjs, then scripts/bundle-stories-art.mjs writes the lean
+# committed copies into mobile/assets). Covers yusuf-art + all 9 new <id>-art dirs.
+content/stories/*-art/
+content/stories/_montage-*.png
+
+# throwaway underscore-prefixed one-off scripts + smoke images
+scripts/_*
+
+# user-provided design source folder (left untracked on purpose)
+vecteezy_*/
 
 # misc
 .DS_Store

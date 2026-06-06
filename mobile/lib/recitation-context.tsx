@@ -9,6 +9,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 
 import { getSurah } from '@/lib/quran';
 import { recordActivity } from '@/lib/streak';
+import { setListenPos } from '@/lib/storage';
 import {
   ayahAudioUrl,
   DEFAULT_RECITER,
@@ -26,8 +27,10 @@ export type RecitationApi = {
   loading: boolean;
   continuous: boolean;
   queued: boolean; // a playlist (e.g. a hub's "narrate all") is running
+  wholeQuran: boolean; // the active session is the continuous whole-Qur'an "Listen", not a manual ayah play
   reciter: Reciter;
   playFrom: (surah: number, ayah: number) => void;
+  playWhole: (surah: number, ayah: number) => void; // start/resume the whole-Qur'an listen (tracks listenPos)
   playList: (verses: PlayingPos[]) => void;
   toggle: (surah: number, ayah: number) => void;
   toggleAyah: (surah: number, ayah: number) => void;
@@ -52,10 +55,12 @@ function useEngine(): RecitationApi {
   const [loading, setLoading] = useState(false);
   const [continuous, setContinuousState] = useState(false);
   const [queued, setQueued] = useState(false);
+  const [wholeQuran, setWholeQuran] = useState(false);
   const [reciter, setReciter] = useState<Reciter>(DEFAULT_RECITER);
 
   const continuousRef = useRef(continuous);
   continuousRef.current = continuous;
+  const wholeQuranRef = useRef(false); // true while the whole-Qur'an "Listen" session is active
   const folderRef = useRef(reciter.folder);
   folderRef.current = reciter.folder;
 
@@ -200,6 +205,7 @@ function useEngine(): RecitationApi {
     setPlaying(pos);
     setPaused(false);
     setLoading(cold);
+    if (wholeQuranRef.current) setListenPos({ surah: pos.surah, ayah: pos.ayah }); // save the whole-Qur'an resume point each ayah
     const sub = player.addListener('playbackStatusUpdate', (st) => {
       if (!mountedRef.current || !samePos(wantRef.current, pos)) return;
       if (st.playing) {
@@ -265,7 +271,7 @@ function useEngine(): RecitationApi {
     }
   };
 
-  const start = async (pos: PlayingPos, once = false) => {
+  const start = async (pos: PlayingPos, once = false, whole = false) => {
     if (!mountedRef.current) return;
     if (pos.surah < 1 || pos.surah > LAST_SURAH || pos.ayah < 1 || pos.ayah > ayahCount(pos.surah)) {
       stop();
@@ -273,6 +279,10 @@ function useEngine(): RecitationApi {
     }
     teardown();
     onceRef.current = once;
+    // Any non-whole start (tap an ayah, a one-shot, a playlist) ends the whole-Qur'an session, freezing
+    // listenPos where it was. Centralised here so every entry point gets it right.
+    wholeQuranRef.current = whole;
+    setWholeQuran(whole);
     wantRef.current = pos;
     startedRef.current = false;
     setPlaying(pos);
@@ -306,6 +316,17 @@ function useEngine(): RecitationApi {
     queueRef.current = null;
     setQueued(false);
     void start({ surah, ayah });
+  };
+  // Start / resume the continuous whole-Qur'an "Listen". Marks the session so its progress is saved to
+  // listenPos (the resume point), kept separate from lastRead (the reading position). A later manual play
+  // (tapping an ayah, etc.) goes through start() with whole=false, which freezes listenPos where it was.
+  const playWhole = (surah: number, ayah: number) => {
+    queueRef.current = null;
+    setQueued(false);
+    continuousRef.current = true;
+    setContinuousState(true);
+    setListenPos({ surah, ayah });
+    void start({ surah, ayah }, false, true);
   };
   // Play a curated playlist of (often scattered) verses in order — e.g. a hub's "narrate all".
   const playList = (verses: PlayingPos[]) => {
@@ -351,7 +372,7 @@ function useEngine(): RecitationApi {
     // immediately (folderRef set synchronously since setReciter only applies next render).
     if (wantRef.current) {
       folderRef.current = r.folder;
-      void start({ ...wantRef.current }, onceRef.current);
+      void start({ ...wantRef.current }, onceRef.current, wholeQuranRef.current);
     }
   };
 
@@ -371,8 +392,10 @@ function useEngine(): RecitationApi {
     loading,
     continuous,
     queued,
+    wholeQuran,
     reciter,
     playFrom,
+    playWhole,
     playList,
     toggle,
     toggleAyah,

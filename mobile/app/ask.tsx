@@ -200,10 +200,26 @@ export default function AskScreen() {
     setMessages((m) => m.map((msg) => (msg.id === id ? { id, role: 'assistant', status: 'done', data } : msg)));
 
   const send = useCallback(
-    async (text: string) => {
+    // regenId set => replace that assistant answer IN PLACE with a fresh take (instead of appending a
+    // duplicate question + a near-identical answer).
+    async (text: string, regenId?: string) => {
       const q = text.trim();
       if (!q || sending) return;
+      // For a regenerate, cut the history just BEFORE the question (the question is re-sent as `q`) so the
+      // model doesn't see — and echo — its previous answer. Otherwise use the recent thread.
+      let cutoff = messages.length;
+      if (regenId) {
+        const ai = messages.findIndex((m) => m.id === regenId);
+        cutoff = ai < 0 ? messages.length : ai;
+        for (let i = cutoff - 1; i >= 0; i--) {
+          if (messages[i].role === 'user') {
+            cutoff = i;
+            break;
+          }
+        }
+      }
       const history = messages
+        .slice(0, cutoff)
         .map((m) =>
           m.role === 'user'
             ? { role: 'user' as const, content: m.text }
@@ -213,14 +229,23 @@ export default function AskScreen() {
         )
         .filter((x): x is { role: 'user' | 'assistant'; content: string } => !!x && !!x.content)
         .slice(-6);
-      setInput('');
-      const userId = nextId();
-      const loadingId = nextId();
-      setMessages((m) => [...m, { id: userId, role: 'user', text: q }, { id: loadingId, role: 'assistant', status: 'loading' }]);
+      const loadingId = regenId ?? nextId();
+      if (regenId) {
+        setMessages((m) => m.map((msg) => (msg.id === regenId ? { id: regenId, role: 'assistant', status: 'loading' } : msg)));
+      } else {
+        setInput('');
+        const userId = nextId();
+        setMessages((m) => [...m, { id: userId, role: 'user', text: q }, { id: loadingId, role: 'assistant', status: 'loading' }]);
+      }
       stick.current = true;
       setSending(true);
       try {
-        const data = await streamChat(q, history, (full) => {
+        // On regenerate, nudge the model for a genuinely different take (the grounded endpoint is only mildly
+        // stochastic). The nudge is sent to the model only — the visible question stays as the user wrote it.
+        const queryToSend = regenId
+          ? `${q}\n\n(Please answer this afresh — give a different explanation or a fresh angle than before, in your own words, still grounded in the Qur'an.)`
+          : q;
+        const data = await streamChat(queryToSend, history, (full) => {
           setMessages((m) => m.map((msg) => (msg.id === loadingId ? { id: loadingId, role: 'assistant', status: 'streaming', text: full, final: false } : msg)));
         });
         recordActivity('asked');
@@ -358,7 +383,7 @@ export default function AskScreen() {
     for (let i = idx - 1; i >= 0; i--) {
       const m = messages[i];
       if (m.role === 'user') {
-        void send(m.text);
+        void send(m.text, assistantId); // re-answer this question in place, with a fresh take
         return;
       }
     }

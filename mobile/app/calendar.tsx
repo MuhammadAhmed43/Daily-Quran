@@ -240,9 +240,9 @@ const styles = StyleSheet.create({
 
   detail: { padding: space.card, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(201,189,166,0.28)', backgroundColor: 'rgba(201,189,166,0.07)', gap: 8 },
   detailHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  detailTitle: { lineHeight: 26 },
-  detailBody: { lineHeight: 23 },
-  caveat: { fontStyle: 'italic', lineHeight: 16 },
+  detailTitle: { lineHeight: 31 },
+  detailBody: { lineHeight: 27 },
+  caveat: { fontStyle: 'italic', lineHeight: 18 },
   readRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   readText: { fontFamily: font.sansBold },
 

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { type Href, useRouter } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useStreak } from '@/lib/streak';
@@ -7,13 +8,19 @@ import { useStreak } from '@/lib/streak';
 const FLAME = '#f59e0b';
 
 /** The streak hero — the emotional anchor of Home. Flame + day count + the next milestone to aim
- *  for. Reads the activity ledger, so it fills the instant any qualifying action is logged. */
+ *  for. Reads the activity ledger, so it fills the instant any qualifying action is logged. Tap to
+ *  open the full streak history (current + longest + total + a month heatmap). */
 export function StreakHero() {
   const s = useStreak();
+  const router = useRouter();
   const toGo = Math.max(0, s.nextMilestone - s.current);
   const lit = s.current > 0;
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={styles.card}
+      onPress={() => router.push('/streak' as Href)}
+      accessibilityRole="button"
+      accessibilityLabel="View your streak history">
       <View style={styles.flameWrap}>
         <Ionicons name="flame" size={28} color={lit ? FLAME : 'rgba(127,127,127,0.5)'} />
       </View>
@@ -36,7 +43,8 @@ export function StreakHero() {
           <ThemedText style={styles.mlLabel}>to {s.nextMilestone}</ThemedText>
         </View>
       ) : null}
-    </View>
+      <Ionicons name="chevron-forward" size={18} color="rgba(245,158,11,0.55)" style={styles.chev} />
+    </Pressable>
   );
 }
 
@@ -66,4 +74,5 @@ const styles = StyleSheet.create({
   milestone: { alignItems: 'center', minWidth: 40 },
   mlNum: { fontSize: 18, fontWeight: '800', color: FLAME, lineHeight: 22 },
   mlLabel: { fontSize: 11, opacity: 0.6 },
+  chev: { marginLeft: 2 },
 });

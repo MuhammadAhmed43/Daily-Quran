@@ -1,0 +1,120 @@
+{
+  "id": "ayyub",
+  "title": "Ayyub",
+  "subtitle": "Beautiful Patience",
+  "arabicName": "سُورَةُ الأَنبِيَاءِ",
+  "surah": 21,
+  "blurb": "The story of Ayyub (peace be upon him): richly blessed, then tried with great loss and long affliction, he met every hardship with steadfast patience and constant remembrance. When he turned to his Lord, mercy answered — a cool spring, healing, and a family restored and doubled.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "A Grateful Servant",
+      "ref": "Az-Zumar 39:10",
+      "verse": "39:10",
+      "narration": "In the early light of his days, Ayyub (peace be upon him) walked as a servant grateful to his Lord. He kept his duty quietly and did good wherever he could, knowing that goodness given returns as goodness, and that God's earth is vast. He understood, even then, what few hold onto: that the steadfast are paid their reward in full, beyond all reckoning.",
+      "visual": "Ayyub begins as a thankful, devoted servant living in goodness under his Lord's care.",
+      "scene": "a vast sunlit landscape opening at dawn, gentle golden rays spilling across rolling fields and a quiet path, soft warm haze, an atmosphere of gratitude and peace, luminous abundant gold light over distant horizons",
+      "color": "#caa24a",
+      "motion": "panRight"
+    },
+    {
+      "n": 2,
+      "title": "Abundant Blessings",
+      "ref": "Al-Baqarah 2:152",
+      "verse": "2:152",
+      "narration": "His Lord had given him much: fields ripe with grain, orchards heavy with fruit, a comfortable home, and a household full of warmth. Yet Ayyub (peace be upon him) was not made proud by abundance. With every blessing he remembered the One who gave it, and he gave thanks rather than turning ungrateful — answering the call to remember God, so that God would remember him.",
+      "visual": "Ayyub flourishes amid orchards, grainfields, and a warm household, ever thankful to God.",
+      "scene": "a lush flourishing orchard beside golden grainfields swaying ripe, a comfortable dwelling with warm lamplight in the windows, laden fruit branches, rich harvest tones, a glowing abundant golden afternoon full of plenty",
+      "color": "#d9b24e",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 3,
+      "title": "The Trial Begins",
+      "ref": "Al-Baqarah 2:155",
+      "verse": "2:155",
+      "narration": "Then came the testing his Lord had spoken of — that He will surely try His servants with something of fear and hunger, with loss of wealth and crops. The fields that once shimmered grew silent. The harvest failed, the wealth slipped away, and the land began to wither. Yet in this very loss lay the promise of glad tidings for those who remain steadfast.",
+      "visual": "Ayyub's wealth and crops are stripped away as the trial begins and his land withers.",
+      "scene": "a desolate close-up of cracked drought-split earth filling most of the frame, withered broken golden wheat stalks collapsed and bent across the cracked ground, only a thin band of heavy dark overcast cloud low at the very top, drifting dust, no open sky, desolation and quiet loss, faded gold draining into cold grey",
+      "color": "#9a9389",
+      "motion": "panLeft"
+    },
+    {
+      "n": 4,
+      "title": "The Loss Deepens",
+      "ref": "Sad 38:41",
+      "verse": "38:41",
+      "narration": "The hardship did not stop at his wealth. His body too was touched by long affliction, and his strength gave way to lingering pain. In his distress Ayyub (peace be upon him) called upon his Lord, naming his trial plainly and without despair: that Satan had afflicted him with weariness and suffering. He did not curse his fate; he turned, as the patient turn, toward God.",
+      "visual": "Ayyub's body is struck with long affliction, and he names his suffering to God alone.",
+      "scene": "a barren drought-land of cracked earth stretching grey to the horizon, bare withered branches stripped of all leaves, a cold thin light, deep shadows pooling in the fissures, a desolate ashen sky pressing low, stark and silent",
+      "color": "#7f7a72",
+      "motion": "sink"
+    },
+    {
+      "n": 5,
+      "title": "Years of Patience",
+      "ref": "Al-Baqarah 2:153",
+      "verse": "2:153",
+      "narration": "The years of pain stretched long, and through them Ayyub (peace be upon him) held fast. He sought help in the way the believers are taught — through patience and through prayer — certain that God is with the steadfast. On a humble mat in the shadows he kept the remembrance of his Lord upon his tongue, and his gratitude did not break though everything around him had.",
+      "visual": "Through long years of pain, Ayyub endures with patience, prayer, and remembrance of God.",
+      "scene": "a simple reed mat resting in a dim quiet room deep in shadow, a single thin shaft of pale light falling across the floor, muted grey stillness, a worn clay vessel nearby, an atmosphere of endurance, hushed and patient in low subdued tones",
+      "color": "#8c8478",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 6,
+      "title": "A Gentle Prayer",
+      "ref": "Al-Anbiya 21:83",
+      "verse": "21:83",
+      "narration": "At last he lifted his heart in a prayer of perfect humility. Ayyub (peace be upon him) cried out to his Lord, not in complaint but in trust: that great harm had touched him, and that his Lord is the Most Merciful of the merciful. There was no bargaining in his words — only need laid bare before mercy, and faith that the One he called upon would surely hear.",
+      "visual": "Ayyub humbly calls on his Lord, the Most Merciful of the merciful, in patient trust.",
+      "scene": "a single faint shaft of warming light beginning to pierce a dim grey chamber, falling softly upon a humble clay vessel, the first hint of gold returning at the edges of deep shadow, a tender hush of hope, quiet and reverent",
+      "color": "#9c8a5a",
+      "motion": "rise"
+    },
+    {
+      "n": 7,
+      "title": "Mercy Answers",
+      "ref": "Sad 38:42",
+      "verse": "38:42",
+      "narration": "And his Lord answered. The command came gently, full of relief: strike the ground with your foot — here is cool water to wash with and to drink. After the long drought of his trial, the remedy was water, pure and near, rising at the very place where he stood. Mercy did not arrive from far away; it sprang up from beneath his own steadfast feet.",
+      "visual": "God answers Ayyub's prayer, sending cool water from the ground to wash with and to drink.",
+      "scene": "dry cracked earth splitting open as a bright thread of clear cool water begins to well up from below, the first glints catching renewed golden light, parched grey ground giving way to glistening freshness, relief breaking through",
+      "color": "#7fae8a",
+      "motion": "rise"
+    },
+    {
+      "n": 8,
+      "title": "The Spring Bursts Forth",
+      "ref": "Sad 38:42",
+      "verse": "38:42",
+      "narration": "From the cracked and thirsting earth a cool spring burst forth, clear and gleaming, exactly as he had been told. With it Ayyub (peace be upon him) washed away the long affliction and drank of its sweetness. The water that healed his body was a sign of the mercy that had never left him — and the barren ground itself seemed to remember life again.",
+      "visual": "A cool, clear spring gushes from the cracked earth, both healing and refreshing him.",
+      "scene": "a clear cool spring gushing upward from broken earth, sparkling water spreading in bright ribbons across once-barren ground, simple clay vessels resting beside the flow, refreshing light glinting on the surface, vivid and cleansing",
+      "color": "#5fb389",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 9,
+      "title": "Healing and Restoration",
+      "ref": "Al-Anbiya 21:84",
+      "verse": "21:84",
+      "narration": "So God answered him and lifted his suffering, and restored to him his family — and their like along with them — a mercy from Himself and a reminder for all who worship. Where there had been withered branches, fresh green shoots returned; where there had been loss, there was now twofold gift. The long night of his trial gave way to a morning of healing and restored abundance.",
+      "visual": "God lifts Ayyub's suffering and restores his family doubled, as the land blooms again.",
+      "scene": "fresh green shoots and pale blossoms rising through softening earth, fruit groves coming back into bloom under warm restored light, tender new leaves unfurling on branches, a radiant green-gold morning of renewal and plenty returning",
+      "color": "#6fb35e",
+      "motion": "rise"
+    },
+    {
+      "n": 10,
+      "title": "An Excellent Servant",
+      "ref": "Sad 38:44",
+      "verse": "38:44",
+      "narration": "And so the lesson of his life was sealed in praise: We found him patient — what an excellent servant he was, ever turning back to God. The patience of Ayyub (peace be upon him) is remembered for all who possess insight: that hardship is not abandonment, that mercy answers the steadfast, and that the one who holds to his Lord through every loss is honoured in the end.",
+      "visual": "Ayyub is honored as an excellent, patient servant, ever turning back to God.",
+      "scene": "warm laden fruit groves glowing under a golden restored sky, flowing calligraphy and luminous geometric patterns woven softly into the light above the trees, an atmosphere of honour and serenity, rich green-gold radiance",
+      "color": "#caa24a",
+      "motion": "zoomOut"
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "id": "yunus",
+  "title": "Yunus",
+  "subtitle": "The Call from the Depths",
+  "arabicName": "سُورَةُ الصَّافَّاتِ",
+  "surah": 37,
+  "blurb": "A messenger sent to a great city, a flight from his people, a storm at sea, and a cry rising out of layered darkness — the story of Yunus (peace be upon him) and the mercy that answered him.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "One of the Messengers",
+      "ref": "As-Saffat 37:139",
+      "verse": "37:139",
+      "narration": "Among the messengers of God was Yunus (peace be upon him), sent to a great city so that its people might turn back to their Lord. He carried a warning of light to streets crowded with idols and forgetfulness. Yet his people met the call with deaf ears and hardened hearts, unwilling to leave the worship they had inherited. The patience of a messenger was about to be tested far from any shore.",
+      "visual": "A messenger of God is sent to a great city that refuses to listen.",
+      "scene": "A wide sunlit ancient city of pale stone walls and flat rooftops under a clear midday sky, distant minaret-less towers and empty market lanes, calm open daylight blue, soft golden warmth, a quiet hopeful expectant stillness.",
+      "color": "#2f6fb0",
+      "motion": "panRight"
+    },
+    {
+      "n": 2,
+      "title": "He Storms Out",
+      "ref": "Al-Anbiya 21:87",
+      "verse": "21:87",
+      "narration": "When his people would not listen, Yunus stormed out in fury, leaving the city behind him. He set off without waiting for his Lord's leave, thinking himself beyond the reach of any reckoning. The road carried him away from those he had been sent to save, down toward the open water. Behind him the city stayed in its heedlessness; ahead lay a sea that would teach him how near his Lord had always been.",
+      "visual": "Frustrated and unheeded, Yunus leaves his people and heads for the sea.",
+      "scene": "an ancient walled stone city with a heavy open arched gate, square stone towers and tall slender minarets behind the walls, a bare dusty road leading away into cooling late-afternoon haze, long shadows, a restless tense mood of departure, muted blue-grey and pale amber",
+      "color": "#3a6a98",
+      "motion": "panLeft"
+    },
+    {
+      "n": 3,
+      "title": "The Laden Boat",
+      "ref": "As-Saffat 37:140",
+      "verse": "37:140",
+      "narration": "He fled until he reached the harbor and boarded a boat already laden low with cargo and travelers. The vessel pushed out from the safety of the shore, its sail filling as land slipped away behind it. To Yunus it must have seemed an escape, a passage to somewhere his troubles could not follow. But no ship sails beyond the dominion of its Lord, and the waters he trusted were soon to rise against the heavy, crowded deck.",
+      "visual": "Yunus boards a heavily loaded sailing ship leaving the harbor.",
+      "scene": "A wooden sailing ship riding low with stacked cargo and bundled crates, single broad sail taut with wind, leaving a stone harbor and quay behind, open water ahead under a fading blue sky, faint clouds gathering at the horizon, uneasy seafaring calm.",
+      "color": "#356088",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 4,
+      "title": "Lots Are Cast",
+      "ref": "As-Saffat 37:141",
+      "verse": "37:141",
+      "narration": "Then the sea turned violent, and the overloaded boat could no longer hold all it carried. To lighten the vessel and save the rest, the travelers drew lots to decide who would go overboard. Yunus cast his lot with them, and he was the one the lot fell against — he gambled and lost. The deck pitched beneath roaring waves, and the marked arrows on the boards named him for the deep that waited below.",
+      "visual": "In the storm, lots are cast on deck and the lot falls against Yunus.",
+      "scene": "the weathered wooden deck of a ship pitching steeply in a violent storm, scattered marked lots and arrows and a broken crate sliding across the planks, sea spray bursting over the railing, dark towering waves and a bruised stormy sky, tension and dread, deep teal and slate",
+      "color": "#243a4a",
+      "motion": "sink"
+    },
+    {
+      "n": 5,
+      "title": "Into the Raging Sea",
+      "ref": "Al-Qalam 68:48",
+      "verse": "68:48",
+      "narration": "And so he was cast into the raging sea, the Companion of the Fish, who called out in the grip of despair. The black water closed over the place where the boat had been, and the storm swallowed every familiar light. There was no rope, no shore, no rescue that a sailor could offer. In that moment of utter helplessness the warning was set: let none be like him in heedless despair, for his Lord's mercy had not yet finished with him.",
+      "visual": "Yunus is cast overboard into the towering black waves of the storm.",
+      "scene": "Towering black storm waves under a sky split by white lightning, an overturned section of deck and a torn sail sinking among the swells, sea foam churning into darkness, violent storm black and slate, terror and overwhelming force of the open ocean.",
+      "color": "#161d28",
+      "motion": "sink"
+    },
+    {
+      "n": 6,
+      "title": "Taken to the Depths",
+      "ref": "As-Saffat 37:142",
+      "verse": "37:142",
+      "narration": "Then the great fish swallowed him, and he had brought blame upon himself. Down he was carried, away from wind and wave, into a stillness deeper than the storm above. The surface and its lightning vanished; only weight and dark remained. Here was no ordinary drowning but a sign held in the hand of his Lord, who can guard a soul in the very heart of the sea. The world Yunus had fled was now impossibly far above him.",
+      "visual": "The great fish takes Yunus down into the deep, away from the storm.",
+      "scene": "A vast descending column of deep ocean water growing darker with depth, faint last threads of pale light dissolving far overhead, drifting silt and slow rising bubbles, crushing blue-black gloom, an immense silent pressing solitude beneath the waves.",
+      "color": "#0e1622",
+      "motion": "sink"
+    },
+    {
+      "n": 7,
+      "title": "Layers of Darkness",
+      "ref": "As-Saffat 37:144",
+      "verse": "37:144",
+      "narration": "Had he not been among those who glorified God, he would have remained within that confinement until the Day the dead are raised. Darkness lay upon darkness — the dark of the deep sea, and the dark of the depths within it, and the dark of the night above the waves. No eye could see, no voice could reach. Stripped of every escape he had trusted, Yunus was left with the one refuge he had forgotten: his Lord alone.",
+      "visual": "Yunus is wrapped in layered darkness — of the deep, the depths, and night.",
+      "scene": "Absolute layered ocean blackness with the faintest gradients of deepest indigo, no horizon and no surface visible, a sense of immense crushing depth folding over itself, total darkness upon darkness, profound stillness and weight without a single light.",
+      "color": "#070b12",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 8,
+      "title": "The Cry from the Dark",
+      "ref": "Al-Anbiya 21:87",
+      "verse": "21:87",
+      "narration": "Then, from the heart of that darkness, Yunus cried out: \"There is no god but You! Glory to You! I was one of the wrongdoers.\" It was a turning, a surrender, an admission carried up through the layered black water. He did not bargain or boast; he confessed his fault and proclaimed his Lord alone. In the deepest place a soul can fall, the smallest true word of remembrance became a single rising point of light.",
+      "visual": "From the depths Yunus calls out the words of repentance and praise.",
+      "scene": "Total ocean darkness pierced by one small rising point of warm golden light, a single luminous thread ascending through the black depths, glow concentrated and pure against vast surrounding night, intense symbolic contrast of one light in absolute dark.",
+      "color": "#caa24a",
+      "motion": "rise"
+    },
+    {
+      "n": 9,
+      "title": "Cast on the Shore",
+      "ref": "As-Saffat 37:145-146",
+      "verse": "37:146",
+      "narration": "So God answered him and delivered him from his distress. He was cast out onto a bare and open shore, weak and ill from his ordeal, with no shelter from the sun. Then his Lord caused a broad gourd plant to grow over him, spreading its wide leaves to give him shade and ease. Mercy met him at his most fragile — not a punishment, but a tending hand restoring the messenger it had saved from the deep.",
+      "visual": "Delivered, Yunus lies ill on a bare shore as a gourd plant shades him.",
+      "scene": "A bare desolate dawn shoreline of pale wet sand and smooth stones, soft restored light breaking gentle and green-gold along the water, a single broad-leafed gourd vine spreading low to cast cool shade, tender quiet relief after the storm.",
+      "color": "#6f9a6a",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 10,
+      "title": "Mercy Answered",
+      "ref": "Yunus 10:98",
+      "verse": "10:98",
+      "narration": "And the people of Yunus believed. When at last they turned to their Lord, He lifted from them the suffering of disgrace in this worldly life and granted them comfort for a time — a whole city spared because faith arrived before the punishment. The messenger who had fled in fury was returned to his people, and his people were returned to their Lord. Where there had been heedlessness there was now belief, and where there had been ruin, mercy.",
+      "visual": "His people believe and are spared; the city rests in peace and mercy.",
+      "scene": "A distant peaceful city of pale stone and lit windows resting under a calm green-gold dawn sky, gentle hills and a quiet river, soft warm light spreading over rooftops, an atmosphere of restored serenity, forgiveness, and renewed life.",
+      "color": "#5fa07a",
+      "motion": "panRight"
+    }
+  ]
+}

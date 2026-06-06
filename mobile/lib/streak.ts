@@ -195,6 +195,26 @@ export function useWeekStreak(): WeekDay[] {
   return week;
 }
 
+/** The full set of days that had a qualifying activity — powers the streak-history heatmap. */
+export async function getActiveDays(): Promise<Set<string>> {
+  return qualifyingDays(await load());
+}
+
+export function useActiveDays(): Set<string> {
+  const [days, setDays] = useState<Set<string>>(cache ? qualifyingDays(cache) : new Set());
+  useEffect(() => {
+    let on = true;
+    const refresh = () => getActiveDays().then((d) => on && setDays(d));
+    refresh();
+    const unsub = subscribeStreak(refresh);
+    return () => {
+      on = false;
+      unsub();
+    };
+  }, []);
+  return days;
+}
+
 export function useStreak(): StreakInfo {
   const [info, setInfo] = useState<StreakInfo>(
     cache

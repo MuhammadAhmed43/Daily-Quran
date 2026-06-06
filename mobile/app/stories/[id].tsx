@@ -50,6 +50,7 @@ export default function StoryPlayer() {
   const player = useAudioPlayer();
   const status = useAudioPlayerStatus(player);
   const autoNarrate = useRef(true);
+  const progress = useRef(new Animated.Value(0)).current; // smooth bottom progress bar
 
   useEffect(() => {
     recitation.stop();
@@ -83,6 +84,17 @@ export default function StoryPlayer() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status.didJustFinish]);
+
+  // Smoothly ease the bottom progress bar as the scene changes (like Today's progress), instead of snapping.
+  useEffect(() => {
+    if (!story) return;
+    Animated.timing(progress, {
+      toValue: (index + 1) / story.panels.length,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [index, story, progress]);
 
   if (!story) {
     return (
@@ -152,7 +164,7 @@ export default function StoryPlayer() {
           <Text style={styles.narrateText}>{status.playing ? 'Narrating…' : 'Listen'}</Text>
         </Pressable>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${((index + 1) / total) * 100}%` }]} />
+          <Animated.View style={[styles.progressFill, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
         </View>
       </SafeAreaView>
     </View>

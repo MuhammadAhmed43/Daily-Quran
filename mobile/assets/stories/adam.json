@@ -1,0 +1,120 @@
+{
+  "id": "adam",
+  "title": "Adam",
+  "subtitle": "The First Human",
+  "arabicName": "سُورَةُ البَقَرَةِ",
+  "surah": 2,
+  "blurb": "Before the first sunrise on earth, a promise was made in the heavens — the story of the first human, the names he was taught, the one tree, the slip, and the mercy that followed, in 10 fully aniconic scenes.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "A Successor on the Earth",
+      "ref": "2:30",
+      "verse": "2:30",
+      "narration": "Before the first human drew breath, God announced a plan to the angels: He would place a khalifa — a successor, a caretaker — upon the earth. The angels wondered how such a one could be trusted with so great a trust. But God answered that He knew what they did not. A purpose was being set in motion that the heavens themselves could not yet see.",
+      "visual": "The radiant empty heavens at the moment a great purpose is announced over the still, unmade earth.",
+      "scene": "vast luminous heavens of layered blue-white cloud and soft starlight, opening high above a quiet darkened plain of bare earth far below, a single shaft of light reaching down, serene cool radiance, reverent stillness, dawning blue-white",
+      "color": "#cfe3f2",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "Shaped from Clay",
+      "ref": "15:26–29",
+      "verse": "15:29",
+      "narration": "From the dust of the ground God formed the first human — clay shaped by the Maker's own design. Then, when the form was complete, God breathed into it of His spirit, and lifeless earth stirred with life. What had been molded mud now carried a soul, a mind, a heart. The first human, Adam (peace be upon him), was given being by the will of God alone.",
+      "visual": "Shaped grey clay on the ground catching the first light of life breathed into it.",
+      "scene": "smooth shaped grey clay and fine dust gathered upon dark ground, faintly glowing along its forming edges as soft light descends, a hush of new life, cool blue-white turning toward warm pale gold, quiet wonder",
+      "color": "#bcd8d0",
+      "motion": "rise"
+    },
+    {
+      "n": 3,
+      "title": "The Names of All Things",
+      "ref": "2:31",
+      "verse": "2:31",
+      "narration": "God then taught Adam (peace be upon him) the names — the names of all things, every kind and creature and truth. When the angels were asked to name them, they could not, and said they knew only what God had taught them. But Adam knew. This was the first gift to the first human: knowledge, the light by which the caretaker of the earth would come to understand his world.",
+      "visual": "A luminous tablet inscribed with the flowing names of all things.",
+      "scene": "a luminous open tablet inscribed with flowing golden script and countless names spiraling outward like light, suspended in soft radiance, glowing leaves of knowledge, warm gold kindling against pale heavenly green-white, awe and clarity",
+      "color": "#d8d6a8",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 4,
+      "title": "The One Who Refused",
+      "ref": "2:34",
+      "verse": "2:34",
+      "narration": "God commanded the angels to bow before Adam (peace be upon him) in honor of the one God had taught and chosen. The angels bowed, every one. But Iblis refused. Filled with pride, he thought himself better, made of fire while Adam was made of clay. In that single act of arrogance he turned away from his Lord — the first refusal, the beginning of a long enmity.",
+      "visual": "All the heavens bow in light, while one cold shadow refuses at the edge.",
+      "scene": "a vast luminous floor of glowing golden Islamic geometric patterns flooded with radiant light from above, the whole surface inclined and bowed toward the brilliance, broken at one far corner by a single cold dark angular crack of shadow refusing the light, abstract and symbolic, warm gold and one jagged sliver of black, an empty radiant abstract space",
+      "color": "#c9b487",
+      "motion": "panLeft"
+    },
+    {
+      "n": 5,
+      "title": "The Garden",
+      "ref": "2:35",
+      "verse": "2:35",
+      "narration": "God settled Adam (peace be upon him) and his spouse in the Garden, a place of ease and abundance. They were told to dwell there in peace and to eat freely of its delights, wherever and however they wished. Rivers ran beneath cool shade, fruit hung within easy reach, and there was no hunger and no want — only the gentle generosity of their Lord, given without limit.",
+      "visual": "A lush paradise garden of flowing rivers and abundant fruit.",
+      "scene": "a lush paradise garden of deep green canopies and broad jeweled leaves, clear rivers winding between mossy banks, branches heavy with ripe fruit, dappled golden sunlight, overflowing abundance, rich green-gold serenity, fragrant and bright",
+      "color": "#7fb069",
+      "motion": "panRight"
+    },
+    {
+      "n": 6,
+      "title": "The One Forbidden Tree",
+      "ref": "7:19",
+      "verse": "7:19",
+      "narration": "In all that boundless garden, only one thing was withheld. God told Adam (peace be upon him) to enjoy everything freely, but to keep away from a single tree, lest he wrong himself. It was a small and gentle boundary set within endless gifts — one tree among countless others, a quiet test of trust, marking the difference between what is freely given and what is left alone.",
+      "visual": "A single forbidden tree set apart, heavy with golden fruit.",
+      "scene": "a single tall tree standing apart in a clearing, its branches heavy with glowing golden fruit, ringed by softer green foliage and a hush of warm light, set quietly off-limits, deep emerald and amber-gold, still and tempting",
+      "color": "#a8983e",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 7,
+      "title": "The Whisper",
+      "ref": "20:120",
+      "verse": "20:120",
+      "narration": "Then the deceiver came near. Iblis whispered to Adam (peace be upon him), dressing temptation as kindness, hinting that the forbidden tree was the secret to a kingdom that would never fade and a life that would never end. The whisper coiled softly through the mind, making the one boundary seem like the one thing missing — twisting a gift withheld into a treasure denied.",
+      "visual": "A creeping dark whisper winding unseen among the bright leaves.",
+      "scene": "a thin dark tendril of shadow creeping and coiling among bright sunlit leaves toward a cluster of golden fruit, a faint cold mist threading through warm green, an unseen whisper, gold-green dimmed by a curl of darkness, uneasy quiet",
+      "color": "#8f9243",
+      "motion": "panLeft"
+    },
+    {
+      "n": 8,
+      "title": "The Slip",
+      "ref": "7:22",
+      "verse": "7:22",
+      "narration": "And so they ate from the tree. At once the ease of the Garden fell away; what had been hidden became plain, and shame they had never known rose within them. They hurried to cover themselves with the wide leaves of the Garden, and their Lord called to them — had He not warned that the deceiver was a sworn enemy? The first slip had been made.",
+      "visual": "Large fallen garden leaves gathered as cover on the ground.",
+      "scene": "large broad garden leaves torn loose and gathered upon the ground beneath a now-bare branch, soft shadows lengthening, the warm light of the garden cooling and dimming, a tone of regret, faded green sliding toward dusky earthen brown, hushed sorrow",
+      "color": "#9a7b4f",
+      "motion": "sink"
+    },
+    {
+      "n": 9,
+      "title": "Words of Mercy",
+      "ref": "2:37",
+      "verse": "2:37",
+      "narration": "But the story did not end in shame. Adam (peace be upon him) received words from his Lord — words of repentance and return — and turned back to God with them. And God relented toward him, for He is the Relenting, the Merciful. The very first sin met the very first forgiveness. Before mankind had even reached the earth, the door of mercy was already open and waiting.",
+      "visual": "A single soft ray of mercy descending through clearing shadow.",
+      "scene": "a single gentle shaft of warm golden light breaking through parting grey cloud onto bare quiet ground, soft mist lifting, a sense of release and pardon, tender amber dawn warming cool shadow, calm and merciful",
+      "color": "#d9b27c",
+      "motion": "rise"
+    },
+    {
+      "n": 10,
+      "title": "Down to the Earth",
+      "ref": "2:38",
+      "verse": "2:38",
+      "narration": "Then God sent them down from the Garden to the earth, where life would unfold for a time. Yet they did not go without hope. God promised that guidance would come, and that whoever followed His guidance would have nothing to fear, nor ever grieve. So the first human began the human story — upon the earth, beneath the sky, walking toward the light that God had promised to send.",
+      "visual": "An arched garden gate closing with light beyond, the open earth waiting below.",
+      "scene": "an ornate arched garden gateway easing closed with warm radiance glowing behind it, and beyond, a wide open earth of soft dawn hills and pale morning sky waiting below, a threshold between paradise and world, gentle earthy rose-gold dawn, hopeful",
+      "color": "#e0b98a",
+      "motion": "zoomOut"
+    }
+  ]
+}

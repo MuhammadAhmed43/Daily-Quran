@@ -13,12 +13,13 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from '
 
 import { IconButton, Txt } from '@/components/ui/primitives';
 import { PressableScale } from '@/components/ui/pressable-scale';
+import { OptionSheet } from '@/components/ui/option-sheet';
 import { Screen } from '@/components/ui/screen';
 import { useVoiceSearch } from '@/hooks/use-voice-search';
 import { useBookmarks } from '@/lib/bookmarks';
 import { SURAHS, getSurah, rankSurahs, resolveReference, searchVerses, type Surah } from '@/lib/quran';
 import { useRecitation } from '@/lib/recitation-context';
-import { getLastRead, type LastRead } from '@/lib/storage';
+import { getLastRead, getListenPos, type LastRead } from '@/lib/storage';
 import { c, font, grad, radius, space } from '@/lib/theme';
 
 export default function QuranScreen() {
@@ -27,6 +28,8 @@ export default function QuranScreen() {
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [last, setLast] = useState<LastRead | null>(null);
+  const [listenPos, setListenPos] = useState<LastRead | null>(null);
+  const [listenSheet, setListenSheet] = useState(false);
   const bookmarks = useBookmarks();
   const inputRef = useRef<TextInput>(null);
   const sv = useSharedValue(0);
@@ -35,6 +38,7 @@ export default function QuranScreen() {
     useCallback(() => {
       let active = true;
       getLastRead().then((lr) => active && setLast(lr));
+      getListenPos().then((lp) => active && setListenPos(lp));
       return () => {
         active = false;
       };
@@ -58,25 +62,33 @@ export default function QuranScreen() {
       params: ayah ? { number: String(surah), ayah: String(ayah) } : { number: String(surah) },
     });
 
-  // Listen continuously. If something is ALREADY reciting (the app-level player keeps going across
-  // navigation), continue from THERE — never restart at 1:1. Otherwise resume from where you left off;
-  // only a brand-new listener starts at Al-Fatiha.
+  // Open the reader into a whole-Qur'an LISTEN session — tracks its own resume point (listenPos), separate
+  // from the reading position, and auto-advances surah to surah.
+  const openWhole = (surah: number, ayah: number) =>
+    router.push({ pathname: '/surah/[number]', params: { number: String(surah), ayah: String(ayah), autoplay: '1', continuous: '1', whole: '1' } });
+
+  // "Listen to the whole Qur'an": if a whole-Qur'an session is already reciting, jump to it. Else, if there's
+  // a saved listen point, ask (bottom sheet) whether to resume there or start over; a new listener starts at
+  // Al-Fatiha. NOTE: this is independent of "Continue reading" below, which tracks where you were READING.
+  const live = ctx.playing && ctx.wholeQuran ? ctx.playing : null;
   const listenWholeQuran = () => {
-    const p = ctx.playing;
-    if (p) {
-      ctx.setContinuous(true);
-      open(p.surah, p.ayah);
-    } else if (last) {
-      router.push({ pathname: '/surah/[number]', params: { number: String(last.surah), ayah: String(last.ayah), autoplay: '1', continuous: '1' } });
-    } else {
-      router.push({ pathname: '/surah/[number]', params: { number: '1', autoplay: '1', continuous: '1' } });
+    if (live) {
+      openWhole(live.surah, live.ayah);
+      return;
     }
+    // Re-read the resume point fresh: while we sat on this screen the session may have advanced past the
+    // value loaded on focus (that lag is what made resume start an ayah early).
+    getListenPos().then((fresh) => {
+      setListenPos(fresh);
+      if (fresh) setListenSheet(true);
+      else openWhole(1, 1);
+    });
   };
-  const listenTitle = ctx.playing || last ? 'Continue listening' : 'Listen to the whole Qur’an';
-  const listenSub = ctx.playing
-    ? `Now reciting · ${getSurah(ctx.playing.surah)?.englishName ?? `Surah ${ctx.playing.surah}`} ${ctx.playing.ayah}`
-    : last
-      ? `Pick up from ${getSurah(last.surah)?.englishName ?? `Surah ${last.surah}`} ${last.ayah}`
+  const listenTitle = live || listenPos ? 'Continue listening' : 'Listen to the whole Qur’an';
+  const listenSub = live
+    ? `Now reciting · ${getSurah(live.surah)?.englishName ?? `Surah ${live.surah}`} ${live.ayah}`
+    : listenPos
+      ? `Resume from ${getSurah(listenPos.surah)?.englishName ?? `Surah ${listenPos.surah}`} ${listenPos.ayah}`
       : 'Continuous recitation from Al-Fatiha';
 
   // Voice search: speak a surah name / number / alias → fill the box and, if it
@@ -324,6 +336,26 @@ export default function QuranScreen() {
           renderItem={({ item }) => renderSurahRow(item)}
         />
       )}
+
+      {/* Where to begin the whole-Qur'an listen — resume the saved point or start over. */}
+      <OptionSheet
+        visible={listenSheet}
+        title="Listen to the whole Qur’an"
+        subtitle="Where would you like to begin?"
+        options={[
+          ...(listenPos
+            ? [{ value: 'resume' as const, label: `Resume from ${getSurah(listenPos.surah)?.englishName ?? `Surah ${listenPos.surah}`} ${listenPos.ayah}` }]
+            : []),
+          { value: 'start' as const, label: 'Start from the beginning', hint: 'Al-Fātiḥah · 1:1' },
+        ]}
+        selected="resume"
+        onSelect={(v) => {
+          setListenSheet(false);
+          if (v === 'resume' && listenPos) openWhole(listenPos.surah, listenPos.ayah);
+          else openWhole(1, 1);
+        }}
+        onClose={() => setListenSheet(false)}
+      />
     </Screen>
   );
 }

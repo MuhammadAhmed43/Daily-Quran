@@ -26,7 +26,7 @@ import { questionsFor } from '@/lib/suggested-questions';
 import { c, font, grad, radius, space, type as ty } from '@/lib/theme';
 import { getVerse, type Verse } from '@/lib/today';
 import { useTranslation, verseText } from '@/lib/translations';
-import { freshWelcome } from '@/lib/welcome';
+import { dailyWelcome } from '@/lib/welcome';
 
 function HubCard({ hub, hueIndex, featured, onPress }: { hub: Hub; hueIndex: number; featured?: boolean; onPress: () => void }) {
   return (
@@ -50,17 +50,22 @@ function HubCard({ hub, hueIndex, featured, onPress }: { hub: Hub; hueIndex: num
 export default function AskBrowseScreen() {
   const router = useRouter();
   const { profile } = useProfile();
-  const [welcome, setWelcome] = useState(() => freshWelcome());
+  const [welcome, setWelcome] = useState(() => dailyWelcome());
   const [display, setDisplay] = useState(welcome); // the welcome currently shown; cross-fades when it changes
   const [sheetHub, setSheetHub] = useState<Hub | null>(null);
   useTranslation();
   const textFade = useSharedValue(1);
   const textFadeStyle = useAnimatedStyle(() => ({ opacity: textFade.value }));
 
-  // A fresh welcome verse each time you arrive (changes every conversation start).
+  // Today's welcome verse — date-stable: it only changes at the next local midnight, not on every revisit.
+  // On focus we recompute today's pick and keep the SAME object when unchanged (so a revisit within the
+  // same day triggers no re-render or cross-fade); a day rollover swaps in the new verse.
   useFocusEffect(
     useCallback(() => {
-      setWelcome(freshWelcome());
+      setWelcome((prev) => {
+        const next = dailyWelcome();
+        return prev.surah === next.surah && prev.ayah === next.ayah ? prev : next;
+      });
     }, []),
   );
 
@@ -117,7 +122,7 @@ export default function AskBrowseScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.browse} showsVerticalScrollIndicator={false}>
-        {/* Warm rotating welcome — a comforting verse to begin (changes each visit). */}
+        {/* Warm daily welcome — a comforting verse to begin (a new one each day). */}
         {welcomeVerse ? (
           <PressableScale style={styles.welcomeCard} onPress={() => openVerse(welcomeVerse.surah, welcomeVerse.ayah)}>
             <LinearGradient colors={['rgba(201,189,166,0.14)', 'rgba(201,189,166,0.02)']} start={grad.diagStart} end={grad.diagEnd} style={StyleSheet.absoluteFill} />

@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
 
   // question
   scroll: { padding: space.gutter, paddingBottom: 24, gap: 18 },
-  question: { fontFamily: font.serif, fontSize: 21, lineHeight: 29, color: c.textPrimary, marginTop: 8, marginBottom: 6 },
+  question: { fontFamily: font.serif, fontSize: 21, lineHeight: 32, color: c.textPrimary, marginTop: 8, marginBottom: 6 },
   options: { gap: 11 },
   option: {
     flexDirection: 'row',
@@ -367,10 +367,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   optionDim: { opacity: 0.4 },
-  optionText: { fontFamily: font.sansMed, fontSize: 15.5, color: c.textPrimary, flex: 1, lineHeight: 22 },
+  optionText: { fontFamily: font.sansMed, fontSize: 15.5, color: c.textPrimary, flex: 1, lineHeight: 25 },
 
   explainCard: { backgroundColor: c.surface1, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, padding: 15, gap: 10 },
-  explainText: { lineHeight: 22 },
+  explainText: { lineHeight: 26 },
   readLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   readLinkText: { fontFamily: font.sansBold, fontSize: 14, color: c.accent },
 

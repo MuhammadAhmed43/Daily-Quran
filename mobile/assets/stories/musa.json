@@ -1,0 +1,120 @@
+{
+  "id": "musa",
+  "title": "Musa",
+  "subtitle": "The Staff and the Sea",
+  "arabicName": "سُورَةُ طه",
+  "surah": 20,
+  "blurb": "An infant set adrift, a fire on a dark mountain, a staff that humbled a tyrant, and a sea torn open — the deliverance of a people, told in 10 fully aniconic scenes.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "Cast Upon the River",
+      "ref": "28:7",
+      "verse": "28:7",
+      "narration": "When a tyrant set out to crush a people, God inspired the mother of Musa (peace be upon him) to do the unthinkable: nurse her infant, and when fear closed in, place him in the river and let the water carry him. She was told not to fear, nor grieve — he would be returned to her, and one day made a messenger. So the current bore a small basket toward an unseen mercy.",
+      "visual": "A sealed reed basket drifts on a wide, slow river at dawn, carried by God's promise toward Pharaoh's own house.",
+      "scene": "a small woven reed basket drifting on the broad calm surface of a wide river at first light, tall green papyrus reeds along the banks, soft mist on the water, gentle ripples, pale Nile-green and silver dawn light, tender and hushed",
+      "color": "#1d3a2f",
+      "motion": "panRight"
+    },
+    {
+      "n": 2,
+      "title": "The Fire on the Mount",
+      "ref": "20:10",
+      "verse": "20:10",
+      "narration": "Years later, crossing the desert by night, Musa (peace be upon him) glimpsed a fire on the side of the mountain. He told his family to wait — he would fetch a torch from it, or find some guidance there. But this was no ordinary flame. From the right side of the valley, in the blessed and sacred ground of Tuwa, he was called by his Lord, and his whole life turned upon that light.",
+      "visual": "A solitary fire glows on a dark mountainside at night — the sacred call that begins everything.",
+      "scene": "a single radiant flame glowing upon the slope of a vast dark mountain at night, deep indigo sky scattered with stars, the fire casting warm amber light on cold stone, a lonely desert valley below, mysterious and sacred, awe in the silence",
+      "color": "#241a3a",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 3,
+      "title": "The Two Signs",
+      "ref": "20:22",
+      "verse": "20:22",
+      "narration": "His Lord gave him two signs to carry. The shepherd's staff in his hand, when thrown, became a moving serpent — then was restored. And he was told to press his hand to his side: it came out radiant white, without blemish or disease, pure light from within his garment. These were among the greatest signs, given so that a hardened heart might yet be softened.",
+      "visual": "A plain wooden staff and a burst of pure white light from within a dark cloak — two miracles.",
+      "scene": "a plain wooden shepherd's staff standing upright against dark blue stone, and beside it a brilliant radiant burst of pure white light blazing out of deep shadow, dramatic god-rays and scattered sparks, flawless blinding glow, sacred wonder, deep indigo stone and blazing white-gold",
+      "color": "#3a2f55",
+      "motion": "rise"
+    },
+    {
+      "n": 4,
+      "title": "Go to Pharaoh",
+      "ref": "20:24",
+      "verse": "20:24",
+      "narration": "Then came the charge: Go to Pharaoh, for he has transgressed all bounds. Musa (peace be upon him) was sent, with his brother Harun (peace be upon him) at his side, into the heart of an empire that had enslaved his people and claimed lordship over them. He prayed for an open heart and an eased task, and walked toward the throne of the most powerful man on earth, armed only with the truth.",
+      "visual": "A vast hall of towering carved columns — the seat of a tyrant Musa is sent to confront.",
+      "scene": "a vast ancient throne hall of towering carved stone columns receding into shadow, hieroglyph-engraved pillars catching shafts of cold light, a high empty dais, polished stone floor, oppressive grandeur, dim bronze and slate-grey tones, heavy with menace",
+      "color": "#2e2a33",
+      "motion": "panLeft"
+    },
+    {
+      "n": 5,
+      "title": "The Staff Swallows the Lie",
+      "ref": "20:69",
+      "verse": "20:69",
+      "narration": "Pharaoh summoned his sorcerers, and on the day of the festival they cast their ropes and staffs, which seemed by their magic to writhe and crawl. For a moment Musa (peace be upon him) felt fear. But his Lord said: Do not be afraid; you are the uppermost. Throw what is in your right hand — it will swallow all they have crafted, for a magician's trick can never truly succeed.",
+      "visual": "Ropes and staffs scattered across a stone floor, about to be swallowed by a single staff.",
+      "scene": "dozens of ropes and carved staffs strewn chaotically across a wide sunlit stone courtyard floor, one plain wooden staff lying apart from them, harsh midday light and long shadows, sand-gold and grey stone, tension breaking toward triumph, warming light",
+      "color": "#5a4424",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 6,
+      "title": "The Years of Warning",
+      "ref": "7:133",
+      "verse": "7:133",
+      "narration": "Still Pharaoh and his court refused, clinging to power and pride. So God sent signs upon the land, each a mercy disguised as a warning — the flood, then the locusts, the lice, the frogs, and blood — every one a clear sign calling them to relent. Yet they grew only more arrogant, a people sunk in sin, mistaking patience for permission and signs for misfortune.",
+      "visual": "A flooded, locust-darkened land under a bruised sky — warnings unheeded.",
+      "scene": "ruined farmland under a brooding storm sky, brown floodwater rising over flattened wheat fields, a darkened swarming haze blotting the horizon, broken irrigation channels, ominous greenish-grey light, desolation and dread, a land under warning",
+      "color": "#3b3a28",
+      "motion": "sink"
+    },
+    {
+      "n": 7,
+      "title": "Travel by Night",
+      "ref": "26:52",
+      "verse": "26:52",
+      "narration": "At last the command came to leave. God inspired Musa (peace be upon him) to set out with the believers by night, for they would surely be pursued. Under cover of darkness the long-oppressed people gathered what they could and slipped away from the only land they had ever known, moving toward the sea and toward a freedom they could not yet see, trusting the One who led them.",
+      "visual": "A moonlit desert road winding toward the distant sea — a people departing in the dark.",
+      "scene": "a pale winding sand path stretching across a moonlit desert toward a thin dark line of sea on the horizon, deep night-blue sky, a low silver moon, scattered stars, cool quiet light, hope and urgency in the stillness, a journey into the unknown",
+      "color": "#15233f",
+      "motion": "panRight"
+    },
+    {
+      "n": 8,
+      "title": "The Sea Parts",
+      "ref": "26:63",
+      "verse": "26:63",
+      "narration": "They reached the shore with the army closing behind them, and his people cried that they were overtaken. But Musa (peace be upon him) answered that his Lord was with him and would guide him. Then came the inspiration: Strike the sea with your staff. He struck — and the waters split apart, each towering side standing like a vast mountain, and between them opened a dry path to the far shore.",
+      "visual": "The sea torn open into a dry path between two towering walls of standing water.",
+      "scene": "a vast sea torn wide open between two enormous towering walls of suspended dark water rising like sheer glassy mountains, a broad bare wet seabed of rippled sand and scattered rocks far below, brilliant shafts of sunlight glinting on the towering water cliffs, awe-inspiring vast scale and deliverance, luminous teal and gold",
+      "color": "#1f6f6a",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 9,
+      "title": "The Waters Return",
+      "ref": "20:78",
+      "verse": "20:78",
+      "narration": "The believers crossed safely to the other side. Then Pharaoh pursued them onto the seabed with all his troops — and the sea, which had stood as walls, closed over them and engulfed them completely. The tyrant who had claimed to be a god was swallowed by the water, and his armies with him. Pharaoh had led his people astray, and never guided them aright.",
+      "visual": "Empty bronze chariots and sinking armor swallowed by dark returning waters.",
+      "scene": "dark churning seawater crashing closed over the seabed, an empty overturned bronze chariot and scattered pieces of metal armor and a sinking helmet vanishing beneath the foaming black waves, swirling deep water, turbulent and final, cold steel-blue darkness",
+      "color": "#13283a",
+      "motion": "sink"
+    },
+    {
+      "n": 10,
+      "title": "The Mount and the Tablets",
+      "ref": "7:145",
+      "verse": "7:145",
+      "narration": "Delivered at last, the people were summoned to the foot of the cloud-wrapped Mount. There God spoke with Musa (peace be upon him) and inscribed for him on the Tablets all manner of guidance, and a clear explanation of all things — to hold fast to, and to teach his people to take up in the best way. From slavery had come a covenant, and from the sea, a law to live by.",
+      "visual": "Two stone Tablets glowing at the foot of a cloud-wrapped mountain — the covenant given.",
+      "scene": "two upright stone tablets glowing with soft golden light at the base of a great mountain wrapped in luminous cloud, gilded geometric Islamic patterns shimmering across the cloud, shafts of radiant light from above, reverent awe, triumphant gold dissolving into pure white",
+      "color": "#c9a64a",
+      "motion": "rise"
+    }
+  ]
+}

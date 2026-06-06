@@ -47,3 +47,28 @@ export function freshWelcome(): Welcome {
   const ref = WELCOME_REFS[i];
   return { surah: ref.surah, ayah: ref.ayah, greeting: GREETINGS[i % GREETINGS.length] };
 }
+
+// FNV-1a → a stable non-negative int, so a given calendar day always maps to the same verse.
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function dayString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** The welcome for TODAY — deterministic by calendar day, so it stays put all day and only changes at the
+ *  next local midnight (NOT on every revisit). Still distinct from Today's calendar Verse of the Day. */
+export function dailyWelcome(date: Date = new Date()): Welcome {
+  const i = hashStr(dayString(date)) % WELCOME_REFS.length;
+  const ref = WELCOME_REFS[i];
+  return { surah: ref.surah, ayah: ref.ayah, greeting: GREETINGS[i % GREETINGS.length] };
+}

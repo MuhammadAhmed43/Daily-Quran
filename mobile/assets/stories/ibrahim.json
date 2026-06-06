@@ -1,0 +1,120 @@
+{
+  "id": "ibrahim",
+  "title": "Ibrahim",
+  "subtitle": "The Friend of God",
+  "arabicName": "سُورَةُ الأَنبِيَاءِ",
+  "surah": 21,
+  "blurb": "A seeker who reasoned past the stars to the One who made them, shattered the idols, walked unburned through fire, and raised the House of worship — the father of pure monotheism, told in 10 fully aniconic scenes.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "The Seeker of Truth",
+      "ref": "21:51",
+      "verse": "21:51",
+      "narration": "Long ago, into a people who bowed to carved stone, came Ibrahim (peace be upon him). The Qur'an says God gave him his right guidance from the very start, for He knew him well. While everyone around him inherited their gods without a question, this one heart refused to settle. He looked at the world and at the heavens and began, quietly, to search for the truth behind them all.",
+      "visual": "A vast still night sky over a sleeping desert, a single bright star kindling at its center as a lone seeking light.",
+      "scene": "a vast still deep-indigo night sky over a dark sleeping desert, a single bright radiant star kindling at the center as a lone seeking light, quiet awe, painterly cosmic depth, deep blue and faint silver",
+      "color": "#0d1338",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "Past the Star, Moon, and Sun",
+      "ref": "6:76–79",
+      "verse": "6:79",
+      "narration": "When night fell, Ibrahim (peace be upon him) saw a bright star and wondered if it was his lord — but it set, and he would not love what fades. Then the moon rose and sank; then the sun blazed up and went down too. Each light only pointed beyond itself. So he turned his whole heart away from all of them toward the One who created the heavens and the earth, devoted to Him alone.",
+      "visual": "A deep indigo sky in three bands — a fading star, a low setting moon, and a sinking sun on the horizon, each dimming toward one steady point of pure light above.",
+      "scene": "a deep indigo sky in three soft bands, a fading bright star, a low setting crescent moon, and a sinking sun at the horizon, all dimming toward one steady point of pure light above, contemplative, blue to pale gold",
+      "color": "#13193f",
+      "motion": "rise"
+    },
+    {
+      "n": 3,
+      "title": "Lifeless Stone",
+      "ref": "21:52–54",
+      "verse": "21:52",
+      "narration": "Ibrahim (peace be upon him) walked among his people's idols and asked them plainly what these statues were that they sat before so devotedly. They answered only that they had found their fathers worshipping them. He saw the emptiness of it — gods that could not see, hear, or move — and told them clearly that they and their fathers alike had wandered into plain error.",
+      "visual": "A cold dim temple hall of grey lifeless stone idols on pedestals, dust in the still air, faint blue light falling through high openings on carved unmoving forms.",
+      "scene": "a cold dim temple hall of grey lifeless carved stone idols on pedestals, dust drifting in still air, faint blue light falling through high openings onto unmoving carved stone, hollow and silent",
+      "color": "#272d3a",
+      "motion": "panRight"
+    },
+    {
+      "n": 4,
+      "title": "The Axe by the Largest",
+      "ref": "21:57–58",
+      "verse": "21:58",
+      "narration": "Ibrahim (peace be upon him) had quietly resolved to act once the people left for their festival. Alone in the temple, he broke the idols to pieces — all but the biggest of them, so that the people might turn back to it with their questions. He left the axe resting against that great idol, a silent argument waiting for them to discover when they returned.",
+      "visual": "Shattered grey idol fragments strewn across a temple floor, one tall idol left standing, a heavy axe leaning against its base, harsh light raking the wreckage.",
+      "scene": "shattered grey idol fragments strewn across a temple stone floor, one tall idol left standing with a heavy axe leaning against its base, harsh raking light across the wreckage, tense and dramatic",
+      "color": "#3a3330",
+      "motion": "panLeft"
+    },
+    {
+      "n": 5,
+      "title": "Condemned to the Fire",
+      "ref": "21:68",
+      "verse": "21:68",
+      "narration": "When the people found their gods in ruins, they soon learned it was Ibrahim (peace be upon him). He reasoned with them — could carved things that neither help nor harm deserve worship? — but they had no answer, only fury. Unable to win with words, they resolved on violence: build a great fire, they said, and cast him in, to avenge their gods.",
+      "visual": "A towering bonfire of stacked timber roaring against a blackened sky, fierce orange and ember-red flames throwing sparks high into the smoke.",
+      "scene": "a towering bonfire of stacked timber roaring against a blackened night sky, fierce orange and ember-red flames hurling sparks high into billowing smoke, overwhelming heat, intense ember glow",
+      "color": "#7a2d12",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 6,
+      "title": "Coolness and Peace",
+      "ref": "21:69–70",
+      "verse": "21:69",
+      "narration": "They lit the blaze and flung him into its heart. Then came the command that overturns nature: God said, 'O fire, be coolness and safety upon Ibrahim.' The flames that should have devoured him neither burned nor harmed him. His enemies had planned the worst against him — and instead God made them the greatest losers, while His friend stood untouched in the midst of the fire.",
+      "visual": "Flames softening from ember-orange into cool green, fiery embers turning to fresh green blossoms and dew, a calm clearing of new leaves at the bonfire's glowing heart.",
+      "scene": "flames softening from ember-orange into cool green light, glowing embers turning into fresh green blossoms and dew, a miraculous calm clearing of new leaves at the fire heart, serene gold and green",
+      "color": "#b5611f",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 7,
+      "title": "A Prayer for a Blessed Land",
+      "ref": "14:35–37",
+      "verse": "14:35",
+      "narration": "God delivered Ibrahim (peace be upon him) and brought him to a land He had blessed for all people. There he raised his hands and prayed: make this land secure, and keep me and my children far from worshipping idols. He had settled some of his offspring in a barren valley by God's Sacred House, asking that hearts incline toward them and that they be given fruits, so they would establish prayer and be thankful.",
+      "visual": "An empty desert road winding between bare dunes toward a distant barren valley at dawn, warm gold light spreading low across the sand under a clearing sky.",
+      "scene": "a quiet desert valley at golden dawn between bare hills, soft warm light spilling over sand and distant date palms, a sense of peace and supplication, tranquil, warm amber and gold",
+      "color": "#a06a2a",
+      "motion": "panRight"
+    },
+    {
+      "n": 8,
+      "title": "Raising the Sacred House",
+      "ref": "2:127",
+      "verse": "2:127",
+      "narration": "In that valley Ibrahim (peace be upon him) set to work with his son Ismail (peace be upon him), lifting the foundations of the House of worship stone upon stone. As they built, they prayed together that God would accept it from them, for He is the All-Hearing, the All-Knowing. From bare ground rose the first house raised for the worship of the one God — a sanctuary for all who would come after.",
+      "visual": "A simple black stone cube rising on a foundation of bare cut stones in a desert valley, warm gold daylight on the new walls, fitted blocks stacked at its base.",
+      "scene": "the black stone cube of the Kaaba rising from bare foundation stones, cut blocks and simple building tools resting beside it, warm golden light, reverent and monumental, deep gold and stone-grey",
+      "color": "#bb812f",
+      "motion": "rise"
+    },
+    {
+      "n": 9,
+      "title": "The Vision and the Submission",
+      "ref": "37:102",
+      "verse": "37:102",
+      "narration": "When his son had grown old enough to walk beside him, Ibrahim (peace be upon him) saw in a dream that he was to sacrifice him — and he understood it as a command from God. He told his son, who answered that his father should do as he was commanded, and that God willing he would be found among the steadfast. Both submitted, and Ibrahim laid him down, ready to obey whatever the cost.",
+      "visual": "A bright knife laid down upon a flat stone at the edge of a wide open meadow, soft warm gold light over still grass and a clear gentle sky.",
+      "scene": "a still desert hilltop under a vast dawn sky, a single laid-down knife on smooth stone, soft trembling golden light, a profound quiet of submission and trust, warm gold and long shadows",
+      "color": "#caa23a",
+      "motion": "sink"
+    },
+    {
+      "n": 10,
+      "title": "The Ransom and the Reward",
+      "ref": "37:105–107",
+      "verse": "37:107",
+      "narration": "At that very moment God called out that Ibrahim (peace be upon him) had already fulfilled the vision — the test was the willingness, not the loss. So He ransomed the son with a great sacrifice, and his boy was spared. For his faith God left him an honored name among all later generations: peace upon Ibrahim, the friend of God, and through him a lasting legacy of pure devotion to the One alone.",
+      "visual": "The knife resting untouched on the stone as the meadow brightens into full serene gold, soft radiant light flooding the open field under a warm cloudless sky.",
+      "scene": "a green meadow opening on a desert hillside in radiant golden light, a knife laid down upon stone, blossoming relief and mercy, luminous warm gold, serene and triumphant",
+      "color": "#e0c25a",
+      "motion": "zoomOut"
+    }
+  ]
+}

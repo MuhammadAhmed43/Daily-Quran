@@ -1,0 +1,120 @@
+{
+  "id": "kahf",
+  "title": "The Sleepers of the Cave",
+  "subtitle": "Ashab al-Kahf",
+  "arabicName": "سُورَةُ الكَهۡفِ",
+  "surah": 18,
+  "blurb": "A handful of young believers flee a city that worshipped other than God and take refuge in a mountain cave. God seals their hearing for centuries, then wakes them as a sign of His mercy and the truth of the resurrection. Their number He keeps to Himself.",
+  "panels": [
+    {
+      "n": 1,
+      "title": "A Wonder Among His Signs",
+      "ref": "18:9",
+      "verse": "18:9",
+      "narration": "Among the wonders God lays before the heart is the story of the People of the Cave and the Inscription. They were young believers, ordinary in the eyes of their city, yet God counted them among His marvelous signs. Their tale is not folklore but a window: a reminder that the One who shaped the heavens can guard a sleeping faith through the longest night, and wake it whole.",
+      "visual": "The dark mouth of a mountain cave opens as a sign among God's wonders.",
+      "scene": "the dark arched mouth of a mountain cave set into a vast stone cliff at dusk, deep slate shadow within, a sealed quiet valley below, oppressive heavy stillness, faint indigo light catching the rock rim, mysterious and ancient",
+      "color": "#1c1a22",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 2,
+      "title": "A City That Turned Away",
+      "ref": "18:14-15",
+      "verse": "18:15",
+      "narration": "Their people had taken to themselves gods besides God, raising lords with no proof and no truth behind them. The young believers saw the falsehood plainly and would not bow to it. To invent a lie and hang it upon God, they knew, was the gravest wrong of all. So they stood apart in a place that had no room for their faith, strangers among their own streets.",
+      "visual": "An old stone city gate stands shut against the believers who would not worship its idols.",
+      "scene": "an old stone city gate of an ancient era, weathered carved pillars and a heavy shut wooden door, narrow shadowed lane beyond, cold grey-blue twilight, a hard unwelcoming hush over empty paving stones, severe and closed",
+      "color": "#221d28",
+      "motion": "panLeft"
+    },
+    {
+      "n": 3,
+      "title": "Refuge in the Cave",
+      "ref": "18:16",
+      "verse": "18:16",
+      "narration": "Having withdrawn from their people and all they worshipped beside God, the youths turned toward the mountain. There, they were told, their Lord would unfold His mercy upon them and set their affair toward ease. So they slipped into the cave's deep shadow, trading the safety the world offered for the shelter God promised, trusting that the One they fled to was nearer than any wall of stone.",
+      "visual": "The believers step into the cave's deep shadow, seeking God's mercy over the world's safety.",
+      "scene": "the interior threshold of a dark mountain cave, a worn smooth stone floor sloping into shadow, jagged rock walls, a single muted band of evening light at the entrance, drifting dust motes, a refuge of quiet and stone",
+      "color": "#241f2a",
+      "motion": "zoomIn"
+    },
+    {
+      "n": 4,
+      "title": "Our Lord, Give Us Mercy",
+      "ref": "18:10",
+      "verse": "18:10",
+      "narration": "In the hush of the cave they lifted their hands and entrusted everything to God. They asked their Lord for mercy from His own presence and for their affair to be blessed with guidance. They sought no wealth, no rescue of their own devising, only nearness and direction. It was the prayer of the powerless who know where all power rests, a whisper that God would answer beyond all they could imagine.",
+      "visual": "In the cave's stillness rises the youths' prayer for mercy and guidance from God.",
+      "scene": "the deep interior of a quiet cave, smooth stone walls, a faint pool of soft light gathering on the cave floor, fine dust suspended in the air, delicate gold Arabic calligraphy glowing faintly against the rock, hushed and reverent",
+      "color": "#2a2330",
+      "motion": "rise"
+    },
+    {
+      "n": 5,
+      "title": "A Sleep of Many Years",
+      "ref": "18:11",
+      "verse": "18:11",
+      "narration": "Then God sealed their hearing in the cave for a number of years. Sleep came over them, gentle and total, and the world's noise fell away. They did not toss with fear or hunger; they simply rested, held in a stillness no power could break. What seemed an ending was a keeping. The years began to gather and pass over them while their faith lay safe, untouched, in the hollow of the mountain.",
+      "visual": "God seals the sleepers' hearing, and a stillness of many years settles over the cave.",
+      "scene": "the silent depths of a mountain cave at night, smooth worn stone floor in heavy shadow, faint cobwebs drifting in still air, a single thin sliver of pale moonlight at the distant entrance, deep peaceful darkness, time suspended",
+      "color": "#211d2c",
+      "motion": "sink"
+    },
+    {
+      "n": 6,
+      "title": "The Sun Veering Away",
+      "ref": "18:17",
+      "verse": "18:17",
+      "narration": "Outside, the sun obeyed a gentler command. As it rose it veered away from their cave to the right, and as it set it slipped past them to the left, so its blaze never fell upon them where they lay. The light that scorches the world was turned aside to spare them. That, the Qur'an says, was one of God's wonders, His care moving even the sun to shade the ones who trusted Him.",
+      "visual": "The rising sun bends its light away from the cave mouth, sparing the sleepers within.",
+      "scene": "long golden shafts of sunlight sweeping across the rocky mouth of a cave, the rays angling away to one side so the deep interior stays in cool shadow, warm dawn glow washing over the bare cliff wall, gentle protective light, awe and tenderness",
+      "color": "#3a2f33",
+      "motion": "panRight"
+    },
+    {
+      "n": 7,
+      "title": "Turned Right and Left",
+      "ref": "18:18",
+      "verse": "18:18",
+      "narration": "You would have thought them awake, though they were deep asleep, for God turned them over, now to the right, now to the left, so the long rest would not waste their bodies. At the threshold lay their faithful dog, paws stretched across the entrance. The whole scene was wrapped in an awe so heavy that any onlooker would have fled in fear, sensing the unseen hand that watched over them.",
+      "visual": "The sleepers are gently turned right and left, and an awe guards the cave's threshold.",
+      "scene": "the entrance of a quiet cave seen from within, a worn stone threshold catching a soft shaft of light, long shadows shifting across the cave floor, fine dust drifting, an atmosphere of guarded stillness and quiet awe, dim amber-grey tones",
+      "color": "#3f342f",
+      "motion": "panLeft"
+    },
+    {
+      "n": 8,
+      "title": "A Day, or Part of a Day",
+      "ref": "18:19",
+      "verse": "18:19",
+      "narration": "Then God awakened them, and they rose as if from an ordinary nap. One asked how long they had stayed, and they answered, a day, or part of a day, for to them no time had passed at all. Yet sensing the mystery, they yielded: your Lord knows best how long you stayed. Hungry now, they sent one of them quietly into the city with their silver to buy food, urging him to take care.",
+      "visual": "The sleepers wake believing only a day has passed, and send one for food with their coin.",
+      "scene": "the cave mouth flooded with fresh bright morning light, a worn smooth stone floor warmed in gold, dust motes glittering in the sunbeams, a single ancient tarnished silver coin resting on the rock, a feeling of waking and new dawn, luminous",
+      "color": "#5a4734",
+      "motion": "zoomOut"
+    },
+    {
+      "n": 9,
+      "title": "The Coin in a Changed City",
+      "ref": "18:19-21",
+      "verse": "18:21",
+      "narration": "But the city he entered was not the one he had left. Faces, speech, and faith had all changed, and his old silver coin betrayed how many ages had slipped by. So God caused the sleepers to be discovered, that the people might know His promise is true and the Hour beyond all doubt. The town that once persecuted faith now gathered in wonder, marveling at the handful God had hidden and kept.",
+      "visual": "An ancient coin spent in a transformed city reveals that centuries have quietly passed.",
+      "scene": "an old stone city gate of a later era, newer carved arches and worn cobbled streets bright in midday sun, a single tarnished silver coin gleaming on a stone ledge, warm golden light over aged walls, astonishment and the weight of passed centuries",
+      "color": "#7a5e3a",
+      "motion": "panRight"
+    },
+    {
+      "n": 10,
+      "title": "Their Number Known to God",
+      "ref": "18:22",
+      "verse": "18:22",
+      "narration": "People argued over how many they were, three, five, seven, guessing at what they could not know. The Qur'an gently sets the quarrel aside: say, my Lord knows best their number, and none knows them but a few. Do not dispute over them. What matters is the sign itself, that the God who woke them after centuries will surely raise the dead, and that some things are His to keep, not ours to count.",
+      "visual": "The dispute over their number gives way to humility before the God who alone knows.",
+      "scene": "a wide luminous dawn sky of warm gold and amber over a sealed quiet valley and distant cave-pierced mountain, soft radiant clouds, elegant gold Arabic calligraphy glowing across the light, serene, hopeful, full of awe and the promise of resurrection",
+      "color": "#c79a4e",
+      "motion": "rise"
+    }
+  ]
+}
