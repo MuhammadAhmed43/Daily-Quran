@@ -5,11 +5,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { CosmicCardBg } from '@/components/cosmic-field';
+import { CollapsibleMiniPlayer } from '@/components/mini-player';
 import { GlassSurface } from '@/components/ui/glass-surface';
 import { IconButton, Txt } from '@/components/ui/primitives';
 import { PressableScale } from '@/components/ui/pressable-scale';
@@ -22,6 +23,7 @@ import { haptic } from '@/lib/haptics';
 import { bumpHub, useForYou } from '@/lib/hub-affinity';
 import { HUBS, type Hub } from '@/lib/hubs';
 import { useProfile } from '@/lib/profile';
+import { useRecitation } from '@/lib/recitation-context';
 import { questionsFor } from '@/lib/suggested-questions';
 import { c, font, grad, radius, space, type as ty } from '@/lib/theme';
 import { getVerse, type Verse } from '@/lib/today';
@@ -56,6 +58,30 @@ export default function AskBrowseScreen() {
   useTranslation();
   const textFade = useSharedValue(1);
   const textFadeStyle = useAnimatedStyle(() => ({ opacity: textFade.value }));
+
+  // Collapsible reciting bar — only on this tab, where the floating mini-player would otherwise sit on
+  // top of the composer pill. It defaults to a small blob above the pill; tapping it opens the full bar,
+  // and scrolling / tapping anywhere else on the page collapses it back.
+  const recitation = useRecitation();
+  const [miniExpanded, setMiniExpanded] = useState(false);
+  const [composerH, setComposerH] = useState(74); // measured height of the composer pill area
+  const expandedRef = useRef(false);
+  useEffect(() => {
+    expandedRef.current = miniExpanded;
+  }, [miniExpanded]);
+  // collapse to the blob when recitation stops, so the next session opens as a blob again
+  useEffect(() => {
+    if (!recitation.playing) setMiniExpanded(false);
+  }, [recitation.playing]);
+  const collapseMini = useCallback(() => {
+    if (expandedRef.current) setMiniExpanded(false);
+  }, []);
+  // Collapse on ANY touch in the page (a card, empty space, or the start of a scroll) WITHOUT stealing the
+  // touch — onStartShouldSetResponderCapture returns false, so scrolling and taps still work as normal.
+  const onPageTouchCapture = useCallback(() => {
+    collapseMini();
+    return false;
+  }, [collapseMini]);
 
   // Today's welcome verse — date-stable: it only changes at the next local midnight, not on every revisit.
   // On focus we recompute today's pick and keep the SAME object when unchanged (so a revisit within the
@@ -108,80 +134,91 @@ export default function AskBrowseScreen() {
 
   return (
     <Screen stars>
-      <View style={styles.topBar}>
-        <PressableScale onPress={() => router.push('/profile')}>
-          <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.avatar}>
-            <AvatarInitial />
-          </LinearGradient>
-        </PressableScale>
-        <Txt variant="h2" style={styles.topTitle}>
-          Ask
-        </Txt>
-        <View style={styles.fill} />
-        <IconButton name="time-outline" onPress={() => router.push('/chat-history')} diameter={38} size={20} color={c.textSecondary} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.browse} showsVerticalScrollIndicator={false}>
-        {/* Warm daily welcome — a comforting verse to begin (a new one each day). */}
-        {welcomeVerse ? (
-          <PressableScale style={styles.welcomeCard} onPress={() => openVerse(welcomeVerse.surah, welcomeVerse.ayah)}>
-            <LinearGradient colors={['rgba(201,189,166,0.14)', 'rgba(201,189,166,0.02)']} start={grad.diagStart} end={grad.diagEnd} style={StyleSheet.absoluteFill} />
-            <Animated.View style={textFadeStyle}>
-              <Txt variant="h2" style={styles.greeting}>
-                {display.greeting}
-              </Txt>
-              <View style={styles.rule} />
-              <Txt style={[ty.verseAr, styles.welcomeAr]}>{welcomeVerse.ar}</Txt>
-              <Txt style={styles.welcomeTrans}>{verseText(welcomeVerse.surah, welcomeVerse.ayah)}</Txt>
-              <View style={styles.welcomeFoot}>
-                <Txt variant="caption" color={c.accent} style={styles.welcomeRef}>
-                  {welcomeVerse.surahEnglish} · {welcomeVerse.surah}:{welcomeVerse.ayah}
-                </Txt>
-                <VerseSpeaker surah={welcomeVerse.surah} ayah={welcomeVerse.ayah} size={18} />
-              </View>
-            </Animated.View>
+      {/* The page collapses the reciting bar back to its blob on scroll / any outside touch. The capture
+          returns false, so it never steals the touch — scrolling and taps keep working normally. */}
+      <View style={styles.fill} onStartShouldSetResponderCapture={onPageTouchCapture}>
+        <View style={styles.topBar}>
+          <PressableScale onPress={() => router.push('/profile')}>
+            <LinearGradient colors={c.goldGrad} start={grad.diagStart} end={grad.diagEnd} style={styles.avatar}>
+              <AvatarInitial />
+            </LinearGradient>
           </PressableScale>
-        ) : null}
+          <Txt variant="h2" style={styles.topTitle}>
+            Ask
+          </Txt>
+          <View style={styles.fill} />
+          <IconButton name="time-outline" onPress={() => router.push('/chat-history')} diameter={38} size={20} color={c.textSecondary} />
+        </View>
 
-        <Txt variant="h2">Explore topics</Txt>
+        <ScrollView
+          contentContainerStyle={styles.browse}
+          showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={collapseMini}
+          scrollEventThrottle={16}>
+          {/* Warm daily welcome — a comforting verse to begin (a new one each day). */}
+          {welcomeVerse ? (
+            <PressableScale style={styles.welcomeCard} onPress={() => openVerse(welcomeVerse.surah, welcomeVerse.ayah)}>
+              <LinearGradient colors={['rgba(201,189,166,0.14)', 'rgba(201,189,166,0.02)']} start={grad.diagStart} end={grad.diagEnd} style={StyleSheet.absoluteFill} />
+              <Animated.View style={textFadeStyle}>
+                <Txt variant="h2" style={styles.greeting}>
+                  {display.greeting}
+                </Txt>
+                <View style={styles.rule} />
+                <Txt style={[ty.verseAr, styles.welcomeAr]}>{welcomeVerse.ar}</Txt>
+                <Txt style={styles.welcomeTrans}>{verseText(welcomeVerse.surah, welcomeVerse.ayah)}</Txt>
+                <View style={styles.welcomeFoot}>
+                  <Txt variant="caption" color={c.accent} style={styles.welcomeRef}>
+                    {welcomeVerse.surahEnglish} · {welcomeVerse.surah}:{welcomeVerse.ayah}
+                  </Txt>
+                  <VerseSpeaker surah={welcomeVerse.surah} ayah={welcomeVerse.ayah} size={18} />
+                </View>
+              </Animated.View>
+            </PressableScale>
+          ) : null}
 
-        {forYou.length > 0 ? (
+          <Txt variant="h2">Explore topics</Txt>
+
+          {forYou.length > 0 ? (
+            <View style={styles.section}>
+              <Txt variant="eyebrow">For you</Txt>
+              <View style={styles.grid}>
+                {forYou.map((h, i) => (
+                  <HubCard key={h.id} hub={h} hueIndex={i} featured onPress={() => openCategory(h)} />
+                ))}
+              </View>
+            </View>
+          ) : null}
+
           <View style={styles.section}>
-            <Txt variant="eyebrow">For you</Txt>
+            {forYou.length > 0 ? <Txt variant="eyebrow">More</Txt> : null}
             <View style={styles.grid}>
-              {forYou.map((h, i) => (
-                <HubCard key={h.id} hub={h} hueIndex={i} featured onPress={() => openCategory(h)} />
+              {rest.map((h, i) => (
+                <HubCard key={h.id} hub={h} hueIndex={i + forYou.length} onPress={() => openCategory(h)} />
               ))}
             </View>
           </View>
-        ) : null}
+        </ScrollView>
 
-        <View style={styles.section}>
-          {forYou.length > 0 ? <Txt variant="eyebrow">More</Txt> : null}
-          <View style={styles.grid}>
-            {rest.map((h, i) => (
-              <HubCard key={h.id} hub={h} hueIndex={i + forYou.length} onPress={() => openCategory(h)} />
-            ))}
-          </View>
+        {/* The signature glass Ask pill — a tappable entry into the full-screen conversation. */}
+        <View style={styles.composerWrap} onLayout={(e) => setComposerH(e.nativeEvent.layout.height)}>
+          <GlassSurface interactive={false} radius={radius.xl}>
+            <View style={styles.pillRow}>
+              <Pressable style={styles.pillTap} onPress={() => router.push('/ask')}>
+                <Ionicons name="sparkles" size={17} color={c.accent} />
+                <Txt style={styles.pillPlaceholder} numberOfLines={1}>
+                  Ask about the Qur&apos;an…
+                </Txt>
+              </Pressable>
+              <Pressable style={styles.pillBtn} onPress={() => router.push('/voice')} accessibilityLabel="Voice conversation">
+                <Ionicons name="mic" size={20} color={c.textSecondary} />
+              </Pressable>
+            </View>
+          </GlassSurface>
         </View>
-      </ScrollView>
-
-      {/* The signature glass Ask pill — a tappable entry into the full-screen conversation. */}
-      <View style={styles.composerWrap}>
-        <GlassSurface interactive={false} radius={radius.xl}>
-          <View style={styles.pillRow}>
-            <Pressable style={styles.pillTap} onPress={() => router.push('/ask')}>
-              <Ionicons name="sparkles" size={17} color={c.accent} />
-              <Txt style={styles.pillPlaceholder} numberOfLines={1}>
-                Ask about the Qur&apos;an…
-              </Txt>
-            </Pressable>
-            <Pressable style={styles.pillBtn} onPress={() => router.push('/voice')} accessibilityLabel="Voice conversation">
-              <Ionicons name="mic" size={20} color={c.textSecondary} />
-            </Pressable>
-          </View>
-        </GlassSurface>
       </View>
+
+      {/* Reciting bar (collapsible) — sits just ABOVE the composer pill, not on it. */}
+      <CollapsibleMiniPlayer expanded={miniExpanded} onExpandedChange={setMiniExpanded} bottom={composerH + 8} />
 
       <SuggestedSheet
         visible={!!sheetHub}
