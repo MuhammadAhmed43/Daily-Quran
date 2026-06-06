@@ -56,6 +56,7 @@ const ENTRIES: Entry[] = [
 
 const UID_KEY = 'daily-quran:sync-uid';
 let running = false;
+let inFlight: Promise<boolean> | null = null;
 let started = false;
 let lastSyncedAt: number | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -92,45 +93,55 @@ async function permanentUserId(): Promise<string | null> {
   return u && !u.is_anonymous ? u.id : null;
 }
 
-// One full sync pass. Returns true if it actually ran (permanent user + not already running).
+// One full sync pass. Concurrent callers AWAIT the same in-flight pass (deduped), so the launch gate can
+// reliably `await syncNow()` to pull a returning user's cloud profile BEFORE routing past the welcome
+// questions. Returns true if a pass actually ran (permanent user, read+write ok).
 export async function syncNow(): Promise<boolean> {
-  if (running || !supabase) return false;
-  const uid = await permanentUserId();
-  if (!uid) return false; // guests + signed-out never sync
-  running = true;
-  try {
-    const { data: row, error: selErr } = await supabase
-      .from('user_state')
-      .select('state')
-      .eq('user_id', uid)
-      .maybeSingle();
-    if (selErr) return false; // can't read (e.g. table/RLS not set up) -> bail, leave local untouched
-    const remote: Record<string, any> = (row?.state as Record<string, any>) ?? {};
-    const lastUid = await AsyncStorage.getItem(UID_KEY);
-    // A DIFFERENT account synced on this device before -> adopt the cloud account's data wholesale
-    // (don't merge the previous user's leftovers in). First-ever / same-user -> merge (true multi-device).
-    const accountSwitch = lastUid != null && lastUid !== uid;
+  if (!supabase) return false;
+  if (inFlight) return inFlight; // a pass is already running -> await it (dedupe), don't bail early
+  inFlight = (async (): Promise<boolean> => {
+    const uid = await permanentUserId();
+    if (!uid) return false; // guests + signed-out never sync
+    running = true;
+    try {
+      const { data: row, error: selErr } = await supabase
+        .from('user_state')
+        .select('state')
+        .eq('user_id', uid)
+        .maybeSingle();
+      if (selErr) return false; // can't read (e.g. table/RLS not set up) -> bail, leave local untouched
+      const remote: Record<string, any> = (row?.state as Record<string, any>) ?? {};
+      const lastUid = await AsyncStorage.getItem(UID_KEY);
+      // A DIFFERENT account synced on this device before -> adopt the cloud account's data wholesale
+      // (don't merge the previous user's leftovers in). First-ever / same-user -> merge (true multi-device).
+      const accountSwitch = lastUid != null && lastUid !== uid;
 
-    const bundle: Record<string, any> = {};
-    for (const e of ENTRIES) {
-      const local = await readLocal(e.key, e.raw);
-      const remoteVal = Object.prototype.hasOwnProperty.call(remote, e.key) ? remote[e.key] : null;
-      const merged = accountSwitch ? remoteVal : e.merge(local, remoteVal);
-      await writeLocal(e.key, merged, e.raw);
-      await e.apply();
-      if (merged != null) bundle[e.key] = merged;
+      const bundle: Record<string, any> = {};
+      for (const e of ENTRIES) {
+        const local = await readLocal(e.key, e.raw);
+        const remoteVal = Object.prototype.hasOwnProperty.call(remote, e.key) ? remote[e.key] : null;
+        const merged = accountSwitch ? remoteVal : e.merge(local, remoteVal);
+        await writeLocal(e.key, merged, e.raw);
+        await e.apply();
+        if (merged != null) bundle[e.key] = merged;
+      }
+      const { error: upErr } = await supabase
+        .from('user_state')
+        .upsert({ user_id: uid, state: bundle, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if (upErr) return false; // push failed -> report honestly; next trigger retries
+      await AsyncStorage.setItem(UID_KEY, uid);
+      lastSyncedAt = Date.now();
+      return true;
+    } catch {
+      return false; // best-effort; next trigger retries
+    } finally {
+      running = false;
     }
-    const { error: upErr } = await supabase
-      .from('user_state')
-      .upsert({ user_id: uid, state: bundle, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-    if (upErr) return false; // push failed -> report honestly; next trigger retries
-    await AsyncStorage.setItem(UID_KEY, uid);
-    lastSyncedAt = Date.now();
-    return true;
-  } catch {
-    return false; // best-effort; next trigger retries
+  })();
+  try {
+    return await inFlight;
   } finally {
-    running = false;
+    inFlight = null;
   }
 }
 
