@@ -3,7 +3,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView, type Edge, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { type Edge, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SkyBand } from '@/components/sky-band';
 import { c } from '@/lib/theme';
@@ -20,6 +20,16 @@ export function Screen({
   stars?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  // Apply the safe area as MANUAL padding rather than via <SafeAreaView> — that component renders its
+  // children first and applies the insets a frame later, so each screen mounts at 0 top padding and then
+  // snaps down (the first-load "up/down" jitter). With the root SafeAreaProvider seeded by
+  // initialWindowMetrics, these insets are correct on the very first frame, so there's no snap.
+  const pad = {
+    paddingTop: edges.includes('top') ? insets.top : 0,
+    paddingRight: edges.includes('right') ? insets.right : 0,
+    paddingBottom: edges.includes('bottom') ? insets.bottom : 0,
+    paddingLeft: edges.includes('left') ? insets.left : 0,
+  };
   return (
     <View style={styles.root}>
       {glow ? (
@@ -33,9 +43,7 @@ export function Screen({
       ) : null}
       {/* Optional magical constellation in the status-bar / notch band (best on genuinely dark headers). */}
       {stars ? <SkyBand height={insets.top + 40} /> : null}
-      <SafeAreaView edges={edges} style={styles.fill}>
-        {children}
-      </SafeAreaView>
+      <View style={[styles.fill, pad]}>{children}</View>
     </View>
   );
 }

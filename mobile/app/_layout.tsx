@@ -8,7 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { Easing, FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthFlow } from '@/components/auth/auth-flow';
 import { OnboardingFlow } from '@/components/onboarding/onboarding-flow';
@@ -50,12 +51,16 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={navTheme}>
-        <RecitationProvider>
-          <RootGate />
-        </RecitationProvider>
-        <StatusBar style="light" />
-      </ThemeProvider>
+      {/* Seed safe-area insets synchronously on the first frame so screens don't mount with 0 top padding
+          and then snap down a frame later (the first-load up/down jitter on each page). */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <ThemeProvider value={navTheme}>
+          <RecitationProvider>
+            <RootGate />
+          </RecitationProvider>
+          <StatusBar style="light" />
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
@@ -106,26 +111,22 @@ function RootGate() {
 
   return (
     <View style={styles.root}>
-      {/* The destination screen, cross-fading whenever the stage changes (log in -> Today, finish the
-          questions -> Today). On cold launch it mounts UNDER the splash, so the splash melts into it. */}
-      <Animated.View key={stage} style={styles.fill} entering={FadeIn.duration(420)}>
-        {stage === 'auth' ? (
-          <AuthFlow onDone={evaluate} />
-        ) : stage === 'onboard' ? (
-          <OnboardingFlow />
-        ) : (
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="reflect" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="ask" options={{ headerShown: false }} />
-            <Stack.Screen name="chat-history" options={{ headerShown: false }} />
-            {/* Profile is a LEFT slide-over drawer: transparent so Today dims + peeks behind it. */}
-            <Stack.Screen name="profile" options={{ headerShown: false, presentation: 'transparentModal', animation: 'none' }} />
-          </Stack>
-        )}
-      </Animated.View>
+      {stage === 'auth' ? (
+        <AuthFlow onDone={evaluate} />
+      ) : stage === 'onboard' ? (
+        <OnboardingFlow />
+      ) : (
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="reflect" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="ask" options={{ headerShown: false }} />
+          <Stack.Screen name="chat-history" options={{ headerShown: false }} />
+          {/* Profile is a LEFT slide-over drawer: transparent so Today dims + peeks behind it. */}
+          <Stack.Screen name="profile" options={{ headerShown: false, presentation: 'transparentModal', animation: 'none' }} />
+        </Stack>
+      )}
 
-      {/* The animated launch splash — shown once per cold launch, then it fades away to reveal the stage. */}
+      {/* The animated launch splash — shown once per cold launch, then it fades away to reveal the app. */}
       {!splashGone ? <LaunchSplash onDone={() => setSplashGone(true)} /> : null}
     </View>
   );
@@ -150,5 +151,4 @@ function LaunchSplash({ onDone }: { onDone: () => void }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: c.bg },
-  fill: { flex: 1 },
 });

@@ -9,7 +9,7 @@
 // runtime randomness. ~6 stars/card, ~4 animated — opacity + scale only, far inside Reanimated's budget.
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
+import { InteractionManager, LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -99,17 +99,22 @@ export function StarDot({ s, w, h }: { s: Star; w: number; h: number }) {
   const t = useSharedValue(0); // 0..1 twinkle driver (UI thread)
   useEffect(() => {
     if (!s.twinkles) return;
-    t.value = withDelay(
-      s.phase,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
+    // Defer the loop until after the screen/nav transition settles, so mounting a card full of stars on a
+    // tab's first visit doesn't jank the load (stars appear at rest, then begin to twinkle).
+    const task = InteractionManager.runAfterInteractions(() => {
+      t.value = withDelay(
+        s.phase,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
+            withTiming(0, { duration: s.dur, easing: Easing.inOut(Easing.sin) }),
+          ),
+          -1,
+          false,
         ),
-        -1,
-        false,
-      ),
-    );
+      );
+    });
+    return () => task.cancel();
   }, [s.dur, s.phase, s.twinkles, t]);
 
   const aStyle = useAnimatedStyle(() => {

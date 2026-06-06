@@ -8,7 +8,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutChangeEvent, StyleSheet, View, ViewStyle } from 'react-native';
+import { InteractionManager, LayoutChangeEvent, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -126,17 +126,21 @@ export function AtlasTile({
   // Idle glow-breath — each tile breathes on its own phase so the grid shimmers asynchronously.
   const breath = useSharedValue(0);
   useEffect(() => {
-    breath.value = withDelay(
-      hashStr(category) % 1600,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 4200, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: 4200, easing: Easing.inOut(Easing.sin) }),
+    // Defer the idle glow-breath until after the screen transition settles (lighter first-mount on a tab).
+    const task = InteractionManager.runAfterInteractions(() => {
+      breath.value = withDelay(
+        hashStr(category) % 1600,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 4200, easing: Easing.inOut(Easing.sin) }),
+            withTiming(0, { duration: 4200, easing: Easing.inOut(Easing.sin) }),
+          ),
+          -1,
+          false,
         ),
-        -1,
-        false,
-      ),
-    );
+      );
+    });
+    return () => task.cancel();
   }, [breath, category]);
   const glowStyle = useAnimatedStyle(() => ({ opacity: 0.82 + 0.18 * breath.value }));
 
