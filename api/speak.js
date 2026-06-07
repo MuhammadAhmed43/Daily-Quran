@@ -12,6 +12,8 @@ const VOICE = 'en-US-AndrewNeural';
 const RATE = '-4%';
 const PITCH = '+0Hz';
 
+const { rateLimited } = require('./_ratelimit');
+
 function clean(s) {
   return String(s)
     .replace(/aḥsan al-qaṣaṣ\s*[—–-]\s*/gu, '')
@@ -129,6 +131,8 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  // Generous cap — voice fires several /api/speak calls per reply, so this only blocks a flood.
+  if (rateLimited(req, 80)) return res.status(429).json({ error: 'Too many requests — please slow down a moment.' });
 
   const body = req.method === 'POST' ? req.body || {} : {};
   const raw = req.method === 'POST' ? body.text : req.query.text;

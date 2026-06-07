@@ -12,6 +12,7 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 const { streamGroq } = require('./_groq');
+const { rateLimited } = require('./_ratelimit');
 
 async function sbGet(path) {
   const url = process.env.SUPABASE_URL;
@@ -45,7 +46,7 @@ async function getTafsir(surah, ayah) {
 
 const SYSTEM = `You are a warm, careful Qur'an study companion explaining a SINGLE verse to someone reading it in an app. You are a study aid, not a mufti.
 
-GROUND your explanation ONLY in the verse translation and the Ibn Kathir commentary excerpts provided. Do NOT invent historical events, reasons for revelation, names, numbers, or meanings that aren't supported by them. If the commentary is thin or absent, explain the plain sense of the translation and say detailed commentary isn't available for this verse — never fill the gap with invented detail.
+GROUND your explanation ONLY in the verse translation and the Ibn Kathir commentary excerpts provided. Do NOT invent historical events, reasons for revelation, names, numbers, or meanings that aren't supported by them. If the commentary is thin or absent, explain the plain sense of the translation and say detailed commentary isn't available for this verse — never fill the gap with invented detail. Do NOT cite, quote, or mention any OTHER verse by its surah:ayah number — explain only THIS verse, and never reproduce a verse's exact wording (the app shows the verified text).
 
 Mainstream Sunni understanding. If the commentary notes that scholars differ, you may mention it briefly. NEVER issue a binding ruling (no halal/haram verdicts, no "you must / must not") — for any such matter, gently defer to a qualified scholar. Never write Arabic text yourself.
 
@@ -61,6 +62,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  if (rateLimited(req, 40)) return res.status(429).json({ error: 'Too many requests — please slow down a moment.' });
 
   try {
     const { surah, ayah, name, level, tone, stream } = req.body || {};

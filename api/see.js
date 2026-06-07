@@ -20,6 +20,7 @@ const TEXT_MODEL = 'openai/gpt-oss-120b'; // same grounded answerer as chat.js
 
 const { CRISIS_RE, surahName, retrieveContext, buildCards, sanitizeRefs, recognizeVerse, fetchVerses, fetchTafsir, STUDY_AID_DISCLAIMER } = require('./_rag');
 const { streamGroq } = require('./_groq');
+const { rateLimited } = require('./_ratelimit');
 
 const MAX_IMAGE_CHARS = 6_000_000; // ~4MB of base64 -- Groq's base64 image ceiling; the client compresses well under this
 const REFLECT_MIN_SCORE = 0.45; // weak backstop for the reflection path; the scene gate is the real control
@@ -215,6 +216,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  if (rateLimited(req, 20)) return res.status(429).json({ error: 'Too many requests — please slow down a moment.' });
 
   try {
     const body = req.body || {};

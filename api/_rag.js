@@ -215,8 +215,9 @@ function sanitizeRefs(answer, allowedRefs) {
   if (!answer) return answer;
   const ok = (s, a) => allowedRefs.has(`${s}:${a}`);
   return answer
+    // Only PARENTHESIZED refs are treated as citations (the model is told to cite as "(2:255)"); a bare
+    // "3:30" in prose is almost always a time/ratio, so we leave it intact rather than mangle it.
     .replace(/\(\s*(\d{1,3}):(\d{1,3})(?:\s*[-–]\s*\d{1,3})?\s*\)/g, (m, s, a) => (ok(s, a) ? m : '')) // (2:255)
-    .replace(/\b(\d{1,3}):(\d{1,3})(?:\s*[-–]\s*\d{1,3})?\b/g, (m, s, a) => (ok(s, a) ? m : '')) // bare 2:255
     .replace(/\(\s*\)/g, '') // empty parens left behind
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/\s+([.,;:!?])/g, '$1')
