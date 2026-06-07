@@ -36,13 +36,16 @@ export type VoiceReplyHandle = { cancel: () => void };
 
 type StreamEvent =
   | { t: string }
-  | { done: true; verses: VerseCard[]; tafsir: TafsirSnippet[]; video?: VideoRef | null; disclaimer: string }
+  | { done: true; answer?: string; verses: VerseCard[]; tafsir: TafsirSnippet[]; video?: VideoRef | null; disclaimer: string }
   | { error: string };
 
 // A spoken reply is 1–3 sentences (the server caps voice at max_tokens 260). These are defensive
 // ceilings so a runaway answer can never queue an unbounded amount of audio.
 const MAX_SENTENCES = 8;
 const MAX_SPEAK_CHARS = 700;
+// A single sentence's TTS must never stall the whole reply — if /api/speak hangs past this, we abort
+// that request and skip the sentence (a small gap beats a silent, stuck reply).
+const SYNTH_TIMEOUT_MS = 9000;
 
 // A sentence is "complete" when its terminator (. ! ?) — plus any closing quote/bracket — is
 // followed by whitespace AND the next visible char looks like a new sentence start (a capital,
@@ -102,6 +105,7 @@ export function streamSpokenReply(opts: {
   const ctrl = new AbortController();
 
   let answer = '';
+  let finalAnswer = ''; // the server's ref-sanitized text (done event); preferred for history/hand-off
   let consumed = 0; // chars of `answer` already turned into sentences
   let gotToken = false;
   let streamErr = '';
@@ -138,8 +142,17 @@ export function streamSpokenReply(opts: {
 
   const synthOnce = async (text: string): Promise<SpokenReply | null> => {
     for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
-      const clip = await fetchSpokenReply(text, ctrl.signal).catch(() => null);
+      // Per-attempt timeout that aborts the request (so a hung synth can't stall the queue, and we
+      // don't leak a half-written clip). The global cancel also aborts it.
+      const ac = new AbortController();
+      const onAbort = () => ac.abort();
+      ctrl.signal.addEventListener('abort', onAbort);
+      const timer = setTimeout(() => ac.abort(), SYNTH_TIMEOUT_MS);
+      const clip = await fetchSpokenReply(text, ac.signal).catch(() => null);
+      clearTimeout(timer);
+      ctrl.signal.removeEventListener('abort', onAbort);
       if (clip) return clip;
+      if (cancelled) return null;
     }
     return null;
   };
@@ -166,7 +179,7 @@ export function streamSpokenReply(opts: {
   const maybeDone = () => {
     if (cancelled) return;
     if (!streamEnded || draining || queue.length) return;
-    onDone({ answer, ...meta });
+    onDone({ answer: finalAnswer || answer, ...meta });
   };
 
   void (async () => {
@@ -182,6 +195,7 @@ export function streamSpokenReply(opts: {
             onText?.(answer);
             pull(false);
           } else if ('done' in ev) {
+            if (typeof ev.answer === 'string' && ev.answer) finalAnswer = ev.answer;
             meta = {
               verses: ev.verses || [],
               tafsir: ev.tafsir || [],

@@ -260,6 +260,7 @@ export default function VoiceScreen() {
   // timer + a throttle so we warm the serverless functions during listening, not on every frame.
   const voicePipeRef = useRef<VoicePipe | null>(null);
   const firstAudioTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clipWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null); // force-advance if a clip never reports finished
   const lastWarmRef = useRef(0);
   const intensity = useRef(new Animated.Value(0.12)).current;
   const ripple1 = useRef(new Animated.Value(0)).current;
@@ -419,7 +420,7 @@ export default function VoiceScreen() {
       setChunkIdx(0);
       chunksRef.current = [];
       smoothRef.current = 0.2;
-      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true, interruptionMode: 'doNotMix' });
       if (!mountedRef.current || mutedRef.current) return;
       await recorder.prepareToRecordAsync();
       recorder.record();
@@ -586,6 +587,10 @@ export default function VoiceScreen() {
       clearTimeout(firstAudioTimerRef.current);
       firstAudioTimerRef.current = null;
     }
+    if (clipWatchdogRef.current) {
+      clearTimeout(clipWatchdogRef.current);
+      clipWatchdogRef.current = null;
+    }
     if (failTimerRef.current) {
       clearTimeout(failTimerRef.current);
       failTimerRef.current = null;
@@ -642,7 +647,22 @@ export default function VoiceScreen() {
     setChunks(cs);
     resetCaption();
 
+    // Advance to the next clip EXACTLY once — fired by didJustFinish, the watchdog, or a play error.
     let finishedOnce = false;
+    const advanceClip = () => {
+      if (pipe.cancelled || !mountedRef.current || voicePipeRef.current !== pipe || finishedOnce) return;
+      finishedOnce = true;
+      if (clipWatchdogRef.current) {
+        clearTimeout(clipWatchdogRef.current);
+        clipWatchdogRef.current = null;
+      }
+      teardownPlayer();
+      safeDeleteUri(item.uri);
+      pipe.playing = false;
+      pipe.playIdx += 1;
+      pumpPipe(pipe);
+    };
+
     try {
       const player = createAudioPlayer({ uri: item.uri }, { updateInterval: 90 });
       playerRef.current = player;
@@ -662,23 +682,16 @@ export default function VoiceScreen() {
           if (cardTimesRef.current.length) syncCaption(st.currentTime * 1000);
           else advanceCaption(st.currentTime / estTotalRef.current);
         }
-        if (st.didJustFinish && !finishedOnce) {
-          finishedOnce = true;
-          teardownPlayer();
-          safeDeleteUri(item.uri);
-          pipe.playing = false;
-          pipe.playIdx += 1;
-          pumpPipe(pipe);
-        }
+        if (st.didJustFinish) advanceClip();
       });
       player.play();
+      // Watchdog: expo-audio can drop didJustFinish on very short clips — force-advance after the
+      // clip's own duration + margin so a turn can never wedge waiting for an event that never comes.
+      const durMs = item.dur && item.dur > 0 ? item.dur : (item.spoken.length / CHARS_PER_SEC) * 1000;
+      if (clipWatchdogRef.current) clearTimeout(clipWatchdogRef.current);
+      clipWatchdogRef.current = setTimeout(advanceClip, durMs + 4000);
     } catch {
-      // couldn't create/play this clip — skip it and keep the reply moving
-      teardownPlayer();
-      safeDeleteUri(item.uri);
-      pipe.playing = false;
-      pipe.playIdx += 1;
-      pumpPipe(pipe);
+      advanceClip(); // couldn't create/play this clip — skip it and keep the reply moving
     }
   };
 
@@ -745,8 +758,9 @@ export default function VoiceScreen() {
 
   // The fast path: stream the grounded answer and speak it sentence-by-sentence as it generates.
   const playReplyStreaming = async (question: string) => {
-    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
+    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' });
     if (!mountedRef.current) return;
+    cancelVoicePipeline(); // self-contained: kill any prior pipeline + its timers/files first
     teardownPlayer();
 
     const pipe: VoicePipe = {
@@ -767,7 +781,9 @@ export default function VoiceScreen() {
     if (firstAudioTimerRef.current) clearTimeout(firstAudioTimerRef.current);
     // if no audio has started within 10s, abandon streaming for the buffered path — never hang
     firstAudioTimerRef.current = setTimeout(() => {
-      if (!mountedRef.current || pipe.cancelled || pipe.everSpoke) return;
+      // pipe.playing guards the race where a clip is mid-start (play() called, st.playing not yet) —
+      // don't tear it down and double-synth; the clip watchdog covers a clip that then never sounds.
+      if (!mountedRef.current || pipe.cancelled || pipe.everSpoke || pipe.playing) return;
       fallbackToBuffered(pipe);
     }, 10000);
 
@@ -811,7 +827,7 @@ export default function VoiceScreen() {
   // original, proven path kept intact as the safety net.
   const playBuffered = async (full: string) => {
     const speakText = forSpeech(full);
-    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
+    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' });
     teardownPlayer();
     if (failTimerRef.current) clearTimeout(failTimerRef.current);
     // overall guard: if nothing is speaking within 15s, fall back to on-device speech
@@ -822,32 +838,27 @@ export default function VoiceScreen() {
       }
     }, 15000);
 
-    // Preferred path: fetch the audio as a LOCAL file + per-word timestamps → true caption sync.
+    // Fetch the audio as a LOCAL file + per-word timestamps → true caption sync.
     const reply = await fetchSpokenReply(speakText);
     if (!mountedRef.current) return;
-
-    let srcUri: string;
-    if (reply) {
-      const cs = makeChunks(reply.spoken);
-      chunksRef.current = cs;
-      cardTimesRef.current = buildCardTimes(cs, reply.spoken, reply.marks, reply.dur);
-      estTotalRef.current = Math.max(
-        1.2,
-        (reply.dur || (reply.spoken.length / CHARS_PER_SEC) * 1000) / 1000,
-      );
-      setChunks(cs);
-      setChunkIdx(0);
-      srcUri = reply.uri;
-    } else {
-      // marks endpoint unavailable → stream the audio (Andrew voice) and pace off an estimate
-      const cs = makeChunks(speakText);
-      chunksRef.current = cs;
-      cardTimesRef.current = [];
-      estTotalRef.current = Math.max(1.2, speakText.length / CHARS_PER_SEC);
-      setChunks(cs);
-      setChunkIdx(0);
-      srcUri = `${API_BASE}/api/speak?text=${encodeURIComponent(speakText)}`;
+    if (!reply) {
+      // marks endpoint unavailable → speak on-device. We deliberately do NOT fall back to the chunked
+      // /api/speak?text= GET stream: feeding that into createAudioPlayer can hang for many seconds
+      // before any audio (the bug that made "hello" take ~16s); on-device is instant and reliable.
+      if (failTimerRef.current) {
+        clearTimeout(failTimerRef.current);
+        failTimerRef.current = null;
+      }
+      speakOnDevice(speakText);
+      return;
     }
+    const cs = makeChunks(reply.spoken);
+    chunksRef.current = cs;
+    cardTimesRef.current = buildCardTimes(cs, reply.spoken, reply.marks, reply.dur);
+    estTotalRef.current = Math.max(1.2, (reply.dur || (reply.spoken.length / CHARS_PER_SEC) * 1000) / 1000);
+    setChunks(cs);
+    setChunkIdx(0);
+    const srcUri = reply.uri;
 
     try {
       const player = createAudioPlayer({ uri: srcUri }, { updateInterval: 90 });
@@ -870,6 +881,7 @@ export default function VoiceScreen() {
         }
         if (st.didJustFinish) {
           teardownPlayer();
+          safeDeleteUri(srcUri); // clean up the downloaded clip
           restCaptionAtEnd();
           go('idle');
           relisten();
@@ -881,7 +893,8 @@ export default function VoiceScreen() {
         clearTimeout(failTimerRef.current);
         failTimerRef.current = null;
       }
-      speakOnDevice(reply ? reply.spoken : speakText);
+      safeDeleteUri(srcUri);
+      speakOnDevice(reply.spoken);
     }
   };
 
