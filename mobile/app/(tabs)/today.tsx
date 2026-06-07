@@ -23,7 +23,7 @@ import { useAuth } from '@/lib/auth';
 import { toggleBookmark, useBookmarks } from '@/lib/bookmarks';
 import { refreshDailyVerse } from '@/lib/daily-verse';
 import { haptic } from '@/lib/haptics';
-import { FARD, LABELS } from '@/lib/prayer';
+import { FARD, LABELS, refreshAdhan } from '@/lib/prayer';
 import { usePrayerLog } from '@/lib/prayer-log';
 import { usePrayerGate } from '@/lib/prayer-times';
 import { useRecitation } from '@/lib/recitation-context';
@@ -88,6 +88,7 @@ export default function TodayScreen() {
   useEffect(() => {
     recordActivity('daily_verse'); // opening Today counts toward the streak
     void refreshDailyVerse();
+    void refreshAdhan(); // top up the adhan rolling window so alerts don't silently stop after a few days
   }, []);
 
   const prayersDone = prayer.todayCount === FARD.length;

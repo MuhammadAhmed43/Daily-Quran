@@ -16,12 +16,11 @@ import { haptic } from '@/lib/haptics';
 import {
   DISPLAY_ORDER,
   LABELS,
-  cancelAdhan,
   computeTimes,
-  ensureNotifPermission,
   formatTime,
+  getAdhanEnabled,
   nextPrayer,
-  scheduleAdhan,
+  setAdhan,
 } from '@/lib/prayer';
 import { c, font, radius, space } from '@/lib/theme';
 
@@ -39,6 +38,15 @@ export default function PrayerScreen() {
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Restore the saved adhan on/off choice (it persists across launches now).
+  useEffect(() => {
+    let active = true;
+    getAdhanEnabled().then((on) => active && setAlertsOn(on));
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function load() {
@@ -85,14 +93,10 @@ export default function PrayerScreen() {
     haptic.light();
     setBusy(true);
     try {
-      if (alertsOn) {
-        await cancelAdhan();
-        setAlertsOn(false);
-      } else {
-        if (!(await ensureNotifPermission())) return;
-        const n = await scheduleAdhan(coords.lat, coords.lng);
-        setAlertsOn(n > 0);
-      }
+      // setAdhan persists the choice + the location and schedules a 7-day rolling window; the app-open
+      // refreshAdhan() tops it up so alerts don't silently stop after a couple of days.
+      const on = await setAdhan(!alertsOn, coords.lat, coords.lng);
+      setAlertsOn(on);
     } finally {
       setBusy(false);
     }

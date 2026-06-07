@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CalculationMethod, Coordinates, Madhab, PrayerTimes, Qibla } from 'adhan';
 import * as Notifications from 'expo-notifications';
 
@@ -123,4 +124,76 @@ export async function scheduleAdhan(
 
 export async function cancelAdhan(): Promise<void> {
   await cancelByType('adhan');
+}
+
+// ---- adhan on/off preference + app-open TOP-UP ----
+// scheduleAdhan only schedules a rolling window; without a top-up the alerts silently STOP once the
+// window runs out (a couple of days). We persist the on/off choice (so it survives relaunch) and
+// re-schedule on app open. Mirrors the daily-verse reminder.
+const ADHAN_KEY = 'daily-quran:adhan';
+const COORDS_KEY = 'daily-quran:coords'; // shared with the prayer-time gate
+const ADHAN_DAYS = 7; // 5 prayers x 7 = 35 pending — comfortably under iOS's 64 cap alongside the daily verse
+let adhanEnabledCache: boolean | null = null;
+
+export async function getAdhanEnabled(): Promise<boolean> {
+  if (adhanEnabledCache != null) return adhanEnabledCache;
+  try {
+    const raw = await AsyncStorage.getItem(ADHAN_KEY);
+    const v = raw ? JSON.parse(raw) : null;
+    adhanEnabledCache = !!(v && v.enabled);
+  } catch {
+    adhanEnabledCache = false;
+  }
+  return adhanEnabledCache;
+}
+async function persistAdhanEnabled(enabled: boolean): Promise<void> {
+  adhanEnabledCache = enabled;
+  try {
+    await AsyncStorage.setItem(ADHAN_KEY, JSON.stringify({ enabled }));
+  } catch {}
+}
+async function loadSavedCoords(): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const raw = await AsyncStorage.getItem(COORDS_KEY);
+    const v = raw ? JSON.parse(raw) : null;
+    return v && typeof v.lat === 'number' && typeof v.lng === 'number' ? { lat: v.lat, lng: v.lng } : null;
+  } catch {
+    return null;
+  }
+}
+
+// Turn adhan alerts on/off and PERSIST the choice. Saves the location too, so the app-open top-up can
+// reschedule even before the prayer screen is opened again. Returns the resulting enabled state.
+export async function setAdhan(enabled: boolean, lat: number, lng: number): Promise<boolean> {
+  if (enabled) {
+    if (!(await ensureNotifPermission())) {
+      await persistAdhanEnabled(false);
+      return false;
+    }
+    try {
+      await AsyncStorage.setItem(COORDS_KEY, JSON.stringify({ lat, lng }));
+    } catch {}
+    await scheduleAdhan(lat, lng, 'MuslimWorldLeague', 'shafi', ADHAN_DAYS);
+  } else {
+    await cancelAdhan();
+  }
+  await persistAdhanEnabled(enabled);
+  return enabled;
+}
+
+// Top up the rolling window on app open. No-op unless adhan is enabled, permission is granted, and a
+// saved location exists. In-flight guarded so concurrent calls can't double-schedule.
+let refreshingAdhan = false;
+export async function refreshAdhan(): Promise<void> {
+  if (refreshingAdhan) return;
+  if (!(await getAdhanEnabled())) return;
+  if (!(await ensureNotifPermission())) return;
+  const coords = await loadSavedCoords();
+  if (!coords) return;
+  refreshingAdhan = true;
+  try {
+    await scheduleAdhan(coords.lat, coords.lng, 'MuslimWorldLeague', 'shafi', ADHAN_DAYS);
+  } finally {
+    refreshingAdhan = false;
+  }
 }
