@@ -24,7 +24,7 @@ function mergeBookmarks(local, remote) {
     if (!b) continue;
     const k = `${b.surah}:${b.ayah}`;
     const ex = byKey.get(k);
-    if (!ex || (b.at ?? 0) < (ex.at ?? 0)) byKey.set(k, b);
+    if (!ex || (b.at ?? 0) > (ex.at ?? 0)) byKey.set(k, b);
   }
   return Array.from(byKey.values());
 }
@@ -133,11 +133,15 @@ ok(eq(mergeLedger(null, R1), R1), 'empty local -> remote');
 ok(eq(mergeLedger(L1, R1), mergeLedger(R1, L1)), 'union is commutative');
 ok(eq(mergeLedger(L1, mergeLedger(L1, R1)), mergeLedger(L1, R1)), 'union is idempotent');
 
-console.log('bookmarks (union by surah:ayah, earliest at)');
+console.log('bookmarks (union by surah:ayah, latest at; tombstones)');
 const b1 = mergeBookmarks([{ surah: 2, ayah: 255, at: 9 }], [{ surah: 1, ayah: 1, at: 3 }]);
 ok(b1.length === 2, 'disjoint bookmarks unioned');
 const b2 = mergeBookmarks([{ surah: 2, ayah: 255, at: 9 }], [{ surah: 2, ayah: 255, at: 3 }]);
-ok(b2.length === 1 && b2[0].at === 3, 'duplicate deduped, earliest at kept');
+ok(b2.length === 1 && b2[0].at === 9, 'duplicate deduped, latest at kept');
+const b3 = mergeBookmarks([{ surah: 2, ayah: 255, at: 10, deleted: true }], [{ surah: 2, ayah: 255, at: 5 }]);
+ok(b3.length === 1 && b3[0].deleted === true, 'tombstone (newer) wins -> deletion propagates, not resurrected');
+const b4 = mergeBookmarks([{ surah: 2, ayah: 255, at: 10, deleted: true }], [{ surah: 2, ayah: 255, at: 20 }]);
+ok(b4.length === 1 && !b4[0].deleted, 're-add (newer than the tombstone) brings the bookmark back');
 ok(mergeBookmarks([], []).length === 0, 'both empty -> empty');
 ok(eq(mergeBookmarks([{ surah: 1, ayah: 1, at: 1 }], [{ surah: 2, ayah: 2, at: 2 }]), mergeBookmarks([{ surah: 2, ayah: 2, at: 2 }], [{ surah: 1, ayah: 1, at: 1 }])), 'commutative');
 

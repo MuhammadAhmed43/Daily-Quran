@@ -3,7 +3,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
-export type Bookmark = { surah: number; ayah: number; at: number };
+// `deleted` marks a TOMBSTONE: a removed bookmark is kept (with a fresh `at`) rather than spliced out,
+// so the deletion survives a cloud merge instead of the bookmark resurrecting from the other device.
+export type Bookmark = { surah: number; ayah: number; at: number; deleted?: boolean };
 
 const KEY = 'daily-quran:bookmarks';
 let cache: Bookmark[] | null = null;
@@ -40,26 +42,30 @@ export function subscribeBookmarks(fn: () => void): () => void {
   };
 }
 
-// Newest first.
+// Newest first (tombstones hidden).
 export async function getBookmarks(): Promise<Bookmark[]> {
   const all = await load();
-  return all.slice().sort((a, b) => b.at - a.at);
+  return all.filter((b) => !b.deleted).sort((a, b) => b.at - a.at);
 }
 
 export function isBookmarked(surah: number, ayah: number): boolean {
-  return !!cache?.some((b) => b.surah === surah && b.ayah === ayah);
+  return !!cache?.some((b) => b.surah === surah && b.ayah === ayah && !b.deleted);
 }
 
 // Returns true if it ended up bookmarked, false if removed.
 export async function toggleBookmark(surah: number, ayah: number): Promise<boolean> {
   await load();
   const i = cache!.findIndex((b) => b.surah === surah && b.ayah === ayah);
+  const now = Date.now();
   let added: boolean;
-  if (i >= 0) {
-    cache!.splice(i, 1);
+  if (i >= 0 && !cache![i].deleted) {
+    cache![i] = { surah, ayah, at: now, deleted: true }; // tombstone, not a hard delete (survives sync)
     added = false;
+  } else if (i >= 0) {
+    cache![i] = { surah, ayah, at: now }; // re-add over an existing tombstone
+    added = true;
   } else {
-    cache!.push({ surah, ayah, at: Date.now() });
+    cache!.push({ surah, ayah, at: now });
     added = true;
   }
   persist();
@@ -68,7 +74,7 @@ export async function toggleBookmark(surah: number, ayah: number): Promise<boole
 
 // Subscribe a component to the bookmark list (re-renders on any change).
 export function useBookmarks(): Bookmark[] {
-  const [list, setList] = useState<Bookmark[]>(cache ? cache.slice().sort((a, b) => b.at - a.at) : []);
+  const [list, setList] = useState<Bookmark[]>(cache ? cache.filter((b) => !b.deleted).sort((a, b) => b.at - a.at) : []);
   useEffect(() => {
     let active = true;
     const refresh = () => getBookmarks().then((b) => active && setList(b));

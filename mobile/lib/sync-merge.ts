@@ -41,14 +41,17 @@ export function mergeLedger(local: any, remote: any): any {
   return out;
 }
 
-// bookmarks [{ surah, ayah, at }]: union by surah:ayah, keep the earliest 'at' (when first saved).
+// bookmarks [{ surah, ayah, at, deleted? }]: union by surah:ayah, keep the LATEST 'at'. A removal is a
+// tombstone ({deleted:true} with a fresh 'at'), so latest-wins makes a delete beat an older add (and a
+// re-add beat the tombstone) — deletions propagate instead of the bookmark resurrecting. Tombstones are
+// retained in the synced value; getBookmarks() hides them.
 export function mergeBookmarks(local: any, remote: any): any {
   const byKey = new Map<string, any>();
   for (const b of [...(local ?? []), ...(remote ?? [])]) {
     if (!b) continue;
     const k = `${b.surah}:${b.ayah}`;
     const ex = byKey.get(k);
-    if (!ex || (b.at ?? 0) < (ex.at ?? 0)) byKey.set(k, b);
+    if (!ex || (b.at ?? 0) > (ex.at ?? 0)) byKey.set(k, b);
   }
   return Array.from(byKey.values());
 }
