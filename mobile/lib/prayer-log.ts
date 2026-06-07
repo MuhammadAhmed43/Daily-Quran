@@ -1,8 +1,9 @@
 // The private daily prayer log — a quiet record of the five fard prayers, for the user alone. Same
 // cache + pub/sub + hook pattern as the other on-device stores; day boundaries reuse streak.ts's
 // dayKey. DELIBERATELY non-gamified: marking a prayer logs `prayer_logged`, which is NOT a streak-
-// qualifying activity (see streak.ts QUALIFYING), so worship is never turned into a score. Local-only,
-// never synced.
+// qualifying activity (see streak.ts QUALIFYING), so worship is never turned into a score. It IS backed
+// up to the user's OWN private cloud row (RLS-protected, never shared or community-visible) like the
+// other personal stores — "private" means not gamified / not social, not device-only.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 

@@ -54,7 +54,9 @@ export default function StoryPlayer() {
 
   useEffect(() => {
     recitation.stop();
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    // doNotMix so the OS interrupts any lingering qari clip if stop() hasn't fully torn it down yet,
+    // rather than letting the narration play over it.
+    setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

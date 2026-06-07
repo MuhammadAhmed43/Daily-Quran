@@ -7,7 +7,7 @@
 // pending jump/scroll, autoplay, bookmarks. This is presentation only.
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -93,6 +93,25 @@ export default function SurahReader() {
   const playingHere = ctx.playing?.surah === displayedSurah;
   const playingAyah = playingHere ? ctx.playing!.ayah : null;
 
+  // Latest-value refs so the per-row callbacks can stay referentially STABLE — that's what lets the
+  // memoized AyahRows skip re-rendering: only the row whose play state actually changed re-renders,
+  // instead of all ~286 on every recited ayah.
+  const ctxRef = useRef(ctx);
+  ctxRef.current = ctx;
+  const displayedSurahRef = useRef(displayedSurah);
+  displayedSurahRef.current = displayedSurah;
+  const playingHereRef = useRef(playingHere);
+  playingHereRef.current = playingHere;
+  const targetAyahRef = useRef(targetAyah);
+  targetAyahRef.current = targetAyah;
+
+  // O(1) bookmark lookup per row (was an O(rows x bookmarks) .some scan on every render).
+  const bookmarkedSet = useMemo(() => {
+    const s = new Set<number>();
+    for (const b of bookmarks) if (b.surah === displayedSurah) s.add(b.ayah);
+    return s;
+  }, [bookmarks, displayedSurah]);
+
   // Auto-start when arriving from a "Listen to the whole Qur'an" / autoplay link.
   useEffect(() => {
     if (didAutostartRef.current) return;
@@ -171,7 +190,9 @@ export default function SurahReader() {
     else pendingScrollRef.current = playingAyah;
   }, [playingAyah]);
 
-  function onAyahLayout(ayahNum: number, y: number) {
+  // Stable (refs only) so it can be a memoized-row prop. onLayout fires on row mount/resize, so the
+  // measured-position scroll machinery is unaffected by row memoization.
+  const onAyahLayout = useCallback((ayahNum: number, y: number) => {
     positions.current[ayahNum] = y;
     if (pendingScrollRef.current === ayahNum) {
       pendingScrollRef.current = null;
@@ -180,11 +201,24 @@ export default function SurahReader() {
     }
     // Open at the route's target ayah — UNLESS this surah is being recited, in which case the follow
     // effect below lands us on the actually-playing ayah (so returning always points to what's narrated).
-    if (!didScroll.current && targetAyah && ayahNum === targetAyah && !playingHere) {
+    if (!didScroll.current && targetAyahRef.current && ayahNum === targetAyahRef.current && !playingHereRef.current) {
       didScroll.current = true;
       requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: false }));
     }
-  }
+  }, []);
+
+  // Stable per-row action callbacks (read latest state via refs).
+  const onLongPressAyah = useCallback((a: Ayah) => {
+    haptic.medium();
+    setActiveAyah(a);
+  }, []);
+  const onInfinityAyah = useCallback((n: number) => {
+    ctxRef.current.playWhole(displayedSurahRef.current, n);
+  }, []);
+  const onToggleAyah = useCallback((n: number, isPlayingRow: boolean) => {
+    if (!isPlayingRow) setLastRead({ surah: displayedSurahRef.current, ayah: n }); // a newly tapped ayah is a manual read
+    ctxRef.current.toggle(displayedSurahRef.current, n);
+  }, []);
 
   // Jump to any surah:ayah. If this surah is reciting, continue from there; else just read there.
   function jumpTo(s: number, a: number) {
@@ -224,11 +258,6 @@ export default function SurahReader() {
   const showBismillah = surah.number !== 1 && surah.number !== 9;
   const reciting = playingHere;
   const trShort = translationMeta(trId).short;
-
-  function onLongPressAyah(a: Ayah) {
-    haptic.medium();
-    setActiveAyah(a);
-  }
 
   return (
     <Screen edges={['top']}>
@@ -278,50 +307,21 @@ export default function SurahReader() {
 
         {surah.ayahs.map((item) => {
           const isThis = playingAyah === item.n;
-          const bookmarked = bookmarks.some((b) => b.surah === displayedSurah && b.ayah === item.n);
           return (
-            <Pressable
+            <AyahRow
               key={item.n}
-              onLayout={(e) => onAyahLayout(item.n, e.nativeEvent.layout.y)}
-              onLongPress={() => onLongPressAyah(item)}
-              delayLongPress={300}
-              style={({ pressed }) => [
-                styles.ayah,
-                highlight === item.n && styles.ayahHighlight,
-                isThis && styles.ayahPlaying,
-                pressed && styles.ayahPressed,
-              ]}>
-              <Txt style={styles.arabic}>{item.ar}</Txt>
-              <View style={styles.transRow}>
-                <Txt style={styles.vnum}>{item.n}</Txt>
-                {bookmarked ? <Ionicons name="bookmark" size={13} color={c.accent} style={styles.bookmarkMark} /> : null}
-                <Txt style={styles.trans}>{verseText(surah.number, item.n)}</Txt>
-                <PressableScale
-                  onPress={() => ctx.playWhole(displayedSurah, item.n)}
-                  hitSlop={6}
-                  style={styles.ayBtn}
-                  accessibilityLabel="Recite the whole Qur'an from this ayah">
-                  <Ionicons name="infinite" size={19} color={c.textMuted} />
-                </PressableScale>
-                <PressableScale
-                  onPress={() => {
-                    if (!isThis) setLastRead({ surah: displayedSurah, ayah: item.n }); // a newly tapped ayah is a manual read
-                    ctx.toggle(displayedSurah, item.n);
-                  }}
-                  hitSlop={8}
-                  style={styles.ayBtn}>
-                  {isThis && ctx.loading ? (
-                    <ActivityIndicator size="small" color={c.accent} />
-                  ) : (
-                    <Ionicons
-                      name={isThis ? (ctx.paused ? 'play' : 'pause') : 'headset-outline'}
-                      size={22}
-                      color={isThis ? c.accent : c.textMuted}
-                    />
-                  )}
-                </PressableScale>
-              </View>
-            </Pressable>
+              item={item}
+              trans={verseText(surah.number, item.n)}
+              isPlaying={isThis}
+              loading={isThis && ctx.loading}
+              paused={isThis && ctx.paused}
+              isHighlight={highlight === item.n}
+              isBookmarked={bookmarkedSet.has(item.n)}
+              onLayout={onAyahLayout}
+              onLongPress={onLongPressAyah}
+              onInfinity={onInfinityAyah}
+              onToggle={onToggleAyah}
+            />
           );
         })}
       </ScrollView>
@@ -414,6 +414,72 @@ export default function SurahReader() {
     </Screen>
   );
 }
+
+type AyahRowProps = {
+  item: Ayah;
+  trans: string;
+  isPlaying: boolean;
+  loading: boolean;
+  paused: boolean;
+  isHighlight: boolean;
+  isBookmarked: boolean;
+  onLayout: (n: number, y: number) => void;
+  onLongPress: (item: Ayah) => void;
+  onInfinity: (n: number) => void;
+  onToggle: (n: number, isPlaying: boolean) => void;
+};
+
+// One verse row, MEMOIZED: during recitation only the row whose play state changed re-renders, not all
+// ~286 every ayah. Props are primitives + stable callbacks, so React.memo's shallow compare holds. Note
+// loading/paused are passed as `isThis && ...` so non-playing rows keep constant false props (they don't
+// re-render when the player's loading/paused toggles).
+const AyahRow = memo(function AyahRow({
+  item,
+  trans,
+  isPlaying,
+  loading,
+  paused,
+  isHighlight,
+  isBookmarked,
+  onLayout,
+  onLongPress,
+  onInfinity,
+  onToggle,
+}: AyahRowProps) {
+  return (
+    <Pressable
+      onLayout={(e) => onLayout(item.n, e.nativeEvent.layout.y)}
+      onLongPress={() => onLongPress(item)}
+      delayLongPress={300}
+      style={({ pressed }) => [
+        styles.ayah,
+        isHighlight && styles.ayahHighlight,
+        isPlaying && styles.ayahPlaying,
+        pressed && styles.ayahPressed,
+      ]}>
+      <Txt style={styles.arabic}>{item.ar}</Txt>
+      <View style={styles.transRow}>
+        <Txt style={styles.vnum}>{item.n}</Txt>
+        {isBookmarked ? <Ionicons name="bookmark" size={13} color={c.accent} style={styles.bookmarkMark} /> : null}
+        <Txt style={styles.trans}>{trans}</Txt>
+        <PressableScale
+          onPress={() => onInfinity(item.n)}
+          hitSlop={6}
+          style={styles.ayBtn}
+          accessibilityLabel="Recite the whole Qur'an from this ayah">
+          <Ionicons name="infinite" size={19} color={c.textMuted} />
+        </PressableScale>
+        <PressableScale onPress={() => onToggle(item.n, isPlaying)} hitSlop={8} style={styles.ayBtn}>
+          {isPlaying && loading ? (
+            <ActivityIndicator size="small" color={c.accent} />
+          ) : (
+            <Ionicons name={isPlaying ? (paused ? 'play' : 'pause') : 'headset-outline'} size={22} color={isPlaying ? c.accent : c.textMuted} />
+          )}
+        </PressableScale>
+      </View>
+    </Pressable>
+  );
+});
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },

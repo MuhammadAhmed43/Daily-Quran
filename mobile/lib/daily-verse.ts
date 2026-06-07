@@ -87,11 +87,20 @@ export async function setVerseNotif(enabled: boolean, hour: number, minute: numb
 
 // Top-up on app open so the rolling window never runs dry. Safe to call often - it only re-schedules
 // daily-verse notifications, and no-ops when the reminder is off or permission was revoked.
+// In-flight guard: foreground + sync-apply can both call this at once; without it the two passes can
+// each cancel-then-schedule and briefly double the pending count.
+let refreshing = false;
 export async function refreshDailyVerse(): Promise<void> {
+  if (refreshing) return;
   const prefs = await getVerseNotifPrefs();
   if (!prefs.enabled) return;
   if (!(await ensureNotifPermission())) return;
-  await scheduleDailyVerse(prefs.hour, prefs.minute);
+  refreshing = true;
+  try {
+    await scheduleDailyVerse(prefs.hour, prefs.minute);
+  } finally {
+    refreshing = false;
+  }
 }
 
 // Fire a one-off reminder a few seconds from now with TODAY's verse, so you can see exactly what the
