@@ -61,3 +61,6 @@ coverage/
 # UI redesign reference screenshots (local design aids; large + third-party, not source)
 Bible-chat/
 Ui-Design/
+
+# agentic-log submission artifact (the committed .claude-logs/ folder is the source of truth)
+claude-logs.zip
