@@ -18,13 +18,17 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'; // Groq multimodal; CF Llama-3.2-Vision is the documented fallback
 const TEXT_MODEL = 'openai/gpt-oss-120b'; // same grounded answerer as chat.js
 
-const { surahName, retrieveContext, buildCards, sanitizeRefs, recognizeVerse, fetchVerses, fetchTafsir, STUDY_AID_DISCLAIMER } = require('./_rag');
+const { CRISIS_RE, surahName, retrieveContext, buildCards, sanitizeRefs, recognizeVerse, fetchVerses, fetchTafsir, STUDY_AID_DISCLAIMER } = require('./_rag');
 const { streamGroq } = require('./_groq');
 
 const MAX_IMAGE_CHARS = 6_000_000; // ~4MB of base64 -- Groq's base64 image ceiling; the client compresses well under this
 const REFLECT_MIN_SCORE = 0.45; // weak backstop for the reflection path; the scene gate is the real control
 const QA_MIN_SCORE = 0.57; // QA floor: drop verses unrelated to the claim so the model can't enumerate/card them; explicitly-named verses (e.g. a "2:255" in the claim) bypass it
 const RATE_MSG = "I'm getting a lot of requests right now -- please try again in a few seconds.";
+// Duty of care: if a photo's text/caption or the question signals distress or self-harm, wellbeing
+// comes before any reflection or scripture (mirrors the chat + ameen-wall crisis handling).
+const CRISIS_MSG =
+  "It sounds like you may be carrying something really heavy right now, and I'm glad you reached out. Please talk to someone who can be there with you -- in the US you can call or text 988 (the Suicide and Crisis Lifeline), anytime, day or night; elsewhere, your local emergency number or a crisis line can help. You matter, and you deserve real support. I'm here too, but please reach out to them first.";
 
 // ---- vision: describe + moderate + classify + read text. STRICT JSON, no interpretation. ----
 const VISION_SYSTEM = `You are a careful visual describer for a Qur'an study app. Look at the image and reply with STRICT JSON ONLY (no prose, no markdown), matching exactly:
@@ -244,6 +248,13 @@ module.exports = async (req, res) => {
     }
     if (!vision.description && !vision.text && !vision.arabicText) {
       return respondPlain(res, stream, "I couldn't make out this image clearly. A brighter or closer photo might help -- or just tell me what you'd like to reflect on.");
+    }
+
+    // WELLBEING FIRST (duty of care): if the question, or the text/caption read from the image,
+    // expresses distress or self-harm, respond with support + a helpline BEFORE any reflection,
+    // verse recognition, or fact-check. The QA/gentle modes have no crisis guidance, so gate here.
+    if (CRISIS_RE.test(q) || CRISIS_RE.test(vision.text || '') || CRISIS_RE.test(vision.description || '')) {
+      return respondPlain(res, stream, CRISIS_MSG);
     }
 
     const priorTurns = (Array.isArray(history) ? history : [])

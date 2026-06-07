@@ -248,6 +248,32 @@ function buildCards(answer, verses, named, tafsir) {
   return { verseCards, tafsirCards };
 }
 
+// FAITHFULNESS GATE for the PROSE (buildCards gates the cards): strip from the answer text any
+// surah:ayah citation NOT in `allowedRefs` (the verses/tafsir we actually retrieved) — both
+// parenthesized "(16:12)" and bare "16:12" — so the model can never leave a from-memory citation in
+// the text the user reads or hears. Kept identical to api/_rag.js sanitizeRefs (chat.js holds inline
+// twins of the retrieval helpers; this is the one that had drifted/was missing).
+function sanitizeRefs(answer, allowedRefs) {
+  if (!answer) return answer;
+  const ok = (s, a) => allowedRefs.has(`${s}:${a}`);
+  return answer
+    .replace(/\(\s*(\d{1,3}):(\d{1,3})(?:\s*[-–]\s*\d{1,3})?\s*\)/g, (m, s, a) => (ok(s, a) ? m : ''))
+    .replace(/\b(\d{1,3}):(\d{1,3})(?:\s*[-–]\s*\d{1,3})?\b/g, (m, s, a) => (ok(s, a) ? m : ''))
+    .replace(/\(\s*\)/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .trim();
+}
+
+// The set of "surah:ayah" the answer is ALLOWED to cite in prose = everything we retrieved (named +
+// similar verses + the tafsir verses). Passed to sanitizeRefs.
+function allowedRefSet(verses, tafsir) {
+  const set = new Set();
+  for (const v of verses) set.add(`${v.surah}:${v.ayah}`);
+  for (const t of tafsir) set.add(`${t.surah}:${t.ayah}`);
+  return set;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -343,10 +369,13 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
     // cards (which need the whole answer to validate citations). Voice replies stream too — on the
     // fast non-reasoning model so the FIRST token (and so the first spoken sentence) arrives in a
     // fraction of a second instead of after gpt-oss's hidden reasoning pause.
+    const allowedRefs = allowedRefSet(verses, tafsir);
+
     if (stream) {
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
       let answer = '';
+      let streamErr = null;
       try {
         answer = await streamGroq(
           {
@@ -359,13 +388,20 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
           (delta) => res.write(JSON.stringify({ t: delta }) + '\n'),
         );
       } catch (e) {
-        res.write(JSON.stringify({ error: String((e && e.message) || e) }) + '\n');
+        streamErr = e;
+      }
+      // If Groq dropped mid-stream but we got SOME text, finalize the partial answer gracefully
+      // (clean + cards) instead of dumping a raw error; only error out if we have nothing at all.
+      if (streamErr && !answer.trim()) {
+        res.write(JSON.stringify({ error: String((streamErr && streamErr.message) || streamErr) }) + '\n');
         return res.end();
       }
-      const { verseCards, tafsirCards } = buildCards(answer, verses, named, tafsir);
+      const clean = sanitizeRefs(answer, allowedRefs);
+      const { verseCards, tafsirCards } = buildCards(clean, verses, named, tafsir);
       res.write(
         JSON.stringify({
           done: true,
+          answer: clean, // the faithful, ref-sanitized text the client should settle on (see see.js)
           verses: verseCards,
           tafsir: tafsirCards,
           video,
@@ -397,10 +433,11 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
     }
     const groqJson = await groqRes.json();
     const answer = (groqJson.choices?.[0]?.message?.content || '').trim();
+    const clean = sanitizeRefs(answer, allowedRefs);
 
-    const { verseCards, tafsirCards } = buildCards(answer, verses, named, tafsir);
+    const { verseCards, tafsirCards } = buildCards(clean, verses, named, tafsir);
     return res.status(200).json({
-      answer,
+      answer: clean,
       verses: verseCards,
       tafsir: tafsirCards,
       video,

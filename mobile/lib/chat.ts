@@ -49,6 +49,7 @@ type ChatStreamEvent =
   | { t: string }
   | {
       done: true;
+      answer?: string; // the server's ref-sanitized final text — settle on this, not the raw tokens
       verses: VerseCard[];
       tafsir: TafsirSnippet[];
       video?: VideoRef | null;
@@ -67,6 +68,7 @@ export async function streamChat(
   let gotToken = false;
   let lastEmit = 0;
   const out = {
+    answer: '',
     verses: [] as VerseCard[],
     tafsir: [] as TafsirSnippet[],
     video: null as VideoRef | null,
@@ -84,6 +86,7 @@ export async function streamChat(
           onToken(answer);
         }
       } else if ('done' in ev) {
+        if (typeof ev.answer === 'string' && ev.answer) out.answer = ev.answer;
         out.verses = ev.verses;
         out.tafsir = ev.tafsir;
         out.video = ev.video ?? null;
@@ -97,5 +100,7 @@ export async function streamChat(
     return askQuestion(question, history); // streaming unavailable → buffered fallback
   }
   if (out.error) throw new Error(out.error);
-  return { answer, verses: out.verses, tafsir: out.tafsir, video: out.video, disclaimer: out.disclaimer };
+  // Settle on the server's sanitized text (refs the model couldn't ground are stripped); fall back to
+  // the raw token accumulation only if the server didn't send a final answer.
+  return { answer: out.answer || answer, verses: out.verses, tafsir: out.tafsir, video: out.video, disclaimer: out.disclaimer };
 }
