@@ -69,10 +69,12 @@ export default function AskBrowseScreen() {
   useEffect(() => {
     expandedRef.current = miniExpanded;
   }, [miniExpanded]);
-  // collapse to the blob when recitation stops, so the next session opens as a blob again
+  // collapse to the blob when recitation stops, so the next session opens as a blob again. Depend on
+  // the BOOLEAN (not the {surah,ayah} object that changes every ayah) so this effect doesn't churn.
+  const recitationPlaying = !!recitation.playing;
   useEffect(() => {
-    if (!recitation.playing) setMiniExpanded(false);
-  }, [recitation.playing]);
+    if (!recitationPlaying) setMiniExpanded(false);
+  }, [recitationPlaying]);
   const collapseMini = useCallback(() => {
     if (expandedRef.current) setMiniExpanded(false);
   }, []);

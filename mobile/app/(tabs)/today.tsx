@@ -10,7 +10,7 @@
 // recordActivity. Re-skin + re-layout + motion only — no data/logic rewrite.
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import Animated, { Easing, LinearTransition, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -144,12 +144,12 @@ function TopBar({ hijri, streak }: { hijri: string; streak: number }) {
           {hijri}
         </Txt>
       </View>
-      <View style={styles.streakPill}>
+      <PressableScale style={styles.streakPill} onPress={() => router.push('/streak' as Href)}>
         <Ionicons name="flame" size={14} color={c.streakFlame} />
         <Txt variant="caption" color={c.textPrimary} style={styles.streakNum}>
           {streak}
         </Txt>
-      </View>
+      </PressableScale>
       <PressableScale onPress={() => router.push('/calendar')} style={styles.calBtn}>
         <Ionicons name="calendar-outline" size={18} color={c.textSecondary} />
       </PressableScale>
