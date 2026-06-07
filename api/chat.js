@@ -148,8 +148,10 @@ function extraRefs(question) {
   const re = /\b(\d{1,3}):(\d{1,3})\b/g;
   while ((m = re.exec(question))) refs.push({ surah: +m[1], ayah: +m[2] });
   if (/ayat\s*al[-\s]?kursi|ayatul\s*kursi|throne verse/.test(q)) refs.push({ surah: 2, ayah: 255 });
-  // Greetings/small talk → offer one warm, uplifting verse (hearts find rest in remembrance).
-  if (/^\s*(hi|hey+|hello|yo|howdy|salam|salaam|asalam|assalam|as[-\s]?salaam?u?\s*alaiku?m|good\s*(morning|afternoon|evening)|peace be upon you)\b/i.test(q)) {
+  // A PURE greeting (the whole message is just a hello) → offer one warm, uplifting verse. Anchored to
+  // end-of-message so "hey, is music haram?" is NOT treated as a greeting and doesn't get a verse stapled
+  // onto a fiqh deferral.
+  if (/^\s*(hi|hey+|hello|yo|howdy|salam|salaam|asalam|assalam|as[-\s]?salaam?u?\s*alaiku?m|good\s*(morning|afternoon|evening)|peace be upon you)[\s!.,'’-]*$/i.test(q)) {
     refs.push({ surah: 13, ayah: 28 });
   }
   for (const [name, num] of Object.entries(SURAH_ALIASES)) {
@@ -381,7 +383,9 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
           {
             model: voice ? VOICE_MODEL : GROQ_MODEL,
             messages,
-            maxTokens: voice ? 260 : 800,
+            // gpt-oss is a reasoning model: hidden reasoning shares this budget, so give text answers
+            // headroom (1200) to avoid truncating a longer teaching answer mid-sentence.
+            maxTokens: voice ? 260 : 1200,
             // reasoning_effort only helps gpt-oss (text); the fast voice model has no reasoning step.
             reasoningEffort: voice ? undefined : 'low',
           },
@@ -423,7 +427,7 @@ The spoken "Surah <Name>, verse <N>" makes it sound natural when read aloud; the
         model: voice ? VOICE_MODEL : GROQ_MODEL,
         messages,
         temperature: 0.3,
-        max_tokens: voice ? 260 : 800, // voice replies are short & spoken → fewer tokens, faster to generate and to speak
+        max_tokens: voice ? 260 : 1200, // voice = short/spoken; text gets headroom so gpt-oss reasoning doesn't truncate the answer
         // reasoning_effort only applies to gpt-oss (the non-voice path); the fast voice model has no reasoning step
         ...(voice ? {} : { reasoning_effort: 'low' }),
       }),
