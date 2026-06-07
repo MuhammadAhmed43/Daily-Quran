@@ -9,7 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take a photo to reflect on with a relevant Qur'an verse.",
+        "NSPhotoLibraryUsageDescription": "Choose a photo to reflect on with a relevant Qur'an verse.",
+        "NSMicrophoneUsageDescription": "Speak your question, or search for a surah by voice.",
+        "NSLocationWhenInUseUsageDescription": "Show accurate prayer times and the qibla direction for your location."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -39,7 +45,19 @@
           }
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-location",
+        { "locationWhenInUsePermission": "Show accurate prayer times and the qibla direction for your location." }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Take a photo to reflect on with a relevant Qur'an verse.",
+          "photosPermission": "Choose a photo to reflect on with a relevant Qur'an verse."
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -62,8 +62,11 @@ export default function QiblaScreen() {
     (async () => {
       try {
         const s = await Location.watchHeadingAsync((h) => {
-          const deg = h.trueHeading >= 0 ? h.trueHeading : h.magHeading;
-          if (deg >= 0) setHeading(Math.round(deg));
+          // TRUE north ONLY — qiblaDirection() returns a true-north bearing, so comparing it against the
+          // magnetic heading would be off by the local declination (up to ~30deg), pointing the wrong way
+          // while the UI says "aligned". If trueHeading isn't ready, leave heading null so the screen
+          // stays in its calibrating state rather than showing a confidently-wrong needle.
+          if (typeof h.trueHeading === 'number' && h.trueHeading >= 0) setHeading(Math.round(h.trueHeading));
         });
         if (active) sub = s;
         else s.remove();

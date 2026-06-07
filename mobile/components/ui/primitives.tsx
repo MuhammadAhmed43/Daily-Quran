@@ -45,6 +45,7 @@ export function IconButton({
   color = c.textPrimary,
   bg = c.surface2,
   diameter = 44,
+  accessibilityLabel,
 }: {
   name: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
@@ -52,10 +53,13 @@ export function IconButton({
   color?: string;
   bg?: string;
   diameter?: number;
+  accessibilityLabel?: string;
 }) {
   return (
     <PressableScale
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       style={{
         width: diameter,
         height: diameter,

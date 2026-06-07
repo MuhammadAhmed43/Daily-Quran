@@ -247,7 +247,10 @@ export default function SurahReader() {
 
   if (!surah) {
     return (
-      <Screen>
+      <Screen edges={['top']}>
+        <View style={styles.header}>
+          <IconButton name="chevron-back" onPress={() => router.back()} diameter={38} size={22} color={c.textPrimary} />
+        </View>
         <View style={styles.center}>
           <Txt variant="body">Surah not found.</Txt>
         </View>

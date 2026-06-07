@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   spacer: { width: 38 },
 
   scroll: { paddingHorizontal: space.gutter, paddingBottom: space.section, gap: 16 },
-  title: { marginTop: 8, lineHeight: 33 },
+  title: { marginTop: 8, lineHeight: 38 }, // generous so the ﷺ honorific (e.g. "Muhammad ﷺ ...") never clips when the title wraps
   framing: { fontFamily: font.serifReg, fontSize: 16.5, lineHeight: 26, color: c.scriptureInk, marginTop: 10 },
 
   crisis: { backgroundColor: 'rgba(217,89,76,0.10)', borderColor: 'rgba(217,89,76,0.35)', borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, padding: 16, gap: 8 },

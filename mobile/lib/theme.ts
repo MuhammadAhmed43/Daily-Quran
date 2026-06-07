@@ -545,7 +545,7 @@ const onyx: Palette = {
   accentBright: '#E3D9C4',
   textPrimary: '#F0EDE6',
   textSecondary: '#A09A8E',
-  textMuted: '#5E5A52',
+  textMuted: '#807A6E', // warm gray bumped from #5E5A52 to reach WCAG AA (~4.6:1 on the onyx bg) for caption/hint/disclaimer text; still clearly below textSecondary
   scriptureInk: '#F6F1E6',
   hairline: 'rgba(255,255,255,0.08)',
   hairlineSoft: 'rgba(255,255,255,0.05)',
