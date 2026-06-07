@@ -28,7 +28,8 @@ async function load(): Promise<Affinity> {
   if (cache) return cache;
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as Affinity) : {};
+    const parsed = raw ? JSON.parse(raw) : null; // validate shape so a corrupt blob can't crash rankForYou
+    cache = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Affinity) : {};
   } catch {
     cache = {};
   }

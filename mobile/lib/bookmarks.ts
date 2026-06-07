@@ -13,7 +13,8 @@ async function load(): Promise<Bookmark[]> {
   if (cache) return cache;
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as Bookmark[]) : [];
+    const parsed = raw ? JSON.parse(raw) : null; // validate shape: JSON.parse of corrupt/legacy data could be a non-array
+    cache = Array.isArray(parsed) ? (parsed as Bookmark[]) : [];
   } catch {
     cache = [];
   }

@@ -64,7 +64,10 @@ async function load(): Promise<Ledger> {
   if (cache) return cache;
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as Ledger) : {};
+    const parsed = raw ? JSON.parse(raw) : null;
+    // Validate the SHAPE after parsing — JSON.parse('null'|'5'|'[]') succeeds but would crash the
+    // later Object.entries / .t access on corrupt or schema-drifted data.
+    cache = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Ledger) : {};
   } catch {
     cache = {};
   }
@@ -95,8 +98,17 @@ export function recordActivity(type: ActType): void {
   void (async () => {
     await load();
     const k = dayKey(new Date());
+    const existing = cache![k];
+    // Already recorded this activity type today: the streak only cares about WHICH days qualify, not
+    // per-event counts, so just bump the in-memory count and skip the disk write + subscriber fan-out.
+    // (Without this, continuous "Listen to the whole Qur'an" persists the whole ledger every ayah.)
+    if (existing && Array.isArray(existing.t) && existing.t.includes(type)) {
+      existing.n += 1;
+      return;
+    }
     const day = (cache![k] ??= { t: [], n: 0 });
     day.n += 1;
+    if (!Array.isArray(day.t)) day.t = [];
     if (!day.t.includes(type)) day.t.push(type);
     persist();
   })();
@@ -105,7 +117,7 @@ export function recordActivity(type: ActType): void {
 function qualifyingDays(ledger: Ledger): Set<string> {
   const set = new Set<string>();
   for (const [day, log] of Object.entries(ledger)) {
-    if (log.t.some((t) => QUALIFYING.includes(t))) set.add(day);
+    if (log && Array.isArray(log.t) && log.t.some((t) => QUALIFYING.includes(t))) set.add(day);
   }
   return set;
 }

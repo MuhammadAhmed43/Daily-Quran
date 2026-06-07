@@ -44,11 +44,20 @@ async function load(): Promise<Store> {
   if (cache) return cache;
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as Store) : {};
+    const parsed = raw ? JSON.parse(raw) : null;
+    cache = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Store) : {};
   } catch {
     cache = {};
   }
   return cache;
+}
+
+/** Reset the private journal (+ AI-reading) cache from storage + notify — used by sign-out clearing. */
+export async function reloadReflections(): Promise<void> {
+  cache = null;
+  readingCache = null;
+  await load();
+  listeners.forEach((l) => l());
 }
 
 function persist() {
@@ -113,7 +122,8 @@ async function loadReadings(): Promise<Record<string, string>> {
   if (readingCache) return readingCache;
   try {
     const raw = await AsyncStorage.getItem(READING_KEY);
-    readingCache = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    const parsed = raw ? JSON.parse(raw) : null;
+    readingCache = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, string>) : {};
   } catch {
     readingCache = {};
   }

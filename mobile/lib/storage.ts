@@ -4,10 +4,19 @@ const LAST_READ_KEY = 'daily-quran:lastRead';
 
 export type LastRead = { surah: number; ayah: number };
 
+function parsePos(raw: string | null): LastRead | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw);
+    return v && typeof v.surah === 'number' && typeof v.ayah === 'number' ? { surah: v.surah, ayah: v.ayah } : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getLastRead(): Promise<LastRead | null> {
   try {
-    const raw = await AsyncStorage.getItem(LAST_READ_KEY);
-    return raw ? (JSON.parse(raw) as LastRead) : null;
+    return parsePos(await AsyncStorage.getItem(LAST_READ_KEY));
   } catch {
     return null;
   }
@@ -27,8 +36,7 @@ const LISTEN_KEY = 'daily-quran:listenPos';
 
 export async function getListenPos(): Promise<LastRead | null> {
   try {
-    const raw = await AsyncStorage.getItem(LISTEN_KEY);
-    return raw ? (JSON.parse(raw) as LastRead) : null;
+    return parsePos(await AsyncStorage.getItem(LISTEN_KEY));
   } catch {
     return null;
   }

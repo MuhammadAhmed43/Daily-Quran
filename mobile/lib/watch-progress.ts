@@ -18,11 +18,19 @@ async function load(): Promise<ProgressMap> {
   if (cache) return cache;
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as ProgressMap) : {};
+    const parsed = raw ? JSON.parse(raw) : null; // validate shape so corrupt data can't crash the timeline
+    cache = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as ProgressMap) : {};
   } catch {
     cache = {};
   }
   return cache;
+}
+
+/** Reset the in-memory cache from storage + notify — used by sign-out clearing and any external reset. */
+export async function reloadWatch(): Promise<void> {
+  cache = null;
+  await load();
+  listeners.forEach((l) => l());
 }
 
 function persist() {

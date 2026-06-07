@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
 
 import { reloadBookmarks, subscribeBookmarks } from './bookmarks';
+import { clearAllChats } from './chat-history';
 import { refreshDailyVerse } from './daily-verse';
 import { reloadAffinity, subscribeAffinity } from './hub-affinity';
 import { reloadPlans, subscribePlans } from './plan-progress';
@@ -13,8 +14,10 @@ import { reloadPrayerLog, subscribePrayerLog } from './prayer-log';
 import { reloadProfile, subscribeProfile } from './profile';
 import { reloadQuiz, subscribeQuiz } from './quiz';
 import { reloadQuranPlan, subscribeQuranPlan } from './quran-plan-progress';
+import { reloadReflections } from './reflections';
 import { reloadStreak, subscribeStreak } from './streak';
 import { supabase } from './supabase';
+import { reloadWatch } from './watch-progress';
 import {
   SYNC_KEYS,
   mergeAffinity,
@@ -147,6 +150,50 @@ export async function syncNow(): Promise<boolean> {
 
 export function getLastSyncedAt(): number | null {
   return lastSyncedAt;
+}
+
+// Device-level preferences that are NOT user-private — these survive sign-out so the next person on the
+// device keeps a sane experience (their language/reciter/location/age-gate aren't someone else's secret).
+const KEEP_ON_SIGNOUT = new Set<string>([
+  'daily-quran:translation',
+  'daily-quran:reciter',
+  'daily-quran:coords',
+  'daily-quran:community-13plus',
+]);
+
+// Wipe ALL per-user local data so the next account can never inherit (and then re-upload into its own
+// cloud row) the previous user's streak, bookmarks, reading position, private journal, chats, etc.
+// MUST run AFTER the final syncNow() has pushed the outgoing user's data to their own cloud row.
+export async function clearLocalUserData(): Promise<void> {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const remove = keys.filter((k) => k.startsWith('daily-quran:') && !KEEP_ON_SIGNOUT.has(k));
+    if (remove.length) await AsyncStorage.multiRemove(remove);
+  } catch {
+    // best-effort
+  }
+  // Reset every in-memory cache so a screen mounted before sign-out (or remounted after) never shows the
+  // previous user's data. The synced stores reload via their apply(); the unsynced ones reset directly.
+  for (const e of ENTRIES) {
+    try {
+      await e.apply();
+    } catch {
+      // ignore a single store's reset failure
+    }
+  }
+  try {
+    await reloadWatch();
+  } catch {}
+  try {
+    await reloadReflections();
+  } catch {}
+  try {
+    clearAllChats();
+  } catch {}
 }
 
 // Start the sync loop once: now, on every auth change (sign-in/out), and on app foreground/background.

@@ -74,6 +74,14 @@ function persistHistory() {
   listeners.forEach((l) => l());
 }
 
+/** Reset the in-memory history + pending hand-off (used by sign-out clearing; the AsyncStorage keys
+ *  themselves are removed by the central clearLocalUserData). */
+export function clearAllChats(): void {
+  cache = [];
+  pendingRestore = null;
+  listeners.forEach((l) => l());
+}
+
 /** Push the given thread into the shared History list, newest first. No-op unless the user actually took
  *  part (a welcome/category opener alone isn't history). The caller clears the live thread separately. */
 export async function archive(msgs: StoredMsg[]): Promise<void> {

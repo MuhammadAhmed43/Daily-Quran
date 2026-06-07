@@ -10,7 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 
 import { ensureAnonSession, supabase } from './supabase';
-import { syncNow } from './sync';
+import { clearLocalUserData, syncNow } from './sync';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -154,7 +154,8 @@ export async function updateDisplayName(name: string): Promise<AuthResult> {
 }
 
 export async function signOut(): Promise<void> {
-  await syncNow(); // push any unsynced local changes before we lose the session
+  await syncNow(); // push any unsynced local changes to the OUTGOING user's cloud row first
+  await clearLocalUserData(); // then wipe local so the next account can't inherit/re-upload this user's data
   await markDecided(false);
   if (supabase) await supabase.auth.signOut();
 }
