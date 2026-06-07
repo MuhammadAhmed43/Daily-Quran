@@ -57,6 +57,12 @@ export default function StoryPlayer() {
     // doNotMix so the OS interrupts any lingering qari clip if stop() hasn't fully torn it down yet,
     // rather than letting the narration play over it.
     setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' }).catch(() => {});
+    return () => {
+      // Pause before the hook releases the player, so the narration can't linger after leaving the screen.
+      try {
+        player.pause();
+      } catch {}
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

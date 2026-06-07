@@ -10,7 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 
 import { ensureAnonSession, supabase } from './supabase';
-import { clearLocalUserData, syncNow } from './sync';
+import { clearLocalUserData, suspendSync, syncNow } from './sync';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -155,9 +155,14 @@ export async function updateDisplayName(name: string): Promise<AuthResult> {
 
 export async function signOut(): Promise<void> {
   await syncNow(); // push any unsynced local changes to the OUTGOING user's cloud row first
-  await clearLocalUserData(); // then wipe local so the next account can't inherit/re-upload this user's data
-  await markDecided(false);
-  if (supabase) await supabase.auth.signOut();
+  suspendSync(true); // then freeze sync so the SIGNED_OUT event / cache-reset debounce can't push emptied state
+  try {
+    await clearLocalUserData(); // wipe local so the next account can't inherit/re-upload this user's data
+    await markDecided(false);
+    if (supabase) await supabase.auth.signOut();
+  } finally {
+    suspendSync(false); // re-enable for the next sign-in
+  }
 }
 
 // Subscribe to auth changes (sign in / out / token refresh). Used by the launch gate so signing out

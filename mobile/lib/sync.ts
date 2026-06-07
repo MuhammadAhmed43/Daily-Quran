@@ -61,6 +61,14 @@ const UID_KEY = 'daily-quran:sync-uid';
 let running = false;
 let inFlight: Promise<boolean> | null = null;
 let started = false;
+let suspended = false; // true during sign-out so a stray auth/AppState/debounce trigger can't push cleared data
+
+// Pause/resume the sync loop. signOut() suspends BEFORE wiping local data so that the SIGNED_OUT auth
+// event (or the debounce armed by the cache resets) can't run a pass that pushes emptied state back into
+// the outgoing user's cloud row.
+export function suspendSync(v: boolean): void {
+  suspended = v;
+}
 let lastSyncedAt: number | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -101,6 +109,7 @@ async function permanentUserId(): Promise<string | null> {
 // questions. Returns true if a pass actually ran (permanent user, read+write ok).
 export async function syncNow(): Promise<boolean> {
   if (!supabase) return false;
+  if (suspended) return false; // signing out — never push during/after the local wipe
   if (inFlight) return inFlight; // a pass is already running -> await it (dedupe), don't bail early
   inFlight = (async (): Promise<boolean> => {
     const uid = await permanentUserId();

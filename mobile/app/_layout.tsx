@@ -6,7 +6,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -149,6 +149,28 @@ function LaunchSplash({ onDone }: { onDone: () => void }) {
   );
 }
 
+// expo-router renders this automatically if any screen throws during render. Without it, a single
+// uncaught error white-screens the whole app with no recovery. Uses system fonts + only theme colors so
+// it renders even if a font/theme load was the thing that failed.
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  return (
+    <View style={styles.errRoot}>
+      <Text style={styles.errTitle}>Something went wrong</Text>
+      <Text style={styles.errBody}>The app ran into an unexpected problem. Please try again.</Text>
+      {__DEV__ ? <Text style={styles.errDetail}>{String(error?.message ?? error)}</Text> : null}
+      <Pressable style={styles.errBtn} onPress={() => retry()} accessibilityRole="button" accessibilityLabel="Try again">
+        <Text style={styles.errBtnText}>Try again</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: c.bg },
+  errRoot: { flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
+  errTitle: { color: c.textPrimary, fontSize: 22, fontWeight: '600', textAlign: 'center' },
+  errBody: { color: c.textSecondary, fontSize: 15, lineHeight: 22, textAlign: 'center' },
+  errDetail: { color: c.textMuted, fontSize: 12, textAlign: 'center' },
+  errBtn: { marginTop: 12, backgroundColor: c.accent, paddingHorizontal: 28, paddingVertical: 13, borderRadius: 999 },
+  errBtnText: { color: c.bg, fontSize: 16, fontWeight: '600' },
 });

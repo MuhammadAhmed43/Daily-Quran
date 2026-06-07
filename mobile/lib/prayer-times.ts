@@ -17,7 +17,8 @@ async function loadCoords(): Promise<Coords | null> {
   if (coordsCache) return coordsCache;
   try {
     const raw = await AsyncStorage.getItem(COORDS_KEY);
-    coordsCache = raw ? (JSON.parse(raw) as Coords) : null;
+    const v = raw ? JSON.parse(raw) : null; // validate shape so a corrupt blob yields no coords (gate opens) rather than NaN times
+    coordsCache = v && typeof v.lat === 'number' && typeof v.lng === 'number' ? { lat: v.lat, lng: v.lng } : null;
   } catch {
     coordsCache = null;
   }
