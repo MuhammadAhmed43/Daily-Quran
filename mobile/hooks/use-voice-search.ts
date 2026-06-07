@@ -55,6 +55,9 @@ export function useVoiceSearch(onResult: (text: string) => void) {
     } catch (e) {
       Alert.alert('Voice search failed', String((e as Error)?.message ?? e));
     } finally {
+      // Release the mic from the audio session, else iOS keeps PlayAndRecord active and routes the
+      // next recitation to the quiet earpiece. Restores the normal speaker playback mode.
+      setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' }).catch(() => {});
       setBusy(false);
     }
   }, [recorder, onResult]);

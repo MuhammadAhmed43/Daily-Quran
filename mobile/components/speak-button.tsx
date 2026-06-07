@@ -54,10 +54,10 @@ export function SpeakButton({ text, compact }: { text: string; compact?: boolean
   const play = async () => {
     const t = text.trim().slice(0, 1500);
     if (!t) return;
-    recitation.pause(); // never overlap the qari
+    recitation.stop(); // single audio owner — stop (not pause) the qari so it can't overlap or get stuck paused
     setState('loading');
     try {
-      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' });
       if (!mountedRef.current) return;
       const player = createAudioPlayer(
         { uri: `${API_BASE}/api/speak?text=${encodeURIComponent(t)}` },

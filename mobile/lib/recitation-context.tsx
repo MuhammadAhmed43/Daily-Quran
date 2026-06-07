@@ -74,7 +74,6 @@ function useEngine(): RecitationApi {
   const failRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadingRef = useRef(false); // a volume fade-out is in progress (ignore the natural clip-end)
   const fadeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const audioReadyRef = useRef(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -289,10 +288,10 @@ function useEngine(): RecitationApi {
     setPaused(false);
     setLoading(true);
     try {
-      if (!audioReadyRef.current) {
-        await setAudioModeAsync({ playsInSilentMode: true });
-        audioReadyRef.current = true;
-      }
+      // Re-assert the session on EVERY start so recitation self-heals if another surface (voice
+      // search, voice mode) left allowsRecording on — otherwise iOS routes the qari to the quiet
+      // earpiece. doNotMix makes the OS enforce single-audio, so a missed teardown can't double up.
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' });
       if (!mountedRef.current || !samePos(wantRef.current, pos)) return;
       attachAndPlay(pos, makePlayer(pos), true);
     } catch {
