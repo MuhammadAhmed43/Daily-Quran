@@ -9,8 +9,42 @@ import { PressableScale } from './pressable-scale';
 
 type Variant = keyof typeof typeScale;
 
-export function Txt({ variant = 'body', color, style, ...rest }: TextProps & { variant?: Variant; color?: string }) {
-  return <Text {...rest} style={[typeScale[variant], color ? { color } : null, style]} />;
+// The standalone Arabic honorific ligatures — ﷺ (sall-Allahu alayhi wa sallam) and ﷻ (jalla jalaluhu) —
+// render far larger than the surrounding text and break out of the line box. Render just those glyphs at
+// HALF size, inline, wherever Txt shows them (the honorifics live in the content data, which flows through
+// Txt). Only kicks in when a honorific is actually present, so normal text is untouched.
+const hasHon = (s: string) => s.includes('ﷺ') || s.includes('ﷻ');
+const childHasHon = (node: ReactNode): boolean =>
+  typeof node === 'string' ? hasHon(node) : Array.isArray(node) ? node.some(childHasHon) : false;
+function shrinkHonorifics(node: ReactNode, half: number): ReactNode {
+  const one = (s: string, kb: string): ReactNode =>
+    hasHon(s)
+      ? s.split(/([ﷺﷻ])/).map((p, i) =>
+          p === 'ﷺ' || p === 'ﷻ' ? (
+            <Text key={`${kb}${i}`} style={{ fontSize: half }}>
+              {p}
+            </Text>
+          ) : (
+            p
+          ),
+        )
+      : s;
+  if (typeof node === 'string') return one(node, 'h');
+  if (Array.isArray(node)) return node.map((ch, i) => (typeof ch === 'string' ? one(ch, `h${i}_`) : ch));
+  return node;
+}
+
+export function Txt({ variant = 'body', color, style, children, ...rest }: TextProps & { variant?: Variant; color?: string }) {
+  let kids: ReactNode = children;
+  if (childHasHon(children)) {
+    const base = (StyleSheet.flatten([typeScale[variant], style]) as { fontSize?: number }).fontSize ?? 16;
+    kids = shrinkHonorifics(children, base * 0.5);
+  }
+  return (
+    <Text {...rest} style={[typeScale[variant], color ? { color } : null, style]}>
+      {kids}
+    </Text>
+  );
 }
 
 export function Card({
