@@ -82,6 +82,9 @@ export function MiniPlayer() {
 
   if (!ctx.playing) return null;
   if (pathname === '/chat') return null; // the Ask tab floats its own collapsible bar above its composer
+  // The surah reader shows its OWN recitation bar (the GlassSurface pill), so suppress the floating one
+  // there — otherwise both are briefly visible during the push and read as a "double" bar.
+  if (pathname.startsWith('/surah')) return null;
   const { surah, ayah } = ctx.playing;
 
   const open = () => {

@@ -7,7 +7,7 @@
 // pending jump/scroll, autoplay, bookmarks. This is presentation only.
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -234,7 +234,9 @@ export default function SurahReader() {
       }
     } else {
       pendingJumpRef.current = { ayah: a, play: shouldPlay };
-      setDisplayedSurah(s);
+      // Defer the heavy list re-render so the jump stays responsive instead of freezing the UI thread
+      // while a large surah (e.g. al-Baqarah, 286 ayat) mounts. Pending jump applies after it commits.
+      startTransition(() => setDisplayedSurah(s));
     }
   }
 
@@ -242,7 +244,9 @@ export default function SurahReader() {
   function goSurah(n: number) {
     if (n < 1 || n > SURAH_COUNT || n === displayedSurah) return;
     haptic.light();
-    setDisplayedSurah(n);
+    // Defer the heavy list re-render so prev/next paging stays responsive (the haptic + bar react
+    // instantly; the new surah paints when ready) instead of freezing on a large surah.
+    startTransition(() => setDisplayedSurah(n));
   }
 
   if (!surah) {
