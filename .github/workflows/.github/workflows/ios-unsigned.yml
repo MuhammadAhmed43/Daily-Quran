@@ -1,0 +1,73 @@
+# Builds an UNSIGNED iOS .ipa on GitHub's free macOS runner (unlimited for public repos), so it can be
+# sideloaded onto a device with a FREE Apple ID via Sideloadly / AltStore (no paid Apple Developer account,
+# no Mac needed locally). Trigger it manually from the Actions tab; download the "ios-unsigned-ipa" artifact.
+name: iOS unsigned IPA (sideload)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      # The app's PUBLIC config (RLS-protected anon key + public URLs) — embedded into the JS bundle at build.
+      EXPO_PUBLIC_API_BASE: https://daily-quran-murex.vercel.app
+      EXPO_PUBLIC_SUPABASE_URL: https://fznzuypkmdbnwzatukbi.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bnp1eXBrbWRibnd6YXR1a2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDA4NzYsImV4cCI6MjA5NTkxNjg3Nn0.pFSItLoti0yfrSwzV-gMugXmhnVRgPuUi2wLlN8oeJ4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Expo prebuild (generate the native ios/ project)
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Archive (no code signing)
+        run: |
+          cd ios
+          WORKSPACE=$(ls -d *.xcworkspace | head -n1)
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | python3 -c "import sys, json; print(json.load(sys.stdin)['workspace']['schemes'][0])")
+          echo "Workspace: $WORKSPACE   Scheme: $SCHEME"
+          xcodebuild archive \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/app.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Package unsigned .ipa
+        run: |
+          cd ios
+          APP=$(ls -d build/app.xcarchive/Products/Applications/*.app | head -n1)
+          echo "App bundle: $APP"
+          rm -rf Payload && mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qr app-unsigned.ipa Payload
+          ls -la app-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: mobile/ios/app-unsigned.ipa
+          if-no-files-found: error
