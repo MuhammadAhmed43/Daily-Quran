@@ -9,21 +9,34 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.muhammadahmed.dailyquran",
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Take a photo to reflect on with a relevant Qur'an verse.",
         "NSPhotoLibraryUsageDescription": "Choose a photo to reflect on with a relevant Qur'an verse.",
         "NSMicrophoneUsageDescription": "Speak your question, or search for a surah by voice.",
-        "NSLocationWhenInUseUsageDescription": "Show accurate prayer times and the qibla direction for your location."
+        "NSLocationWhenInUseUsageDescription": "Show accurate prayer times and the qibla direction for your location.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.muhammadahmed.dailyquran",
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -46,7 +59,9 @@
       "expo-audio",
       [
         "expo-location",
-        { "locationWhenInUsePermission": "Show accurate prayer times and the qibla direction for your location." }
+        {
+          "locationWhenInUsePermission": "Show accurate prayer times and the qibla direction for your location."
+        }
       ],
       [
         "expo-image-picker",
@@ -60,6 +75,18 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8d884d55-2fff-40e9-aee0-7663dc9144d8"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8d884d55-2fff-40e9-aee0-7663dc9144d8"
     }
   }
 }

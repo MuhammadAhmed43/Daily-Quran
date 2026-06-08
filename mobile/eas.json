@@ -1,0 +1,45 @@
+{
+  "cli": {
+    "version": ">= 20.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://daily-quran-murex.vercel.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fznzuypkmdbnwzatukbi.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bnp1eXBrbWRibnd6YXR1a2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDA4NzYsImV4cCI6MjA5NTkxNjg3Nn0.pFSItLoti0yfrSwzV-gMugXmhnVRgPuUi2wLlN8oeJ4"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://daily-quran-murex.vercel.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fznzuypkmdbnwzatukbi.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bnp1eXBrbWRibnd6YXR1a2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDA4NzYsImV4cCI6MjA5NTkxNjg3Nn0.pFSItLoti0yfrSwzV-gMugXmhnVRgPuUi2wLlN8oeJ4"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://daily-quran-murex.vercel.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://fznzuypkmdbnwzatukbi.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6bnp1eXBrbWRibnd6YXR1a2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNDA4NzYsImV4cCI6MjA5NTkxNjg3Nn0.pFSItLoti0yfrSwzV-gMugXmhnVRgPuUi2wLlN8oeJ4"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
