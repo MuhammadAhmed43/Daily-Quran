@@ -3,83 +3,35 @@
 // high at midday, low-right at dusk, a cool moon-glow at night), the constellation fades up, a crescent
 // rises, and the gold-leaf seal kindles at centre with Ayat an-Nur beneath. Pure light imagery — aniconic.
 import { useEffect } from 'react';
-import { StyleSheet, useWindowDimensions, View, type ViewStyle } from 'react-native';
-import Animated, { Easing, Extrapolation, interpolate, type SharedValue, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { SealMedallion } from '@/components/atlas-tile';
 import { SkyBand } from '@/components/sky-band';
-import { BEAT, Brandmark, Crescent, RadialBloom, Seal, SKY, SplashVerse, type Phase } from '@/components/splash/common';
-import { CornerOrnament } from '@/components/splash/corner-ornament';
+import { BEAT, Brandmark, Crescent, RadialBloom, SKY, SplashVerse, type Phase } from '@/components/splash/common';
 import { haptic } from '@/lib/haptics';
 import { c } from '@/lib/theme';
-
-// The four gold-leaf corner flourishes — one source (an L-shaped piece whose angle sits at the BOTTOM-LEFT)
-// mirrored so the angle nestles into each screen corner: bottom-left is the source orientation (identity),
-// the others mirror across the relevant axis. Each gets a soft champagne glow + a staggered fade-in.
-type Flip = ({ scaleX: number } | { scaleY: number })[];
-const CORNERS: { pos: ViewStyle; glowAt: { x: number; y: number }; flip: Flip; at: number }[] = [
-  { pos: { top: 0, left: 0 }, glowAt: { x: 0.3, y: 0.3 }, flip: [{ scaleY: -1 }], at: 0 },
-  { pos: { top: 0, right: 0 }, glowAt: { x: 0.7, y: 0.3 }, flip: [{ scaleX: -1 }, { scaleY: -1 }], at: 0.1 },
-  { pos: { bottom: 0, left: 0 }, glowAt: { x: 0.3, y: 0.7 }, flip: [], at: 0.2 },
-  { pos: { bottom: 0, right: 0 }, glowAt: { x: 0.7, y: 0.7 }, flip: [{ scaleX: -1 }], at: 0.3 },
-];
-
-function Corner({
-  orn,
-  idx,
-  at,
-  pos,
-  glowAt,
-  flip,
-  color,
-  size,
-}: {
-  orn: SharedValue<number>;
-  idx: number;
-  at: number;
-  pos: ViewStyle;
-  glowAt: { x: number; y: number };
-  flip: Flip;
-  color: string;
-  size: number;
-}) {
-  const wrapStyle = useAnimatedStyle(() => ({ opacity: interpolate(orn.value, [at, at + 0.5], [0, 1], Extrapolation.CLAMP) }));
-  const ornStyle = useAnimatedStyle(() => {
-    const p = interpolate(orn.value, [at, at + 0.5], [0, 1], Extrapolation.CLAMP);
-    return { transform: [...flip, { scale: 0.92 + 0.08 * p }] };
-  });
-  return (
-    <Animated.View style={[styles.corner, pos, { width: size, height: size }, wrapStyle]} pointerEvents="none">
-      <RadialBloom id={`ornglow-${idx}`} cx={glowAt.x} cy={glowAt.y} r={0.7} stops={[{ offset: 0, color, opacity: 0.16 }, { offset: 1, color, opacity: 0 }]} />
-      <Animated.View style={[StyleSheet.absoluteFill, ornStyle]}>
-        <CornerOrnament size={size} color={color} />
-      </Animated.View>
-    </Animated.View>
-  );
-}
 
 export function SkySplash({ phase, onDone }: { phase: Phase; onDone?: () => void }) {
   const { width, height } = useWindowDimensions();
   const meta = SKY[phase];
-  const cornerSize = Math.round(Math.min(width * 0.46, 196));
 
   const mark = useSharedValue(0); // seal kindle
   const sky = useSharedValue(0); // bloom + stars + crescent
   const reveal = useSharedValue(0); // verse stagger
-  const orn = useSharedValue(0); // corner ornaments
 
   useEffect(() => {
     mark.value = withDelay(BEAT.markIn.delay, withTiming(1, { duration: BEAT.markIn.dur, easing: Easing.out(Easing.cubic) }));
     sky.value = withDelay(BEAT.sky.delay, withTiming(1, { duration: BEAT.sky.dur, easing: Easing.out(Easing.quad) }));
     reveal.value = withDelay(BEAT.reveal.delay, withTiming(1, { duration: BEAT.reveal.dur, easing: Easing.out(Easing.cubic) }));
-    orn.value = withDelay(900, withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) }));
     const h = setTimeout(() => haptic.light(), BEAT.hapticAt);
     const d = onDone ? setTimeout(onDone, BEAT.doneAt) : undefined;
     return () => {
       clearTimeout(h);
       if (d) clearTimeout(d);
     };
-  }, [phase, mark, sky, reveal, orn, onDone]);
+  }, [phase, mark, sky, reveal, onDone]);
 
   // The sky simply brightens in place (pure opacity) — no scale, so the off-centre glow never drifts sideways.
   const skyStyle = useAnimatedStyle(() => ({ opacity: sky.value }));
@@ -137,11 +89,6 @@ export function SkySplash({ phase, onDone }: { phase: Phase; onDone?: () => void
         />
       </Animated.View>
 
-      {/* ornamental gold-leaf corners framing the splash, with a soft champagne glow */}
-      {CORNERS.map((cn, i) => (
-        <Corner key={i} orn={orn} idx={i} at={cn.at} pos={cn.pos} glowAt={cn.glowAt} flip={cn.flip} color={meta.tone} size={cornerSize} />
-      ))}
-
       {/* centre column: kindling seal + the verse */}
       <View style={styles.center} pointerEvents="none">
         <View style={styles.sealWrap}>
@@ -158,7 +105,7 @@ export function SkySplash({ phase, onDone }: { phase: Phase; onDone?: () => void
             />
           </Animated.View>
           <Animated.View style={sealStyle}>
-            <Seal size={64} color={meta.tone} />
+            <SealMedallion name="star-crescent" frame={108} ring={76} glyph={46} glowStrength={0.34} />
           </Animated.View>
         </View>
         <Brandmark anim={mark} />
@@ -173,5 +120,4 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', gap: 30, marginTop: -8 },
   sealWrap: { width: 132, height: 132, alignItems: 'center', justifyContent: 'center' },
   verse: { marginTop: -8 },
-  corner: { position: 'absolute' },
 });
