@@ -901,6 +901,13 @@ export default function VoiceScreen() {
   const speakOnDevice = (text: string) => {
     go('speaking');
     haptic.light();
+    // Ensure the caption cards exist on the on-device path too. The streaming + buffered paths set
+    // `chunks` before they reach here, but a fallback (throttled device / slow or failed TTS) can
+    // arrive with none — which showed the reply being SPOKEN with no on-screen text. Derive the
+    // caption cards from exactly what we're about to speak so the words always appear.
+    const cs = makeChunks(text);
+    chunksRef.current = cs;
+    setChunks(cs);
     startTimedCaption();
     Speech.stop();
     Speech.speak(text, {
