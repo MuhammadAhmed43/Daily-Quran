@@ -314,9 +314,12 @@ function FadeHero({ item, active, width }: { item: HeroItem; active: boolean; wi
 
 function HeroCard({ item, width }: { item: HeroItem; width: number }) {
   return (
-    <PressableScale style={[styles.hero, { width }]} onPress={item.go}>
+    <PressableScale style={[styles.hero, !item.image && styles.heroBordered, { width }]} onPress={item.go}>
       {item.image ? (
-        <Image source={item.image} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        // Square panel art in a wide hero. The subject (e.g. the basket in the Musa panel) sits ~65% down, so a
+        // centered cover-crop buries it low in frame. Crop lower (show more below it) so the subject rises to the
+        // visual centre. Lower factor = higher crop = subject moves UP. Verified against the actual panel.
+        <Image source={item.image} style={[styles.heroImg, { bottom: -width * 0.55 }]} resizeMode="cover" />
       ) : (
         <>
           <LinearGradient colors={['#141210', '#1E1813']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -391,10 +394,16 @@ const styles = StyleSheet.create({
     aspectRatio: 1.6,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.hairline,
     justifyContent: 'flex-end',
   },
+  // The faint white hairline is only added to gradient (non-image) slides. On a photo slide its bottom
+  // edge sits over the dark bottom-scrim and reads as a "weird line"; the image's own edge defines the card.
+  heroBordered: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.hairline,
+  },
+  // full-width square, vertically nudged so the crop sits between center and bottom (see HeroCard).
+  heroImg: { position: 'absolute', left: 0, width: '100%', aspectRatio: 1 },
   heroEmblem: { position: 'absolute', right: 16, top: 14 },
   heroPill: {
     position: 'absolute',
