@@ -4,8 +4,9 @@
 // religiously-sensitive server prompt — these are honest, already-wired controls.
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { BuildLoader } from '@/components/ui/build-loader';
 import { OptionSheet, type Option } from '@/components/ui/option-sheet';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Txt } from '@/components/ui/primitives';
@@ -13,7 +14,7 @@ import { Screen } from '@/components/ui/screen';
 import { SettingsCard, SettingsHeaderSub, SettingsRow } from '@/components/ui/settings';
 import { haptic } from '@/lib/haptics';
 import { type Journey, type Knowledge, updateProfile, useProfile } from '@/lib/profile';
-import { c, font, space } from '@/lib/theme';
+import { c, font, radius, space } from '@/lib/theme';
 
 const KNOWLEDGE: Option<Knowledge>[] = [
   { value: 'new', label: 'New to the Qur’an', hint: 'Simple, gentle explanations' },
@@ -33,6 +34,7 @@ export default function PersonalizeScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   const [sheet, setSheet] = useState<null | 'knowledge' | 'journey'>(null);
+  const [building, setBuilding] = useState(false);
 
   const knowledgeLabel = KNOWLEDGE.find((o) => o.value === profile.knowledge)?.label ?? 'Choose';
   const journeyLabel = APPROACH.find((o) => o.value === profile.journey)?.label ?? 'Choose';
@@ -45,7 +47,7 @@ export default function PersonalizeScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <SettingsHeaderSub title="Personalize your conversation" onBack={() => router.back()} />
 
         <Txt variant="caption" color={c.textMuted} style={styles.intro}>
@@ -77,6 +79,17 @@ export default function PersonalizeScreen() {
         </SettingsCard>
       </ScrollView>
 
+      <View style={styles.footer}>
+        <PressableScale
+          style={styles.doneCta}
+          onPress={() => {
+            haptic.light();
+            setBuilding(true);
+          }}>
+          <Txt style={styles.doneText}>Done</Txt>
+        </PressableScale>
+      </View>
+
       <OptionSheet
         visible={sheet === 'knowledge'}
         title="Answer detail"
@@ -95,13 +108,28 @@ export default function PersonalizeScreen() {
         onSelect={(v) => updateProfile({ journey: v })}
         onClose={() => setSheet(null)}
       />
+
+      {building ? (
+        <View style={[StyleSheet.absoluteFill, styles.overlay]}>
+          <BuildLoader
+            title="Updating your experience"
+            stages={['Saving your preferences', 'Re-tuning explanations', 'Refreshing your space']}
+            onDone={() => router.back()}
+          />
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   scroll: { paddingTop: space.sm, paddingBottom: space.section, gap: space.md },
   intro: { paddingHorizontal: space.gutter, marginBottom: 2 },
   reset: { alignItems: 'center', paddingVertical: 16 },
   resetText: { fontFamily: font.sansSemi, fontSize: 14.5, color: c.accent },
+  footer: { paddingHorizontal: space.gutter, paddingTop: 8, paddingBottom: 20 },
+  doneCta: { backgroundColor: c.primary, paddingVertical: 15, borderRadius: radius.full, alignItems: 'center' },
+  doneText: { color: c.bg, fontFamily: font.sansSemi, fontSize: 16 },
+  overlay: { backgroundColor: c.bg },
 });

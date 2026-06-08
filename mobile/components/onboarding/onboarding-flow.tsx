@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { SealMedallion } from '@/components/atlas-tile';
+import { BuildLoader } from '@/components/ui/build-loader';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Txt } from '@/components/ui/primitives';
 import { Screen } from '@/components/ui/screen';
@@ -14,7 +15,7 @@ import { haptic } from '@/lib/haptics';
 import { completeOnboarding, type Journey } from '@/lib/profile';
 import { c, font, radius, space } from '@/lib/theme';
 
-const STEPS = ['welcome', 'journey', 'goals', 'time', 'focuses', 'done'] as const;
+const STEPS = ['welcome', 'journey', 'goals', 'time', 'focuses', 'building', 'done'] as const;
 type StepKey = (typeof STEPS)[number];
 
 const JOURNEY_OPTS: { id: Journey; label: string }[] = [
@@ -88,6 +89,14 @@ export function OnboardingFlow() {
 
   return (
     <Screen edges={['top', 'bottom']} stars>
+      {step === 'building' ? (
+        <BuildLoader
+          title="Personalizing your space"
+          stages={['Saving your answers', 'Shaping your recommendations', 'Preparing your space']}
+          onDone={() => setI(STEPS.indexOf('done'))}
+        />
+      ) : (
+        <>
       <View style={styles.top}>
         {i > 0 && step !== 'done' ? (
           <PressableScale onPress={back} hitSlop={10} style={styles.topBtn}>
@@ -198,6 +207,8 @@ export function OnboardingFlow() {
           <Txt style={styles.ctaText}>{cta}</Txt>
         </PressableScale>
       </View>
+        </>
+      )}
     </Screen>
   );
 }
