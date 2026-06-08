@@ -15,6 +15,8 @@ const DEFAULT_PROMPT =
   'Al-Fatiha, Al-Baqarah, Aal-e-Imran, An-Nisa, Al-Maidah, Yusuf, Maryam, Ya-Sin, Ar-Rahman, ' +
   'Al-Waqiah, Al-Mulk, Al-Kahf, Al-Ikhlas, Al-Falaq, An-Nas, and Ayat al-Kursi.';
 
+const { rateLimited } = require('./_ratelimit');
+
 module.exports = async (req, res) => {
   // The request comes from the device (Expo Go), so allow cross-origin.
   res.setHeader('Access-Control-Allow-Origin', '*');
