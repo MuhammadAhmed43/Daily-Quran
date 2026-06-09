@@ -97,7 +97,11 @@ function RootGate() {
   // Guests / signed-out resolve instantly (syncNow is a quick no-op without a permanent session).
   const evaluate = useCallback(async () => {
     const decided = await getAuthDecided();
-    if (decided) await syncNow();
+    // Pull cloud state before routing so a returning user never flashes the welcome questions -- but CAP it.
+    // A hung/slow network here (e.g. right after Google sign-in) must NOT trap the user on the loading
+    // spinner: after 6s we route anyway, and the background sync keeps running + re-routes via reloadProfile
+    // once it lands.
+    if (decided) await Promise.race([syncNow(), new Promise<void>((res) => setTimeout(res, 6000))]);
     setAuthDecided(decided);
   }, []);
   useEffect(() => {
