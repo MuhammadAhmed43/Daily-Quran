@@ -12,9 +12,9 @@ verses without ever fabricating scripture.
 
 - **Verified text, never AI-generated.** Qur'anic text is rendered from a
   verified, integrity-checked dataset (114 surahs / 6,236 ayahs, Hafs/Kufan
-  numbering). The planned AI layer *retrieves and cites* verses from this
-  dataset — it never generates scripture, because free LLMs reproduce Qur'anic
-  Arabic incorrectly the majority of the time.
+  numbering). The AI layer *retrieves and cites* verses from this dataset — it
+  never generates scripture, because free LLMs reproduce Qur'anic Arabic
+  incorrectly the majority of the time.
 - **Privacy-first.** Reading and prayer times run entirely on-device, offline.
   No tracking, no selling data.
 - **Built with care for the subject.** Source attribution, narration grading,
@@ -23,8 +23,9 @@ verses without ever fabricating scripture.
 
 ## Features
 
-- ✅ **Qur'an reading** — all 114 surahs, verified Uthmani script + Pickthall
-  translation, right-to-left rendering, fully offline.
+- ✅ **Qur'an reading** — all 114 surahs, verified Uthmani script + selectable
+  English translations (Itani · Pickthall · Yusuf Ali), right-to-left rendering,
+  fully offline.
 - ✅ **Prayer times** — on-device calculation ([adhan-js](https://github.com/batoulapps/adhan-js))
   for your location, a live next-prayer countdown, and local adhan
   notifications. Selectable calculation method & madhab (default: Muslim World
