@@ -210,8 +210,10 @@ export function startSync(): void {
   if (started || !supabase) return;
   started = true;
   void syncNow();
+  // Defer OUT of the onAuthStateChange handler: syncNow calls supabase.auth.getSession, and re-entering
+  // supabase-js's auth lock from inside the event callback deadlocks it (the app hangs after sign-in).
   supabase.auth.onAuthStateChange(() => {
-    void syncNow();
+    setTimeout(() => void syncNow(), 0);
   });
   AppState.addEventListener('change', (s) => {
     if (s === 'active' || s === 'background') void syncNow();

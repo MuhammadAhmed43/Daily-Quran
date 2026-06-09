@@ -33,7 +33,14 @@ export function AuthFlow({ onDone }: { onDone: () => void }) {
     haptic.light();
     setBusy(which);
     setError(null);
-    const r = await fn();
+    let r: { ok: boolean; message?: string };
+    try {
+      r = await fn();
+    } catch (e) {
+      // A thrown / timed-out auth call must never leave the spinner spinning forever.
+      const timedOut = (e as Error)?.message?.includes('timed out');
+      r = { ok: false, message: timedOut ? 'That took too long - check your connection and try again.' : 'Something went wrong - please try again.' };
+    }
     if (r.ok) {
       haptic.success();
       setBusy(null); // clear the spinner now; routing (onDone) drives the unmount, but never depend on it

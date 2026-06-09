@@ -55,8 +55,14 @@ function prettyAuthError(msg: string): string {
 export async function getAuthDecided(): Promise<boolean> {
   if (!supabase) return true; // community not configured -> never gate
   try {
-    const { data } = await supabase.auth.getSession();
+    // Timeout-guarded: getSession is normally a fast local read, but can stall on the auth lock; never let
+    // it block the launch/route decision indefinitely.
+    const { data } = await withTimeout(supabase.auth.getSession(), 8000, 'getSession');
     if (data.session && !data.session.user.is_anonymous) return true;
+  } catch {
+    // fall through to the persisted decision flag
+  }
+  try {
     return (await AsyncStorage.getItem(DECIDED_KEY)) === 'yes';
   } catch {
     return false;
@@ -70,7 +76,7 @@ async function markDecided(yes: boolean): Promise<void> {
 }
 
 export async function continueAsGuest(): Promise<AuthResult> {
-  const s = await ensureAnonSession();
+  const s = await withTimeout(ensureAnonSession(), 20000, 'guest');
   if (!s) return { ok: false, message: "Couldn't start a guest session - check your connection." };
   await markDecided(true);
   return { ok: true };
@@ -83,18 +89,18 @@ export async function signUpEmail(email: string, password: string, name: string)
   // A plain sign-up is the reliable path: anonymous->permanent CONVERSION (updateUser) always requires
   // an email-verification click, which the no-deep-link Expo Go flow can't do. Drop the guest session
   // first so sign-up creates a clean permanent account + session.
-  const { data: cur } = await supabase.auth.getSession();
-  if (cur.session?.user.is_anonymous) await supabase.auth.signOut();
-  const { data, error } = await supabase.auth.signUp({
-    email: clean,
-    password,
-    options: { data: { full_name: display } },
-  });
+  const { data: cur } = await withTimeout(supabase.auth.getSession(), 8000, 'session');
+  if (cur.session?.user.is_anonymous) await withTimeout(supabase.auth.signOut(), 10000, 'sign-out');
+  const { data, error } = await withTimeout(
+    supabase.auth.signUp({ email: clean, password, options: { data: { full_name: display } } }),
+    20000,
+    'sign-up',
+  );
   if (error) return { ok: false, message: prettyAuthError(error.message) };
   // With "Confirm email" OFF, sign-up returns a session immediately (you're signed in). If there's no
   // session, email confirmation is still ON in Supabase - say so plainly instead of failing silently.
   if (!data.session) {
-    const { error: e2 } = await supabase.auth.signInWithPassword({ email: clean, password });
+    const { error: e2 } = await withTimeout(supabase.auth.signInWithPassword({ email: clean, password }), 20000, 'sign-in');
     if (e2) {
       return {
         ok: false,
@@ -108,7 +114,7 @@ export async function signUpEmail(email: string, password: string, name: string)
 
 export async function signInEmail(email: string, password: string): Promise<AuthResult> {
   if (!supabase) return { ok: false, message: 'Accounts are unavailable right now.' };
-  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  const { error } = await withTimeout(supabase.auth.signInWithPassword({ email: email.trim(), password }), 20000, 'sign-in');
   if (error) return { ok: false, message: prettyAuthError(error.message) };
   await markDecided(true);
   return { ok: true };
@@ -119,10 +125,11 @@ export async function signInEmail(email: string, password: string): Promise<Auth
 export async function signInGoogle(): Promise<AuthResult> {
   if (!supabase) return { ok: false, message: 'Accounts are unavailable right now.' };
   const redirectTo = Linking.createURL('auth-callback');
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo, skipBrowserRedirect: true },
-  });
+  const { data, error } = await withTimeout(
+    supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } }),
+    20000,
+    'Google start',
+  );
   if (error || !data?.url) return { ok: false, message: 'Could not start Google sign-in.' };
   const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (res.type !== 'success' || !res.url) return { ok: false, message: 'Google sign-in was cancelled.' };
@@ -175,7 +182,11 @@ export async function signOut(): Promise<void> {
 // returns to the landing screen, and signing in advances past it. Returns an unsubscribe fn.
 export function subscribeAuthChange(cb: () => void): () => void {
   if (!supabase) return () => {};
-  const { data } = supabase.auth.onAuthStateChange(() => cb());
+  // Defer the callback OUT of the onAuthStateChange handler. supabase-js holds an internal lock while it
+  // emits the event, and calling an auth method (our evaluate -> getSession) synchronously from inside here
+  // re-enters that lock and DEADLOCKS -- the app hangs after sign-in. setTimeout(0) runs it once the lock
+  // is released.
+  const { data } = supabase.auth.onAuthStateChange(() => setTimeout(cb, 0));
   return () => data.subscription.unsubscribe();
 }
 
