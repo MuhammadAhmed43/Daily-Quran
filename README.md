@@ -71,6 +71,30 @@ app — the app opens right on your device. That's it.
 - 📶 If the QR won't connect (phone + computer on different networks, or a firewall): run **`npx expo start --tunnel`**.
 - ☁️ It runs against the **live deployed backend** (Vercel + Supabase), so the grounded AI chat, voice, prayer times, reading, stories, and study plans all work immediately — sign in with Google, or just tap **"Continue as guest"** to jump straight in.
 
+## Optional: run it as a real native build
+
+You don't need this to review the app — Expo Go above is the easy path — but the
+project builds to a native app too (no custom native modules beyond standard
+Expo / React-Native ones).
+
+**On a Mac — free, no paid Apple account:**
+
+```bash
+cd mobile
+npx expo run:ios             # iOS Simulator
+npx expo run:ios --device    # ...or onto a plugged-in iPhone (sign with a free Apple ID, 7-day)
+```
+
+`expo run:ios` auto-generates the native `ios/` project (`expo prebuild`) and
+builds it with Xcode. For the **--device** path, if Xcode asks about signing,
+open `mobile/ios` in Xcode once → **Signing & Capabilities → Team → your (free)
+Apple ID**, then re-run. Android (any OS): `npx expo run:android`.
+
+> The repo also includes a GitHub Actions workflow
+> ([`.github/workflows/ios-unsigned.yml`](.github/workflows/ios-unsigned.yml))
+> that builds an **unsigned `.ipa`** for sideloading without a Mac — that was for
+> the author's Windows setup; on a Mac, `expo run:ios` above is far simpler.
+
 ## Architecture & decisions
 
 The full, independently fact-checked architecture — RAG design, model/provider
