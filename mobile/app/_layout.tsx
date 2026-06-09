@@ -5,8 +5,8 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Component, type ReactNode, useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -41,7 +41,16 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  if (!loaded && !error) return null;
+  // Fail-open: never block the whole app on font loading. If fonts haven't resolved (or errored) within 4s
+  // -- a release/standalone build can stall expo-font in a way Expo Go never does -- proceed anyway. The
+  // theme has system-font fallbacks, so the worst case is a brief glyph swap, not a permanent blank splash.
+  const [fontTimedOut, setFontTimedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setFontTimedOut(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!loaded && !error && !fontTimedOut) return null;
 
   // Dark-only premium: force a dark navigation theme with our canvas, regardless of device setting.
   const navTheme = {
@@ -55,9 +64,11 @@ export default function RootLayout() {
           and then snap down a frame later (the first-load up/down jitter on each page). */}
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <ThemeProvider value={navTheme}>
-          <RecitationProvider>
-            <RootGate />
-          </RecitationProvider>
+          <BootErrorBoundary>
+            <RecitationProvider>
+              <RootGate />
+            </RecitationProvider>
+          </BootErrorBoundary>
           <StatusBar style="light" />
         </ThemeProvider>
       </SafeAreaProvider>
@@ -101,11 +112,22 @@ function RootGate() {
   }, []);
 
   const ready = loaded && trReady && authDecided !== null;
-  useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
-  }, [ready]);
 
-  if (!ready) return null;
+  // Fail-open safety net: if the gate hasn't resolved within 6s (a stalled async step, a network hang,
+  // a swallowed error), force past it so the native splash can NEVER trap the app. Whatever didn't finish
+  // settles behind the scenes or surfaces via BootErrorBoundary -- far better than an invisible hang.
+  const [forceReady, setForceReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setForceReady(true), 6000);
+    return () => clearTimeout(t);
+  }, []);
+  const show = ready || forceReady;
+
+  useEffect(() => {
+    if (show) SplashScreen.hideAsync().catch(() => {});
+  }, [show]);
+
+  if (!show) return null;
 
   const stage: 'auth' | 'onboard' | 'app' = !authDecided ? 'auth' : !profile.onboarded ? 'onboard' : 'app';
 
@@ -149,6 +171,34 @@ function LaunchSplash({ onDone }: { onDone: () => void }) {
   );
 }
 
+// A real React error boundary around the launch tree. If anything throws during boot RENDER (a release-only
+// circular-import/bad-element-type fault, a provider crash, a worklets/native-module init throw), we MUST hide
+// the native splash and show the ACTUAL error -- otherwise the app is stranded on the splash with no clue.
+// Detail is shown on purpose (even in release) while we stabilize the standalone/sideload build.
+class BootErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch() {
+    SplashScreen.hideAsync().catch(() => {});
+  }
+  render() {
+    const e = this.state.error;
+    if (!e) return this.props.children;
+    return (
+      <View style={styles.errRoot}>
+        <Text style={styles.errTitle}>Startup error</Text>
+        <Text style={styles.errBody}>The app hit an error while starting. Details below.</Text>
+        <ScrollView style={styles.errScroll} contentContainerStyle={{ paddingVertical: 8 }}>
+          <Text style={styles.errDetail}>{String(e.message ?? e)}</Text>
+          {e.stack ? <Text style={styles.errStack}>{e.stack}</Text> : null}
+        </ScrollView>
+      </View>
+    );
+  }
+}
+
 // expo-router renders this automatically if any screen throws during render. Without it, a single
 // uncaught error white-screens the whole app with no recovery. Uses system fonts + only theme colors so
 // it renders even if a font/theme load was the thing that failed.
@@ -157,7 +207,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
     <View style={styles.errRoot}>
       <Text style={styles.errTitle}>Something went wrong</Text>
       <Text style={styles.errBody}>The app ran into an unexpected problem. Please try again.</Text>
-      {__DEV__ ? <Text style={styles.errDetail}>{String(error?.message ?? error)}</Text> : null}
+      <Text style={styles.errDetail}>{String(error?.message ?? error)}</Text>
       <Pressable style={styles.errBtn} onPress={() => retry()} accessibilityRole="button" accessibilityLabel="Try again">
         <Text style={styles.errBtnText}>Try again</Text>
       </Pressable>
@@ -171,6 +221,8 @@ const styles = StyleSheet.create({
   errTitle: { color: c.textPrimary, fontSize: 22, fontWeight: '600', textAlign: 'center' },
   errBody: { color: c.textSecondary, fontSize: 15, lineHeight: 22, textAlign: 'center' },
   errDetail: { color: c.textMuted, fontSize: 12, textAlign: 'center' },
+  errScroll: { maxHeight: 340, alignSelf: 'stretch', marginTop: 8 },
+  errStack: { color: c.textMuted, fontSize: 11, marginTop: 10, opacity: 0.75 },
   errBtn: { marginTop: 12, backgroundColor: c.accent, paddingHorizontal: 28, paddingVertical: 13, borderRadius: 999 },
   errBtnText: { color: c.bg, fontSize: 16, fontWeight: '600' },
 });
