@@ -350,10 +350,10 @@ single best document for understanding the depth behind this project.
 
 **Copyright (c) 2026 Muhammad Ahmed. All rights reserved.**
 
-This project is **proprietary**. It is published for **evaluation and review only** (for example, as
-part of a job application). **No license is granted** to use, copy, modify, distribute, sublicense, sell,
-reproduce, reverse-engineer, or create derivative works of this software or its content, in whole or in
-part, without the **prior written permission** of the copyright holder. Third-party data and libraries
-retain their own licenses as noted above.
+This project is **proprietary** and is made publicly viewable for reference only. **No license is
+granted** to use, copy, modify, distribute, sublicense, sell, reproduce, reverse-engineer, or create
+derivative works of this software or its content, in whole or in part, without the **prior written
+permission** of the copyright holder. Third-party data and libraries retain their own licenses as noted
+above.
 
 See **[LICENSE](LICENSE)** for the full terms.

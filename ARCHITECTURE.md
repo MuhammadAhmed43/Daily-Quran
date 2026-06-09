@@ -88,7 +88,7 @@ The core architecture survives: **local-first verified text + retrieval-grounded
 **Decision:** Function duration **300 s** *only with Fluid Compute* (default for projects created after Apr 23 2025). Edge first-byte ≤ 25 s. **Rate-limit AI endpoints aggressively.** **Confidence: medium.** **(CHANGED.)**
 - **Binding constraint = Provisioned Memory: 360 GB-hrs/month.** A 2 GB function streaming 300 s ≈ 0.167 GB-hrs → ~**2,160 long streams/month (~72/day)**, far below the 1M-invocation cap. Rate-limit to ~50–100 AI queries/day globally.
 - The earlier **"128 MB Edge memory cap" was fabricated** — standalone Edge Functions are deprecated; use the Node.js runtime (2 GB).
-- Hobby is **non-commercial per ToS** — fine for a take-home POC, not a shipped product.
+- Hobby is **non-commercial per ToS** — fine for a non-commercial POC, not a shipped product.
 
 ### iOS delivery
 **Decision:** **Expo Go is the only free iOS path** (Windows + iPhone + no Mac + no paid Apple account). Scope it as a **UI/data-layer demo**. **Confidence: high.**
@@ -166,7 +166,7 @@ The core architecture survives: **local-first verified text + retrieval-grounded
 
 ---
 
-## Interview defense pack — "why X not Y"
+## Design rationale — "why X not Y"
 
 **Why render scripture from the DB instead of generating verses?**
 Free-tier-accessible models score 26–41% on verse recognition (IslamicMMLU) and even specialist Arabic 7B models under RAG only 65–82% correct verbatim Ayahs. Even a frontier model's 1% error across 6,236 verses is ~62 misquotes. Verse bytes are rendered from a verified Tanzil DB by ID; the LLM never emits them. (I avoid the circulated "4.77%" figure — unverifiable.)
@@ -283,7 +283,7 @@ Node v20.18.1 ✓ · npm 11.3.0 ✓ · git 2.47.1 ✓ · Expo Go on the physical
 | Hugging Face | BGE-M3 embedding inference (or batch via Colab) | M2 |
 | Vercel | API hosting (Edge/Serverless) | M3 |
 | Expo (free) | Expo Go / EAS later | M0 |
-| Apple Developer ($99) | standalone build / background audio — **deferred, not now** | post-takehome |
+| Apple Developer ($99) | standalone build / background audio — **deferred, not now** | post-MVP |
 
 ### Data to source once (verified, with attribution)
 - **Arabic:** Tanzil `quran-uthmani.txt` (CC BY 3.0 — requires a live tanzil.net link in-app).
