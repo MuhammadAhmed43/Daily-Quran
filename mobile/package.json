@@ -21,6 +21,7 @@
     "@supabase/supabase-js": "^2.107.0",
     "adhan": "^4.4.3",
     "expo": "~54.0.34",
+    "expo-asset": "~12.0.13",
     "expo-audio": "~1.1.1",
     "expo-blur": "~15.0.8",
     "expo-clipboard": "~8.0.8",

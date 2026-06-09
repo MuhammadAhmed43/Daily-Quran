@@ -70,7 +70,8 @@
           "photosPermission": "Choose a photo to reflect on with a relevant Qur'an verse."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
