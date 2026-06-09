@@ -41,8 +41,27 @@ opens directly on your device.
   prayer times, reading, stories, and study plans all work immediately. Sign in with Google, or tap
   **"Continue as guest"** to jump straight in. No accounts or API keys required from you.
 
-> Prefer a real native build? See **[Build a native app](#build-a-native-app-optional)** below
-> (`npx expo run:ios` — free on a Mac).
+---
+
+## Build a native app (optional)
+
+You do not need this to review the app, but it builds to a real native binary (no custom native modules
+beyond standard Expo / React-Native ones).
+
+**On a Mac — free, no paid Apple account:**
+
+```bash
+cd mobile
+npx expo run:ios             # iOS Simulator
+npx expo run:ios --device    # ...or onto a plugged-in iPhone (sign with a free Apple ID, 7-day)
+```
+
+`expo run:ios` auto-generates the native `ios/` project (`expo prebuild`) and builds it with Xcode. For
+the `--device` path, if Xcode asks about signing, open `mobile/ios` in Xcode once and set
+**Signing & Capabilities -> Team -> your (free) Apple ID**, then re-run. Android (any OS):
+`npx expo run:android`. The repo also ships a GitHub Actions workflow
+([`.github/workflows/ios-unsigned.yml`](.github/workflows/ios-unsigned.yml)) that builds an unsigned
+`.ipa` for sideloading without a Mac — that was for the author's Windows setup.
 
 ---
 
@@ -274,28 +293,6 @@ The reading and worship experience requires **no network at all**:
 - Verse of the Day is **rotated deterministically by date** — never an LLM pick — so it is reproducible,
   offline, and free of out-of-context risk.
 - Recitation audio streams from a CDN on demand (bundling one reciter would exceed Apple's cellular cap).
-
----
-
-## Build a native app (optional)
-
-You do not need this to review the app, but it builds to a real native binary (no custom native modules
-beyond standard Expo / React-Native ones).
-
-**On a Mac — free, no paid Apple account:**
-
-```bash
-cd mobile
-npx expo run:ios             # iOS Simulator
-npx expo run:ios --device    # ...or onto a plugged-in iPhone (sign with a free Apple ID, 7-day)
-```
-
-`expo run:ios` auto-generates the native `ios/` project (`expo prebuild`) and builds it with Xcode. For
-the `--device` path, if Xcode asks about signing, open `mobile/ios` in Xcode once and set
-**Signing & Capabilities -> Team -> your (free) Apple ID**, then re-run. Android (any OS):
-`npx expo run:android`. The repo also ships a GitHub Actions workflow
-([`.github/workflows/ios-unsigned.yml`](.github/workflows/ios-unsigned.yml)) that builds an unsigned
-`.ipa` for sideloading without a Mac — that was for the author's Windows setup.
 
 ---
 
