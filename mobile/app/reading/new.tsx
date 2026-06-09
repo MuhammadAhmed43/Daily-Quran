@@ -64,7 +64,10 @@ export default function NewQuranPlan() {
     });
     function commit() {
       createPlan(corpus, days);
-      router.replace('/reading');
+      // Pop back to the dashboard we came from (it updates reactively to the new plan) instead of pushing a
+      // SECOND /reading on top of it — otherwise "back" makes the user step through a duplicate dashboard.
+      if (router.canGoBack()) router.back();
+      else router.replace('/reading');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);

@@ -67,6 +67,13 @@ export default function PortionScreen() {
     if (ownsAudioRef.current) rec.fadeStop();
   };
 
+  // Pop back to the plan dashboard we came from instead of pushing a duplicate /reading the user then has
+  // to back through. Falls back to a replace only if there is nothing to pop to.
+  const backToPlan = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/reading');
+  };
+
   const header = (
     <View style={styles.header}>
       <IconButton name="chevron-back" onPress={() => router.back()} diameter={38} size={22} color={c.textPrimary} />
@@ -115,7 +122,7 @@ export default function PortionScreen() {
                 style={styles.cta}
                 onPress={() => {
                   haptic.light();
-                  router.replace('/reading');
+                  backToPlan();
                 }}>
                 <Txt style={styles.ctaText}>View my plan</Txt>
               </PressableScale>
@@ -159,7 +166,7 @@ export default function PortionScreen() {
           <Txt variant="body" color={c.textSecondary} style={styles.centerText}>
             You&apos;ve finished this plan.
           </Txt>
-          <PressableScale onPress={() => router.replace('/reading')} hitSlop={10}>
+          <PressableScale onPress={backToPlan} hitSlop={10}>
             <Txt variant="body" color={c.accent} style={styles.link}>
               View my plan ›
             </Txt>
