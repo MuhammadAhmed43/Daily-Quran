@@ -2,8 +2,8 @@
 
 A privacy-first Qur'an study app for iOS, built with React Native (Expo). Read
 the Qur'an offline with verified text, get accurate prayer times with adhan
-reminders, and — coming next — a *grounded* AI study companion that answers from
-cited verses without ever fabricating scripture.
+reminders, and ask a *grounded* AI study companion that answers from cited
+verses without ever fabricating scripture.
 
 > **Status:** in active development. This repository documents the build
 > end to end, from architecture decisions through each feature.
@@ -29,31 +29,47 @@ cited verses without ever fabricating scripture.
   for your location, a live next-prayer countdown, and local adhan
   notifications. Selectable calculation method & madhab (default: Muslim World
   League · Shafiʿi).
-- 🔜 Verse of the Day, grounded AI study chat (RAG), journal → comforting
-  verses, and an aniconic story/timeline view.
+- ✅ **Grounded AI study chat** — retrieval-augmented answers that cite real
+  verses + classical tafsir (never generates scripture), plus a **voice mode**
+  and **photo reflection**.
+- ✅ **Stories, plans & habit** — aniconic prophet stories with narration, a
+  personal Qur'an reading plan, guided journeys, a daily verse, streaks, a quiz,
+  and a community "Ameen" wall with account sync.
 
 ## Tech stack
 
 - **App:** React Native (Expo SDK 54), TypeScript, Expo Router
 - **Prayer times:** adhan-js (pure-JS, offline)
-- **Backend (planned):** Supabase (Postgres + pgvector) · Vercel · free LLM
-  providers with privacy routing
+- **Backend:** Supabase (Postgres + pgvector) · Vercel serverless · Groq
+  (free-tier LLMs) — deployed and live
 - **Data:** Tanzil Uthmani text (CC BY) + Pickthall translation (public domain),
   via alquran.cloud
 
-## Getting started
+## Run it on your phone (≈ 2 minutes)
 
-Requires **Node ≥ 20.19** and the **Expo Go** app on a physical iOS device.
+No Xcode, no native build, no Apple Developer account — the app runs in **Expo Go**,
+Expo's runtime for React Native apps.
+
+**You need**
+- [Node.js](https://nodejs.org) **≥ 20.19**
+- The free **Expo Go** app on your phone — [iOS](https://apps.apple.com/app/expo-go/id982107779) · [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)
+
+**Steps**
 
 ```bash
-# 1. (optional) rebuild the Qur'an dataset — self-contained, downloads sources
-node scripts/build-quran.mjs
-
-# 2. run the app
-cd mobile
+git clone https://github.com/MuhammadAhmed43/Daily-Quran.git
+cd Daily-Quran/mobile
+cp .env.example .env      # public config so the app reaches the live backend (no secrets)
 npm install
-npx expo start          # scan the QR with Expo Go
+npx expo start
 ```
+
+Then **scan the QR code** in the terminal with your phone's Camera (iOS) or the Expo Go
+app — the app opens right on your device. That's it.
+
+- 🖥️ **On a Mac you don't even need a phone:** press **`i`** in the Expo terminal to open it in the iOS Simulator.
+- 📶 If the QR won't connect (phone + computer on different networks, or a firewall): run **`npx expo start --tunnel`**.
+- ☁️ It runs against the **live deployed backend** (Vercel + Supabase), so the grounded AI chat, voice, prayer times, reading, stories, and study plans all work immediately — sign in with Google, or just tap **"Continue as guest"** to jump straight in.
 
 ## Architecture & decisions
 
