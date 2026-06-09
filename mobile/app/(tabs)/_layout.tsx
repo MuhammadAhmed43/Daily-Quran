@@ -10,7 +10,7 @@ import { MiniPlayer } from '@/components/mini-player';
 import { c, font } from '@/lib/theme';
 
 export const unstable_settings = {
-  initialRouteName: 'today',
+  initialRouteName: 'index',
 };
 
 function tabIcon(active: keyof typeof Ionicons.glyphMap, inactive: keyof typeof Ionicons.glyphMap) {
@@ -40,8 +40,8 @@ export default function TabLayout() {
         }}>
         <Tabs.Screen name="chat" options={{ title: 'Ask', tabBarIcon: tabIcon('sparkles', 'sparkles-outline') }} />
         <Tabs.Screen name="community" options={{ title: 'Community', tabBarIcon: tabIcon('people', 'people-outline') }} />
-        <Tabs.Screen name="today" options={{ title: 'Today', tabBarIcon: tabIcon('sunny', 'sunny-outline') }} />
-        <Tabs.Screen name="index" options={{ title: "Qur'an", tabBarIcon: tabIcon('book', 'book-outline') }} />
+        <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: tabIcon('sunny', 'sunny-outline') }} />
+        <Tabs.Screen name="quran" options={{ title: "Qur'an", tabBarIcon: tabIcon('book', 'book-outline') }} />
         <Tabs.Screen name="explore" options={{ title: 'Explore', tabBarIcon: tabIcon('compass', 'compass-outline') }} />
         {/* Stories + Prayer are pushed stack screens (app/stories/index.tsx, app/prayer.tsx), reached from
             Explore and Today respectively — not tabs. */}
