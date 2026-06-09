@@ -1,0 +1,91 @@
+Daily Qur'an — Proprietary Software License
+Copyright (c) 2026 Muhammad Ahmed. All rights reserved.
+
+================================================================================
+ALL RIGHTS RESERVED. NO PERMISSION IS GRANTED TO USE THIS SOFTWARE WITHOUT THE
+PRIOR WRITTEN PERMISSION OF THE COPYRIGHT HOLDER.
+================================================================================
+
+1. DEFINITIONS
+
+   "Work" means this software application together with its source code, object
+   code, design, user interface, text, images, audio, data compilations,
+   documentation, and all other associated materials in this repository that are
+   authored by the copyright holder.
+
+   "You" means any individual or entity that accesses, views, clones, downloads,
+   or otherwise obtains a copy of the Work.
+
+2. OWNERSHIP
+
+   The Work is the exclusive property of the copyright holder and is protected by
+   copyright and other intellectual-property laws. No ownership rights are
+   transferred to You by accessing the Work.
+
+3. NO LICENSE GRANTED
+
+   Except for the limited Evaluation Permission in Section 4, NO license or right
+   is granted, expressly or by implication, estoppel, or otherwise. Without the
+   prior written permission of the copyright holder, You may NOT, in whole or in
+   part:
+
+     (a) use, run, host, or deploy the Work for any purpose;
+     (b) copy, reproduce, publish, or distribute the Work;
+     (c) modify, adapt, translate, or create derivative works from the Work;
+     (d) sublicense, sell, rent, lease, or otherwise commercialize the Work;
+     (e) reverse-engineer, decompile, or disassemble the Work;
+     (f) remove or alter any copyright, trademark, or proprietary notice; or
+     (g) use the Work, or any part of it, to train or evaluate any machine-
+         learning model.
+
+4. LIMITED EVALUATION PERMISSION
+
+   Solely for the purpose of evaluating the author (for example, as part of a job
+   application, interview, or technical review), and only for as long as that
+   evaluation is in progress, You are permitted to clone this repository and run
+   the Work locally on Your own device to assess it. This permission grants no
+   other rights, is non-transferable, and may be revoked at any time. It does not
+   permit any use described in Section 3.
+
+5. THIRD-PARTY COMPONENTS
+
+   The Work incorporates third-party data and open-source libraries that are NOT
+   owned by the copyright holder and are NOT covered by this License. Those
+   components remain governed by their own licenses, which You must observe,
+   including but not limited to:
+
+     - Qur'anic Arabic text: the Tanzil Project, under CC BY 3.0
+       (https://tanzil.net) — attribution and a link to tanzil.net are required.
+     - English translations: Pickthall (1930, public domain) and others under
+       their respective terms.
+     - Tafsir / classical commentary: used as graded study context under the
+       terms of their respective sources.
+     - Open-source libraries: under their respective licenses (e.g. MIT,
+       Apache-2.0), retained in their package metadata.
+
+   Nothing in this License limits Your rights or obligations under those
+   third-party licenses with respect to those third-party components.
+
+6. NO WARRANTY
+
+   THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+7. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+   FROM, OUT OF, OR IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS IN
+   THE WORK.
+
+8. RELIGIOUS CONTENT
+
+   The Work presents Qur'anic text, translations, and classical commentary as a
+   study aid. It is not a fatwa or a substitute for a qualified scholar.
+
+9. CONTACT
+
+   For licensing inquiries or to request written permission, contact the
+   copyright holder via the GitHub repository:
+   https://github.com/MuhammadAhmed43/Daily-Quran
