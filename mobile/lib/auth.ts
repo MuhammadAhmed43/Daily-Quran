@@ -16,6 +16,12 @@ WebBrowser.maybeCompleteAuthSession();
 
 const DECIDED_KEY = 'daily-quran:auth-decided';
 
+// Bound a network promise so a stalled auth call can never hang the sign-in flow. On timeout it rejects, and
+// the caller's try/catch surfaces a clear error instead of trapping the loading spinner forever.
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms))]);
+}
+
 export type AuthUser = {
   id: string;
   email: string | null;
@@ -124,7 +130,7 @@ export async function signInGoogle(): Promise<AuthResult> {
     const url = new URL(res.url);
     const code = url.searchParams.get('code');
     if (code) {
-      const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+      const { error: exErr } = await withTimeout(supabase.auth.exchangeCodeForSession(code), 20000, 'Google exchange');
       if (exErr) return { ok: false, message: 'Google sign-in could not complete.' };
     } else {
       const frag = res.url.includes('#') ? res.url.split('#')[1] : '';
@@ -132,7 +138,7 @@ export async function signInGoogle(): Promise<AuthResult> {
       const access_token = p.get('access_token');
       const refresh_token = p.get('refresh_token');
       if (!access_token || !refresh_token) return { ok: false, message: 'Google sign-in did not return a session.' };
-      const { error: sErr } = await supabase.auth.setSession({ access_token, refresh_token });
+      const { error: sErr } = await withTimeout(supabase.auth.setSession({ access_token, refresh_token }), 20000, 'Google session');
       if (sErr) return { ok: false, message: 'Google sign-in could not complete.' };
     }
   } catch {

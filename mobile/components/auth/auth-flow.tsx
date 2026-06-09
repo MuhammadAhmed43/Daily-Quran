@@ -36,6 +36,7 @@ export function AuthFlow({ onDone }: { onDone: () => void }) {
     const r = await fn();
     if (r.ok) {
       haptic.success();
+      setBusy(null); // clear the spinner now; routing (onDone) drives the unmount, but never depend on it
       onDone();
     } else {
       setError(r.message ?? 'Something went wrong.');

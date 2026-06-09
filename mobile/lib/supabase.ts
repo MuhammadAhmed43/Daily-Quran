@@ -18,6 +18,8 @@ export const supabase = communityReady
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        flowType: 'implicit', // pin it: a future supabase-js default flip to PKCE would route through
+        // exchangeCodeForSession on a Hermes runtime with no crypto polyfill (challenge gen degrades/hangs).
       },
     })
   : null;
