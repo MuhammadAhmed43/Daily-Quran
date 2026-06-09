@@ -136,7 +136,8 @@ export function StarDot({ s, w, h }: { s: Star; w: number; h: number }) {
           borderRadius: s.size / 2,
           backgroundColor: s.color,
         },
-        s.near && { shadowColor: c.scriptureInk, shadowOpacity: 0.7, shadowRadius: 3, shadowOffset: { width: 0, height: 0 } },
+        // No animated shadow: a shadowRadius on a view whose opacity/scale change every frame forces iOS to
+        // re-rasterize the blur each frame (a major GPU + heat cost). The twinkle reads fine without it.
         aStyle,
       ]}
     />
