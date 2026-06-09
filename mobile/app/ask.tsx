@@ -715,23 +715,43 @@ function ChatVideoCard({ id }: { id: string }) {
   );
 }
 
+// Inline Qur'an references (e.g. 2:255, 18:10-11) — colored gold INSIDE the answer text so they're easy to
+// spot while reading, matching the gold refs on the verse cards. Splitting on a capturing group keeps the
+// matched refs as their own tokens so only they get recolored.
+const REF_SPLIT = /(\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?)/g;
+const IS_REF = /^\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?$/;
+
+function renderRefs(s: string, keyBase: string) {
+  return s.split(REF_SPLIT).map((part, i) =>
+    IS_REF.test(part) ? (
+      <Text key={`${keyBase}r${i}`} style={styles.inlineRef}>
+        {part}
+      </Text>
+    ) : (
+      part
+    ),
+  );
+}
+
 function renderInline(s: string, keyBase: string) {
   return s.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).map((part, i) => {
     const b = part.match(/^\*\*([\s\S]+)\*\*$/);
     if (b)
       return (
         <Text key={`${keyBase}-${i}`} style={styles.bold}>
-          {b[1]}
+          {renderRefs(b[1], `${keyBase}-${i}b`)}
         </Text>
       );
     const it = part.match(/^\*([\s\S]+)\*$/);
     if (it)
       return (
         <Text key={`${keyBase}-${i}`} style={styles.italic}>
-          {it[1]}
+          {renderRefs(it[1], `${keyBase}-${i}i`)}
         </Text>
       );
-    return part;
+    return (
+      <Text key={`${keyBase}-${i}`}>{renderRefs(part, `${keyBase}-${i}p`)}</Text>
+    );
   });
 }
 
@@ -835,6 +855,7 @@ const styles = StyleSheet.create({
   answerBlock: { gap: 8 },
   bold: { fontFamily: font.serif },
   italic: { fontFamily: font.serifItalic },
+  inlineRef: { color: c.accent },
   bulletRow: { flexDirection: 'row', alignItems: 'flex-start' },
   bulletMarker: { opacity: 0.7 },
   bulletText: { flex: 1 },
